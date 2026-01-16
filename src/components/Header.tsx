@@ -25,7 +25,7 @@ const Header = () => {
             <Home className="h-5 w-5 text-white" />
           </div>
           <span className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-            BrandName
+            АйПиМатика Бел 
           </span>
         </Link>
 
