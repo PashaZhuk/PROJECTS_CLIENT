@@ -8,10 +8,16 @@ const Header = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
 
-  const handleLogout = () => {
-    logout();
+ const handleLogout = async () => {
+  try {
+    await logout(); // Ждем, пока сервер удалит куки
+    navigate('/');  // Только после этого уходим на главную
+  } catch (error) {
+    console.error("Ошибка при выходе:", error);
+    // В любом случае редиректим, так как стейт в контексте очистится (в блоке finally)
     navigate('/');
-  };
+  }
+};
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">

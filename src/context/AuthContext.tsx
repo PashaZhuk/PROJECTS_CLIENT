@@ -1,163 +1,103 @@
-import React, { createContext, useState, useContext, useEffect, } from 'react';
-import type { ReactNode } from 'react';
-import { authAPI } from '../services/api'
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import api from '../services/api'; // Твой экземпляр axios с withCredentials: true
+
+// --- 1. ТИПИЗАЦИЯ ---
 
 interface User {
-  id: string;
-  email: string;
+  id: number;
   name: string;
+  email: string;
 }
 
+interface AuthResponse {
+  success: boolean;
+  message?: string;
+}
+
+// Интерфейс самого контекста (то, что выдает рация useAuth)
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
-  updateUser: (userData: Partial<User>) => void;
+  register: (userData: any) => Promise<AuthResponse>;
+  login: (credentials: any) => Promise<AuthResponse>;
+  logout: () => Promise<void>;
 }
+
+// --- 2. СОЗДАНИЕ КОНТЕКСТА ---
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-// Симуляция API (замените на реальные эндпоинты)
-const mockApi = {
-  login: async (email: string, password: string) => {
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Имитация задержки
-    return {
-      user: {
-        id: '1',
-        email,
-        name: email.split('@')[0],
-      },
-      token: 'mock-jwt-token-' + Date.now(),
-    };
-  },
-  register: async (name: string, email: string, password: string) => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return {
-      user: {
-        id: '2',
-        email,
-        name,
-      },
-      token: 'mock-jwt-token-reg-' + Date.now(),
-    };
-  },
-  validateToken: async (token: string) => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return {
-      user: {
-        id: '1',
-        email: 'user@example.com',
-        name: 'Test User',
-      },
-      valid: true,
-    };
-  },
-};
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const isAuthenticated = !!user;
 
+
+  // Автоматическая проверка: залогинен ли юзер (срабатывает при обновлении страницы)
   useEffect(() => {
-    // Восстановление сессии из localStorage
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-
-    if (storedToken && storedUser) {
-      // В реальном приложении здесь должна быть валидация токена на сервере
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-
-    setIsLoading(false);
+    const checkAuth = async () => {
+      try {
+        const response = await api.get('/auth/profile');
+        setUser(response.data);
+      } catch (error) {
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  // --- ФУНКЦИИ ---
+
+  // Регистрация
+  const register = async (userData: any): Promise<AuthResponse> => {
     try {
-      setIsLoading(true);
-      const response = await mockApi.login(email, password);
-      
-      // Сохраняем данные
-      setUser(response.user);
-      setToken(response.token);
-      
-      // Сохраняем в localStorage
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      
-      console.log('Успешный вход:', response.user);
-    } catch (error) {
-      console.error('Ошибка входа:', error);
-      throw new Error('Неверные учетные данные');
-    } finally {
-      setIsLoading(false);
+      const response = await api.post('/auth/register', userData);
+      setUser(response.data.data.user); // Подстраивай под структуру своего ответа
+      return { success: true };
+    } catch (error: any) {
+      return { 
+        success: false, 
+        message: error.response?.data?.error || 'Ошибка регистрации' 
+      };
     }
   };
 
-  const register = async (name: string, email: string, password: string) => {
+  // Логин
+  const login = async (credentials: any): Promise<AuthResponse> => {
     try {
-      setIsLoading(true);
-      const response = await mockApi.register(name, email, password);
-      
-      // Автоматически входим после регистрации
-      setUser(response.user);
-      setToken(response.token);
-      
-      // Сохраняем в localStorage
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      
-      console.log('Успешная регистрация:', response.user);
+      const response = await api.post('/auth/login', credentials);
+      setUser(response.data.data.user);
+      return { success: true };
+    } catch (error: any) {
+      return { 
+        success: false, 
+        message: error.response?.data?.error || 'Ошибка входа' 
+      };
+    }
+  };
+
+  // Выход
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
     } catch (error) {
-      console.error('Ошибка регистрации:', error);
-      throw new Error('Ошибка при регистрации');
+      console.error("Logout error", error);
     } finally {
-      setIsLoading(false);
+      setUser(null); // В любом случае очищаем стейт на фронте
     }
-  };
-
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    console.log('Выход выполнен');
-  };
-
-  const updateUser = (userData: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...userData };
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-    }
-  };
-
-  const value: AuthContextType = {
-    user,
-    token,
-    isAuthenticated: !!user && !!token,
-    isLoading,
-    login,
-    register,
-    logout,
-    updateUser,
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, register, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
+// --- 3. КАСТОМНЫЙ ХУК ---
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

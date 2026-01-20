@@ -89,12 +89,13 @@ const LoginPage = () => {
       return;
     }
     
-    try {
-      await login(formData.email, formData.password);
-      navigate(from, { replace: true });
-    } catch (error) {
-      setSubmitError('Ошибка при входе. Проверьте данные и попробуйте снова.');
+    const result = await login(formData);
+    if (result.success){
+      navigate(from, { replace: true })
+    } else{
+setSubmitError('Ошибка при входе. Проверьте данные и попробуйте снова.');
     }
+     
   };
 
   return (

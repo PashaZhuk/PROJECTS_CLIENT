@@ -11,7 +11,10 @@ import HomePage from './components/LandingPage';
 import LoginPage from './components/Loginform';
 import RegisterPage from './components/RegisterForm';
 import DashboardPage from './components/DashboardPage';
+import  Projects  from './components/dashboard/Projects';
+import { Orders } from './components/dashboard/Orders';
 import ProfilePage from './components/ProfilePage';
+import RegisterProjectForm from './components/dashboard/REgisterProjectForm';
 
 function App() {
   return (
@@ -39,7 +42,25 @@ function App() {
                 <ProtectedRoute>
                   <DashboardPage />
                 </ProtectedRoute>
-              } />
+              }
+              >
+                {/* Эти маршруты отрендерятся внутри <Outlet /> в DashboardPage */}
+  {/* Перенаправляем с /dashboard на /dashboard/projects по умолчанию */}
+  {/* Главная страница дашборда */}
+  <Route index element={<Navigate to="main" replace />} />
+  <Route path="main" element={<div className="p-6"><h1>Статистика (Дашборд)</h1></div>} />
+
+  {/* Проекты */}
+  <Route path="projects" element={<Projects />} />
+  <Route path="projects/new" element={<RegisterProjectForm/>} />
+
+  {/* Заказы */}
+  <Route path="orders" element={<Orders />} />
+  <Route path="orders/new" element={<div className="p-6"><h1>Форма создания заказа</h1></div>} />
+</Route>
+
+
+
               <Route path="/profile" element={
                 <ProtectedRoute>
                   <ProfilePage />
