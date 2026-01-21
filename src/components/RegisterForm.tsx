@@ -134,20 +134,20 @@ const RegisterPage = () => {
     <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 to-blue-50 py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-md mx-auto">
-          <button
+          {/* <button
             onClick={() => navigate(-1)}
             className="mb-8 flex items-center text-gray-600 hover:text-blue-600 transition-colors"
           >
             <ArrowLeft className="h-5 w-5 mr-2" /> Назад
-          </button>
+          </button> */}
 
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-            <div className="bg-gradient-to-r from-green-600 to-blue-600 p-8 text-center">
-              <h1 className="text-3xl font-bold text-white mb-2">Создать аккаунт</h1>
+            <div className="bg-gradient-to-r from-green-600 to-blue-600 p-4 text-center">
+              <h1 className="text-3xl font-bold text-white mb-1">Создать аккаунт</h1>
               <p className="text-blue-100">Присоединяйтесь к нашему сообществу</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-8 space-y-6">
+            <form onSubmit={handleSubmit} className="p-7 space-y-5">
               {submitError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center">
                   <AlertCircle className="h-5 w-5 mr-2" />

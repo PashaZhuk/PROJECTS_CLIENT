@@ -1,116 +1,67 @@
 import React from 'react';
 import './App.css';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+
+// Импорт необходимых компонентов
 import Header from './components/Header';
+import Footer from './components/Footer';
+import HomePage from './components/HomePage';
+import LoginPage from './components/Loginform'; // Твоя форма входа
+import AdminDashboard from './components/dashboard/AdminDashboard'; // Дашборд админа
+import Userdashboard from './components/dashboard/UserDashboard'; // Дашборд юзера
 
+const AppContent = () => {
+  const { user, isAuthenticated, isLoading } = useAuth();
 
-// Страницы
-import HomePage from './components/LandingPage';
-import LoginPage from './components/Loginform';
-import RegisterPage from './components/RegisterForm';
-import DashboardPage from './components/DashboardPage';
-import  Projects  from './components/dashboard/Projects';
-import { Orders } from './components/dashboard/Orders';
-import ProfilePage from './components/ProfilePage';
-import RegisterProjectForm from './components/dashboard/REgisterProjectForm';
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      <Header />
+      <main className="flex-grow">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          
+          <Route path="/login" element={
+            !isAuthenticated ? <LoginPage /> : 
+            <Navigate to={user?.role === 'ADMIN' ? "/admin/dashboard" : "/dashboard"} replace />
+          } />
+
+          {/* Упрощаем: просто защищаем роут, а проверку роли сделаем внутри или через ProtectedRoute */}
+          <Route path="/admin/dashboard" element={
+            <ProtectedRoute>
+              {user?.role === 'ADMIN' ? <AdminDashboard /> : <Navigate to="/dashboard" replace />}
+            </ProtectedRoute>
+          } />
+
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+               {/* Если зашел админ, просто разрешаем ему видеть этот дашборд или мягко редиректим */}
+               {user?.role === 'ADMIN' ? <Navigate to="/admin/dashboard" replace /> : <Userdashboard />}
+            </ProtectedRoute>
+          } />
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+      <Footer />
+    </div>
+  );
+};
 
 function App() {
   return (
     <Router>
       <AuthProvider>
-        <div className="min-h-screen bg-gray-50">
-          <Header />
-          <main>
-            <Routes>
-              {/* Публичные маршруты */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={
-                <ProtectedRoute requireAuth={false}>
-                  <LoginPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/register" element={
-                <ProtectedRoute requireAuth={false}>
-                  <RegisterPage />
-                </ProtectedRoute>
-              } />
-
-              {/* Защищенные маршруты */}
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <DashboardPage />
-                </ProtectedRoute>
-              }
-              >
-                {/* Эти маршруты отрендерятся внутри <Outlet /> в DashboardPage */}
-  {/* Перенаправляем с /dashboard на /dashboard/projects по умолчанию */}
-  {/* Главная страница дашборда */}
-  <Route index element={<Navigate to="main" replace />} />
-  <Route path="main" element={<div className="p-6"><h1>Статистика (Дашборд)</h1></div>} />
-
-  {/* Проекты */}
-  <Route path="projects" element={<Projects />} />
-  <Route path="projects/new" element={<RegisterProjectForm/>} />
-
-  {/* Заказы */}
-  <Route path="orders" element={<Orders />} />
-  <Route path="orders/new" element={<div className="p-6"><h1>Форма создания заказа</h1></div>} />
-</Route>
-
-
-
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              } />
-
-              {/* Дополнительные маршруты */}
-              <Route path="/forgot-password" element={
-                <div className="min-h-screen flex items-center justify-center">
-                  <div className="text-center">
-                    <h1 className="text-2xl font-bold mb-4">Восстановление пароля</h1>
-                    <p className="text-gray-600">Страница в разработке</p>
-                  </div>
-                </div>
-              } />
-
-              {/* 404 - Not Found */}
-              <Route path="*" element={
-                <div className="min-h-screen flex items-center justify-center">
-                  <div className="text-center">
-                    <h1 className="text-4xl font-bold text-gray-900 mb-4">404</h1>
-                    <p className="text-gray-600 mb-8">Страница не найдена</p>
-                    <a href="/" className="text-blue-600 hover:text-blue-800 font-medium">
-                      Вернуться на главную
-                    </a>
-                  </div>
-                </div>
-              } />
-            </Routes>
-          </main>
-
-          {/* Footer */}
-          <footer className="bg-white border-t mt-12">
-            <div className="container mx-auto px-4 py-8">
-              <div className="flex flex-col md:flex-row justify-between items-center">
-                <div className="mb-4 md:mb-0">
-                  <span className="text-xl font-bold text-gray-900">BrandName</span>
-                  <p className="text-gray-500 text-sm mt-2">
-                    © 2024 Все права защищены
-                  </p>
-                </div>
-                <div className="flex space-x-6">
-                  <a href="#" className="text-gray-600 hover:text-blue-600">Политика конфиденциальности</a>
-                  <a href="#" className="text-gray-600 hover:text-blue-600">Условия использования</a>
-                  <a href="#" className="text-gray-600 hover:text-blue-600">Контакты</a>
-                </div>
-              </div>
-            </div>
-          </footer>
-        </div>
+        <AppContent />
       </AuthProvider>
     </Router>
   );

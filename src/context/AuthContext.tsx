@@ -7,10 +7,12 @@ interface User {
   id: number;
   name: string;
   email: string;
+  role: 'ADMIN' | 'USER';
 }
 
 interface AuthResponse {
   success: boolean;
+  user?:User;
   message?: string;
 }
 
@@ -39,7 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const checkAuth = async () => {
       try {
         const response = await api.get('/auth/profile');
-        setUser(response.data);
+        setUser(response.data.data);
       } catch (error) {
         setUser(null);
       } finally {
@@ -66,18 +68,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Логин
-  const login = async (credentials: any): Promise<AuthResponse> => {
-    try {
-      const response = await api.post('/auth/login', credentials);
-      setUser(response.data.data.user);
-      return { success: true };
-    } catch (error: any) {
-      return { 
-        success: false, 
-        message: error.response?.data?.error || 'Ошибка входа' 
-      };
-    }
-  };
+const login = async (credentials: any): Promise<AuthResponse> => {
+  try {
+    const response = await api.post('/auth/login', credentials);
+    const userData = response.data.data.user; // Извлекаем пользователя
+    
+    setUser(userData); // Сохраняем в стейт контекста
+    
+    // Возвращаем успех И данные пользователя
+    return { 
+      success: true, 
+      user: userData 
+    }; 
+  } catch (error: any) {
+    return { 
+      success: false, 
+      message: error.response?.data?.error || 'Ошибка входа' 
+    };
+  }
+};
 
   // Выход
   const logout = async () => {
