@@ -11,6 +11,7 @@ import HomePage from './components/HomePage';
 import LoginPage from './components/Loginform'; // Твоя форма входа
 import AdminDashboard from './components/dashboard/AdminDashboard'; // Дашборд админа
 import Userdashboard from './components/dashboard/UserDashboard'; // Дашборд юзера
+import ForcePasswordChange from './components/ForсePasswordChange'
 
 const AppContent = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -27,6 +28,7 @@ const AppContent = () => {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
       <main className="flex-grow">
+        {user && user.mustChangePassword && <ForcePasswordChange />}
         <Routes>
           <Route path="/" element={<HomePage />} />
           

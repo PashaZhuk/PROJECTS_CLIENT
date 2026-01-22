@@ -7,6 +7,7 @@ interface User {
   id: number;
   name: string;
   email: string;
+  mustChangePassword: boolean;
   role: 'ADMIN' | 'USER';
 }
 
@@ -19,6 +20,7 @@ interface AuthResponse {
 // Интерфейс самого контекста (то, что выдает рация useAuth)
 interface AuthContextType {
   user: User | null;
+  setUser: React.Dispatch<React.SetStateAction<any>>;
   isAuthenticated: boolean;
   isLoading: boolean;
   register: (userData: any) => Promise<AuthResponse>;
@@ -100,7 +102,7 @@ const login = async (credentials: any): Promise<AuthResponse> => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, register, login, logout }}>
+    <AuthContext.Provider value={{ user, setUser, isAuthenticated, isLoading, register, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

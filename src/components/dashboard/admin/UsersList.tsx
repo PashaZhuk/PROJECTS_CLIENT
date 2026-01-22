@@ -19,7 +19,7 @@ const UsersList = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/auth/users'); // Проверь роут на бэкенде
+      const response = await api.get('/user/users'); // Проверь роут на бэкенде
       setUsers(response.data.data);
       setError('');
     } catch (err: any) {
@@ -37,7 +37,7 @@ const UsersList = () => {
   const handleDelete = async (id: number, email: string) => {
     if (window.confirm(`Вы уверены, что хотите удалить пользователя ${email}?`)) {
       try {
-        await api.delete(`/auth/users/${id}`); // Нужно будет создать этот роут на бэкенде
+        await api.delete(`/user/users/${id}`); // Нужно будет создать этот роут на бэкенде
         setUsers(users.filter(user => user.id !== id)); // Удаляем из стейта без перезагрузки
       } catch (err) {
         alert('Ошибка при удалении пользователя');
