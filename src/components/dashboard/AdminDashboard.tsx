@@ -47,11 +47,15 @@ const AdminDashboard = () => {
         return <UsersList />; 
       case 'user-create':
         return (
-    <div className="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-       <h2 className="text-xl font-bold mb-6">Создать новый аккаунт</h2>
-       <AdminCreateUser /> 
-    </div>
-  );;
+          <AdminCreateUser 
+            onUserCreated={() => {
+              // Логика: переключаем вкладку на список
+              setActiveTab('user-list');
+              // Можно добавить уведомление: alert('Пользователь создан!');
+            }}
+            onCancel={() => setActiveTab('info')} // Если отмена — на главную
+          />
+        );
       default:
         return <div>Выберите раздел в меню</div>;
     }

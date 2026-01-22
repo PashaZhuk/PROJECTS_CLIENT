@@ -12,7 +12,7 @@ const ForcePasswordChange = () => {
     if (newPassword !== confirmPassword) return alert("Пароли не совпадают");
 
     try {
-      await api.post('/auth/change-password', { newPassword });
+      await api.post('/user/change-password', { newPassword });
       // Обновляем локальный стейт, чтобы убрать форму
       setUser((prev: any) => ({ ...prev, mustChangePassword: false }));
       alert("Пароль успешно обновлен!");

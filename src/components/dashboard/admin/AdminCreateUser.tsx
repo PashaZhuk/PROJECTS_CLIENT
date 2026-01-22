@@ -1,130 +1,130 @@
 import React, { useState } from 'react';
-import { UserPlus, Mail, Lock, User, ShieldCheck, Loader2, CheckCircle2 } from 'lucide-react';
-import api from '../../../services/api';
+import axios from 'axios';
+import { User, Mail, Key, Shield, RefreshCw, Check } from 'lucide-react';
 
-const AdminCreateUser = () => {
+interface CreateUserProps {
+  onUserCreated: () => void;
+  onCancel: () => void;
+}
+
+const AdminCreateUser = ({ onUserCreated, onCancel }: CreateUserProps) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    role: 'USER'
+    role: 'USER',
+    sendEmail: true
   });
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+  const [error, setError] = useState('');
+
+  const generatePassword = () => {
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    let retVal = "";
+    for (let i = 0; i < 12; ++i) {
+      retVal += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    setFormData({ ...formData, password: retVal });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setStatus(null);
+    setError('');
 
     try {
-      await api.post('/auth/register', formData);
-      setStatus({ type: 'success', msg: 'Пользователь успешно создан!' });
-      setFormData({ name: '', email: '', password: '', role: 'USER' }); // Очистка
+      await axios.post('http://192.168.85.110:5001/api/auth/register', {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role
+      }, { withCredentials: true });
+
+      onUserCreated(); // Вызываем редирект на список
     } catch (err: any) {
-      setStatus({ 
-        type: 'error', 
-        msg: err.response?.data?.error || 'Ошибка при создании пользователя' 
-      });
+      setError(err.response?.data?.error || 'Ошибка при создании пользователя');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-xl mx-auto">
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="bg-blue-600 p-6 text-white text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-full mb-3">
-            <UserPlus size={24} />
-          </div>
-          <h2 className="text-xl font-bold">Новый аккаунт</h2>
-          <p className="text-blue-100 text-sm opacity-80">Создание учетной записи для нового клиента</p>
+    <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-8 border-b border-gray-50 bg-gray-50/50">
+          <h2 className="text-2xl font-bold text-gray-800">Регистрация сотрудника</h2>
+          <p className="text-gray-500 mt-1">Данные будут сохранены в системе управления доступом</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-5">
-          {status && (
-            <div className={`p-4 rounded-xl flex items-center space-x-3 text-sm ${
-              status.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-            }`}>
-              {status.type === 'success' && <CheckCircle2 size={18} />}
-              <span>{status.msg}</span>
+        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          {error && (
+            <div className="p-4 text-sm text-red-600 bg-red-50 rounded-xl border border-red-100 flex items-center gap-2">
+               <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse" /> {error}
             </div>
           )}
 
-          <div className="space-y-4">
-            {/* Имя */}
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Имя пользователя</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700 ml-1">ФИО</label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <input
-                  type="text"
-                  required
-                  placeholder="Иван Иванов"
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                />
+                <User className="absolute left-3 top-3 text-gray-400" size={18} />
+                <input required type="text" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all" 
+                  value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
               </div>
             </div>
 
-            {/* Email */}
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Email адрес</label>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700 ml-1">Email</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <input
-                  type="email"
-                  required
-                  placeholder="example@mail.com"
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                />
-              </div>
-            </div>
-
-            {/* Пароль */}
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Временный пароль</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                />
-              </div>
-            </div>
-
-            {/* Роль */}
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Роль доступа</label>
-              <div className="relative">
-                <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <select
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all appearance-none"
-                  value={formData.role}
-                  onChange={(e) => setFormData({...formData, role: e.target.value})}
-                >
-                  <option value="USER">Пользователь (Клиент)</option>
-                  <option value="ADMIN">Администратор</option>
-                </select>
+                <Mail className="absolute left-3 top-3 text-gray-400" size={18} />
+                <input required type="email" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
+                  value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
               </div>
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all flex items-center justify-center space-x-2 disabled:opacity-70 active:scale-[0.98]"
-          >
-            {loading ? <Loader2 className="animate-spin" size={20} /> : <span>Создать аккаунт</span>}
-          </button>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center ml-1">
+              <label className="text-sm font-semibold text-gray-700">Временный пароль</label>
+              <button type="button" onClick={generatePassword} className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 uppercase tracking-wider">
+                <RefreshCw size={12} /> Сгенерировать
+              </button>
+            </div>
+            <div className="relative">
+              <Key className="absolute left-3 top-3 text-gray-400" size={18} />
+              <input required type="text" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-gray-700 ml-1">Роль в системе</label>
+            <div className="relative">
+              <Shield className="absolute left-3 top-3 text-gray-400" size={18} />
+              <select className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
+                value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})}>
+                <option value="USER">Менеджер (Доступ к заказам)</option>
+                <option value="ADMIN">Администратор (Полный доступ)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 p-4 bg-blue-50/50 rounded-2xl border border-blue-100 cursor-pointer"
+               onClick={() => setFormData({...formData, sendEmail: !formData.sendEmail})}>
+            <div className={`h-6 w-6 rounded-lg border flex items-center justify-center transition-all ${formData.sendEmail ? 'bg-blue-600 border-blue-600 shadow-md shadow-blue-200' : 'bg-white border-gray-300'}`}>
+              {formData.sendEmail && <Check size={16} className="text-white" />}
+            </div>
+            <span className="text-sm text-blue-800 font-medium italic">Отправить данные для входа на электронную почту</span>
+          </div>
+
+          <div className="flex gap-4 pt-4 border-t border-gray-50">
+            <button type="button" onClick={onCancel} className="flex-1 px-6 py-4 font-bold text-gray-500 bg-gray-100 rounded-2xl hover:bg-gray-200 transition-all">
+              Отмена
+            </button>
+            <button disabled={loading} className="flex-1 px-6 py-4 font-bold text-white bg-blue-600 rounded-2xl hover:bg-blue-700 shadow-xl shadow-blue-100 disabled:opacity-50 transition-all active:scale-95">
+              {loading ? 'Создание...' : 'Зарегистрировать'}
+            </button>
+          </div>
         </form>
       </div>
     </div>
