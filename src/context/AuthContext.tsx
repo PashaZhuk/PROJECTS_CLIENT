@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import api from '../services/api'; // Твой экземпляр axios с withCredentials: true
+import authAPI from '../api/auth';
+import userAPI from '../api/user';
 
 // --- 1. ТИПИЗАЦИЯ ---
 
@@ -13,14 +14,14 @@ interface User {
 
 interface AuthResponse {
   success: boolean;
-  user?:User;
+  user?: User;
   message?: string;
 }
 
-// Интерфейс самого контекста (то, что выдает рация useAuth)
 interface AuthContextType {
   user: User | null;
-  setUser: React.Dispatch<React.SetStateAction<any>>;
+  // Исправили any на правильный тип React State
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
   isAuthenticated: boolean;
   isLoading: boolean;
   register: (userData: any) => Promise<AuthResponse>;
@@ -37,12 +38,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const isAuthenticated = !!user;
 
-
-  // Автоматическая проверка: залогинен ли юзер (срабатывает при обновлении страницы)
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await api.get('/auth/profile');
+        const response = await authAPI.profile();
+        // Убедись, что путь response.data.data соответствует твоему бэкенду
         setUser(response.data.data);
       } catch (error) {
         setUser(null);
@@ -55,11 +55,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // --- ФУНКЦИИ ---
 
-  // Регистрация
+  // Регистрация (для админа)
   const register = async (userData: any): Promise<AuthResponse> => {
     try {
-      const response = await api.post('/auth/register', userData);
-      setUser(response.data.data.user); // Подстраивай под структуру своего ответа
+      await userAPI.register(userData);
+      // ВАЖНО: Мы НЕ вызываем setUser здесь, 
+      // потому что админ создает другого пользователя, а не меняет свой аккаунт
       return { success: true };
     } catch (error: any) {
       return { 
@@ -70,45 +71,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Логин
-const login = async (credentials: any): Promise<AuthResponse> => {
-  try {
-    const response = await api.post('/auth/login', credentials);
-    const userData = response.data.data.user; // Извлекаем пользователя
-    
-    setUser(userData); // Сохраняем в стейт контекста
-    
-    // Возвращаем успех И данные пользователя
-    return { 
-      success: true, 
-      user: userData 
-    }; 
-  } catch (error: any) {
-    return { 
-      success: false, 
-      message: error.response?.data?.error || 'Ошибка входа' 
-    };
-  }
-};
+  const login = async (credentials: any): Promise<AuthResponse> => {
+    try {
+      const response = await authAPI.login(credentials);
+      // В axios.ts мы договорились использовать чистые данные или .data.data
+      const userData = response.data.data.user; 
+      
+      setUser(userData);
+      return { success: true, user: userData }; 
+    } catch (error: any) {
+      return { 
+        success: false, 
+        message: error.response?.data?.error || 'Ошибка входа' 
+      };
+    }
+  };
 
-  // Выход
   const logout = async () => {
     try {
-      await api.post('/auth/logout');
+      await authAPI.logout();
     } catch (error) {
       console.error("Logout error", error);
     } finally {
-      setUser(null); // В любом случае очищаем стейт на фронте
+      setUser(null);
+      // Опционально: очистить кэш или редирект
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, isAuthenticated, isLoading, register, login, logout }}>
-      {children}
+    <AuthContext.Provider value={{ 
+      user, 
+      setUser, 
+      isAuthenticated, 
+      isLoading, 
+      register, 
+      login, 
+      logout 
+    }}>
+      {/* Если приложение грузится, показываем белый экран или спиннер, 
+         чтобы не "мигала" форма логина 
+      */}
+      {!isLoading ? children : (
+        <div className="h-screen w-full flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      )}
     </AuthContext.Provider>
   );
 };
-
-// --- 3. КАСТОМНЫЙ ХУК ---
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

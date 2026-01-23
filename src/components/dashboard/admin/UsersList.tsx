@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Mail, Trash2, Shield, User, Calendar, Loader2 } from 'lucide-react';
-import api from '../../../services/api'; // Путь к твоему настроенному axios
+import userAPI from '../../../api/user'; // Путь к твоему настроенному axios
 
 interface UserData {
   id: number;
@@ -19,8 +19,8 @@ const UsersList = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/user/users'); // Проверь роут на бэкенде
-      setUsers(response.data.data);
+      const response = await userAPI.getAllUsers(); // Проверь роут на бэкенде
+      setUsers(response.data);
       setError('');
     } catch (err: any) {
       setError('Не удалось загрузить список пользователей');
@@ -37,7 +37,7 @@ const UsersList = () => {
   const handleDelete = async (id: number, email: string) => {
     if (window.confirm(`Вы уверены, что хотите удалить пользователя ${email}?`)) {
       try {
-        await api.delete(`/user/users/${id}`); // Нужно будет создать этот роут на бэкенде
+        await userAPI.deleteUser(id); // Нужно будет создать этот роут на бэкенде
         setUsers(users.filter(user => user.id !== id)); // Удаляем из стейта без перезагрузки
       } catch (err) {
         alert('Ошибка при удалении пользователя');

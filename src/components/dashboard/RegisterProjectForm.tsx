@@ -1,7 +1,16 @@
 import React, { useState } from 'react';
-import { ClipboardList, Building2, Monitor, Wallet, Send } from 'lucide-react';
+import { ClipboardList, Building2, Monitor, Wallet, Send, ArrowLeft } from 'lucide-react';
+import api from '../../api/axios'; // Используем твой настроенный axios
 
-const RegisterProjectForm = () => {
+// Описываем интерфейс пропсов для связи с Dashboard
+interface RegisterProjectFormProps {
+  onSecondaryAction?: () => void; 
+}
+
+const RegisterProjectForm: React.FC<RegisterProjectFormProps> = ({ onSecondaryAction }) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
   const [formData, setFormData] = useState({
     customerName: '', customerSite: '', customerUnp: '', buyerDetails: '',
     installAddress: '', plannedDate: '', currentPlatform: '', currentTerminals: '',
@@ -10,24 +19,59 @@ const RegisterProjectForm = () => {
     keyRequirements: '', nextActions: ''
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Отправка данных:", formData);
-    // Здесь будет ваш вызов api.post('/projects', formData)
-  };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (error) setError(''); // Сбрасываем ошибку при вводе
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      // Отправляем данные на бэкенд
+      await api.post('/projects', formData);
+      
+      alert("Проект успешно зарегистрирован!");
+      
+      // Если пропс передан (например, для перехода к списку), вызываем его
+      if (onSecondaryAction) {
+        onSecondaryAction();
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Ошибка при сохранении проекта');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-2xl border border-gray-100 my-8">
-      <div className="flex items-center space-x-3 mb-8 pb-4 border-b">
-        <div className="bg-blue-600 p-2 rounded-lg text-white">
-          <ClipboardList size={24} />
+    <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-2xl border border-gray-100 my-4">
+      {/* Шапка формы */}
+      <div className="flex items-center justify-between mb-8 pb-4 border-b">
+        <div className="flex items-center space-x-3">
+          <div className="bg-blue-600 p-2 rounded-lg text-white">
+            <ClipboardList size={24} />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800">Регистрация проекта</h1>
         </div>
-        <h1 className="text-2xl font-bold text-gray-800">Регистрация нового проекта</h1>
+        
+        {onSecondaryAction && (
+          <button 
+            onClick={onSecondaryAction}
+            className="text-gray-400 hover:text-gray-600 flex items-center gap-1 text-sm transition-colors"
+          >
+            <ArrowLeft size={16} /> Назад
+          </button>
+        )}
       </div>
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
         
@@ -38,22 +82,10 @@ const RegisterProjectForm = () => {
             <span>1. Информация о Заказчике</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">Наименование Заказчика *</label>
-              <input required name="customerName" onChange={handleChange} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" placeholder="ООО 'Конечный пользователь'" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">УНП Заказчика *</label>
-              <input required name="customerUnp" onChange={handleChange} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" placeholder="123456789" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">Сайт Заказчика</label>
-              <input name="customerSite" onChange={handleChange} className="w-full p-2 border rounded-md" placeholder="https://..." />
-            </div>
-            <div className="space-y-1 md:col-span-2">
-              <label className="text-sm font-medium text-gray-700">Закупочная организация (если отличается)</label>
-              <input name="buyerDetails" onChange={handleChange} className="w-full p-2 border rounded-md font-light text-sm" placeholder="УНП и наименование уполномоченной организации" />
-            </div>
+            <FormField label="Наименование Заказчика *" name="customerName" value={formData.customerName} onChange={handleChange} required placeholder="ООО 'Конечный пользователь'" />
+            <FormField label="УНП Заказчика *" name="customerUnp" value={formData.customerUnp} onChange={handleChange} required placeholder="123456789" />
+            <FormField label="Сайт Заказчика" name="customerSite" value={formData.customerSite} onChange={handleChange} placeholder="https://..." />
+            <FormField label="Закупочная организация" name="buyerDetails" value={formData.buyerDetails} onChange={handleChange} placeholder="Наименование уполномоченной организации" isFullWidth />
           </div>
         </section>
 
@@ -61,86 +93,76 @@ const RegisterProjectForm = () => {
         <section className="space-y-4">
           <div className="flex items-center text-blue-600 font-semibold mb-2">
             <Monitor className="mr-2" size={20} />
-            <span>2. Техническое задание и площадка</span>
+            <span>2. ТЗ и площадка</span>
           </div>
           <div className="grid grid-cols-1 gap-4">
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">Адреса установки оборудования *</label>
-              <input required name="installAddress" onChange={handleChange} className="w-full p-2 border rounded-md" placeholder="Город, улица, дом, помещение" />
-            </div>
+            <FormField label="Адрес установки *" name="installAddress" value={formData.installAddress} onChange={handleChange} required />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Планируемая дата реализации *</label>
-                <input required type="date" name="plannedDate" onChange={handleChange} className="w-full p-2 border rounded-md" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Текущая платформа/сервер ВКС</label>
-                <input name="currentPlatform" onChange={handleChange} className="w-full p-2 border rounded-md" placeholder="Чем пользуются сейчас?" />
-              </div>
+              <FormField label="Дата реализации *" name="plannedDate" type="date" value={formData.plannedDate} onChange={handleChange} required />
+              <FormField label="Текущая платформа ВКС" name="currentPlatform" value={formData.currentPlatform} onChange={handleChange} />
             </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">Описание задачи и сценарий использования *</label>
-              <textarea required name="projectTask" onChange={handleChange} rows={3} className="w-full p-2 border rounded-md" placeholder="Внутренние совещания, обучение, число участников..." />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">Описание помещений *</label>
-              <textarea required name="roomDescription" onChange={handleChange} rows={2} className="w-full p-2 border rounded-md" placeholder="Размеры комнат, кол-во человек в каждой..." />
-            </div>
+            <FormTextArea label="Описание задачи *" name="projectTask" value={formData.projectTask} onChange={handleChange} required rows={3} />
           </div>
         </section>
 
-        {/* Блок 3: Спецификация и Бюджет */}
+        {/* Блок 3: Спецификация */}
         <section className="space-y-4">
           <div className="flex items-center text-blue-600 font-semibold mb-2">
             <Wallet className="mr-2" size={20} />
-            <span>3. Коммерческая информация</span>
+            <span>3. Коммерция</span>
           </div>
-          <div className="space-y-4">
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">Планируемая спецификация Yealink *</label>
-              <textarea required name="yealinkSpec" onChange={handleChange} rows={3} className="w-full p-2 border border-blue-200 rounded-md bg-blue-50/30" placeholder="Модели и количество оборудования" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Бюджет ВКС (статус и величина)</label>
-                <input name="budgetStatus" onChange={handleChange} className="w-full p-2 border rounded-md" placeholder="Выделен / Не выделен / Сумма" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Ссылка на тендер</label>
-                <input name="tenderLink" onChange={handleChange} className="w-full p-2 border rounded-md" placeholder="Если опубликовано" />
-              </div>
-            </div>
-          </div>
+          <FormTextArea 
+            label="Спецификация Yealink *" 
+            name="yealinkSpec" 
+            value={formData.yealinkSpec} 
+            onChange={handleChange} 
+            required 
+            className="bg-blue-50/30 border-blue-100"
+          />
         </section>
 
-        {/* Блок 4: Обязательные требования */}
-        <section className="space-y-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
-          <h3 className="font-bold text-gray-800">Ключевые требования и действия</h3>
-          <div className="space-y-4">
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700 font-bold">Оборудование на тестирование *</label>
-              <textarea required name="testEquipment" onChange={handleChange} rows={2} className="w-full p-2 border rounded-md bg-white" placeholder="Что требуется и когда? Если нет - почему?" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700 font-bold">Ключевые требования к решению *</label>
-              <textarea required name="keyRequirements" onChange={handleChange} rows={2} className="w-full p-2 border rounded-md bg-white" placeholder="Для успешной реализации проекта..." />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700 font-bold">Планируемые действия *</label>
-              <textarea required name="nextActions" onChange={handleChange} rows={2} className="w-full p-2 border rounded-md bg-white" placeholder="Встречи, демо, подготовка ТЗ..." />
-            </div>
-          </div>
-        </section>
-
-        <div className="flex justify-end pt-6">
-          <button type="submit" className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg hover:shadow-blue-200 active:scale-95">
-            <Send size={18} />
-            <span>Зарегистрировать проект</span>
+        {/* Кнопки управления */}
+        <div className="flex justify-end items-center space-x-4 pt-6 border-t">
+          {onSecondaryAction && (
+            <button 
+              type="button"
+              onClick={onSecondaryAction}
+              className="px-6 py-3 text-gray-500 hover:text-gray-700 font-medium transition-colors"
+            >
+              Отмена
+            </button>
+          )}
+          <button 
+            type="submit" 
+            disabled={loading}
+            className={`flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-10 rounded-xl transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed`}
+          >
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Send size={18} />
+            )}
+            <span>{loading ? 'Отправка...' : 'Зарегистрировать проект'}</span>
           </button>
         </div>
       </form>
     </div>
   );
 };
+
+// Вспомогательные микро-компоненты для чистоты кода
+const FormField = ({ label, isFullWidth, ...props }: any) => (
+  <div className={`space-y-1 ${isFullWidth ? 'md:col-span-2' : ''}`}>
+    <label className="text-sm font-medium text-gray-700">{label}</label>
+    <input {...props} className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
+  </div>
+);
+
+const FormTextArea = ({ label, ...props }: any) => (
+  <div className="space-y-1">
+    <label className="text-sm font-medium text-gray-700">{label}</label>
+    <textarea {...props} className={`w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all ${props.className}`} />
+  </div>
+);
 
 export default RegisterProjectForm;

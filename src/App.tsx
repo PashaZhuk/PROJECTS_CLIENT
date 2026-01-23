@@ -2,16 +2,16 @@ import React from 'react';
 import './App.css';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from '../src/components/auth/ProtectedRoute'
 
 // Импорт необходимых компонентов
-import Header from './components/Header';
-import Footer from './components/Footer';
-import HomePage from './components/HomePage';
-import LoginPage from './components/Loginform'; // Твоя форма входа
-import AdminDashboard from './components/dashboard/AdminDashboard'; // Дашборд админа
-import Userdashboard from './components/dashboard/UserDashboard'; // Дашборд юзера
-import ForcePasswordChange from './components/ForсePasswordChange'
+import Header from './components/ui/Header';
+import Footer from './components/ui/Footer';
+import HomePage from './pages/HomePage';
+import LoginPage from './pages/Loginpage'; // Твоя форма входа
+import AdminDashboard from '../src/pages/AdminDashboard'; // Дашборд админа
+import Userdashboard from './pages/UserDashboard'; // Дашборд юзера
+import ForcePasswordChange from './components/auth/ForсePasswordChange'
 
 const AppContent = () => {
   const { user, isAuthenticated, isLoading } = useAuth();

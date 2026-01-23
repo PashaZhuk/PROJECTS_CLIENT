@@ -11,9 +11,9 @@ import {
   Menu,
   X
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import UsersList from '../dashboard/admin/UsersList'; // Позже создадим этот компонент
-import AdminCreateUser from './admin/AdminCreateUser';
+import { useAuth } from '../context/AuthContext';
+import UsersList from '../components/dashboard/admin/UsersList'; // Позже создадим этот компонент
+import AdminCreateUser from '../components/dashboard/admin/AdminCreateUser';
 const AdminDashboard = () => {
   const { logout, user } = useAuth();
   const [activeTab, setActiveTab] = useState('info'); // Текущая вкладка

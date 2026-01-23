@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import api from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import userAPI from '../../api/user';
+import { useAuth } from '../../context/AuthContext';
 
 const ForcePasswordChange = () => {
   const [newPassword, setNewPassword] = useState('');
@@ -12,7 +12,7 @@ const ForcePasswordChange = () => {
     if (newPassword !== confirmPassword) return alert("Пароли не совпадают");
 
     try {
-      await api.post('/user/change-password', { newPassword });
+      await userAPI.changePw( {newPassword} );
       // Обновляем локальный стейт, чтобы убрать форму
       setUser((prev: any) => ({ ...prev, mustChangePassword: false }));
       alert("Пароль успешно обновлен!");
