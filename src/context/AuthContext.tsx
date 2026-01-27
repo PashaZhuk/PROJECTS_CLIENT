@@ -9,7 +9,8 @@ interface User {
   name: string;
   email: string;
   mustChangePassword: boolean;
-  role: 'ADMIN' | 'USER';
+  companyName?:string;
+  role: 'ADMIN' | 'MANAGER' | 'USER';
 }
 
 interface AuthResponse {

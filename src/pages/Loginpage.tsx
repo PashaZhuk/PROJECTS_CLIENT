@@ -68,30 +68,40 @@ const LoginPage = () => {
     return !errors.email && !errors.password && formData.email && formData.password;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitError('');
-    
-    const emailError = validateEmail(formData.email);
-    const passwordError = validatePassword(formData.password);
-    
-    setErrors({ email: emailError, password: passwordError });
-    setTouched({ email: true, password: true });
-    
-    if (emailError || passwordError) return;
-    
-    const result = await login(formData);
-    if (result.success) {
-    // result.user должен содержать поле role из БД
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setSubmitError('');
+  
+  const emailError = validateEmail(formData.email);
+  const passwordError = validatePassword(formData.password);
+  
+  setErrors({ email: emailError, password: passwordError });
+  setTouched({ email: true, password: true });
+  
+  if (emailError || passwordError) return;
+  
+  const result = await login(formData);
+
+  if (result.success) {
     const userRole = result.user?.role;
 
-    if (userRole === 'ADMIN') {
-      navigate('/admin/dashboard', { replace: true });
-    } else {
-      navigate('/dashboard', { replace: true });
+    // Используем switch для чистоты кода при множестве ролей
+    switch (userRole) {
+      case 'ADMIN':
+        navigate('/admin/dashboard', { replace: true });
+        break;
+      case 'MANAGER':
+        navigate('/manager/dashboard', { replace: true });
+        break;
+      case 'USER':
+        navigate('/dashboard', { replace: true });
+        break;
+      default:
+        // На случай, если роль не определена или пришла странная строка
+        navigate('/dashboard', { replace: true });
     }
   } else {
-    setSubmitError('Неверный email или пароль');
+    setSubmitError(result.message || 'Неверный email или пароль');
   }
 };
 

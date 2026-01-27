@@ -116,11 +116,7 @@ const AdminDashboard = () => {
             )}
           </div>
 
-          {/* Заглушки для будущего расширения */}
-          <button className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-400 cursor-not-allowed">
-            <FileText size={20} />
-            {isSidebarOpen && <span className="font-medium">Заказы (Скоро)</span>}
-          </button>
+         
         </nav>
 
         {/* User Info & Logout */}
