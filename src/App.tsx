@@ -9,7 +9,7 @@ import Header from './components/ui/Header';
 import Footer from './components/ui/Footer';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/Loginpage';
-import AdminDashboard from '../src/pages/AdminDashboard';
+import AdminDashboard from '../src/components/dashboard/admin/AdminDashboard';
 import Userdashboard from './pages/UserDashboard';
 import ManagerDashboard from './pages/ManagerDashboard'; // Не забудь создать этот файл
 import ForcePasswordChange from './components/auth/ForсePasswordChange';

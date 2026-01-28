@@ -192,3 +192,12 @@ export const PROJECT_CATEGORIES: Record<string, FormField[]> = {
     { name: 'comments', label: 'Комментарии к проекту', type: 'textarea' },
   ]
 };
+
+
+// Генерируем плоский словарь меток для быстрого поиска в таблице
+export const FIELD_LABELS: Record<string, string> = Object.values(PROJECT_CATEGORIES)
+  .flat()
+  .reduce((acc, field) => ({
+    ...acc,
+    [field.name]: field.label
+  }), {});
