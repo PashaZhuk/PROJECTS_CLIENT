@@ -69,41 +69,51 @@ const LoginPage = () => {
   };
 
  const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setSubmitError('');
-  
-  const emailError = validateEmail(formData.email);
-  const passwordError = validatePassword(formData.password);
-  
-  setErrors({ email: emailError, password: passwordError });
-  setTouched({ email: true, password: true });
-  
-  if (emailError || passwordError) return;
-  
-  const result = await login(formData);
+    e.preventDefault();
+    setSubmitError('');
+    
+    const emailError = validateEmail(formData.email);
+    const passwordError = validatePassword(formData.password);
+    
+    setErrors({ email: emailError, password: passwordError });
+    setTouched({ email: true, password: true });
+    
+    if (emailError || passwordError) return;
+    
+    // Вызываем login и получаем результат
+    const result = await login(formData);
 
-  if (result.success) {
-    const userRole = result.user?.role;
-
-    // Используем switch для чистоты кода при множестве ролей
-    switch (userRole) {
-      case 'ADMIN':
-        navigate('/admin/dashboard', { replace: true });
-        break;
-      case 'MANAGER':
-        navigate('/manager/dashboard', { replace: true });
-        break;
-      case 'USER':
-        navigate('/dashboard', { replace: true });
-        break;
-      default:
-        // На случай, если роль не определена или пришла странная строка
-        navigate('/dashboard', { replace: true });
+    if (result.success) {
+      const userRole = result.user?.role;
+      switch (userRole) {
+        case 'ADMIN':
+          navigate('/admin/dashboard', { replace: true });
+          break;
+        case 'MANAGER':
+          navigate('/manager/dashboard', { replace: true });
+          break;
+        case 'USER':
+          navigate('/dashboard', { replace: true });
+          break;
+        default:
+          navigate('/dashboard', { replace: true });
+      }
+    } else {
+      // ПРОВЕРКА ТИПА ОШИБКИ
+      // Если сервер недоступен, обычно fetch выкидывает ошибку, которую твой AuthContext 
+      // должен поймать и вернуть в result.message.
+      
+      const errorMessage = result.message || '';
+      
+      if (errorMessage.toLowerCase().includes('fetch') || errorMessage.toLowerCase().includes('network')) {
+        setSubmitError('Сервер недоступен. Проверьте подключение к сети или VPN.');
+      } else if (result.status === 401 || errorMessage.includes('пароль')) {
+        setSubmitError('Неверный email или пароль');
+      } else {
+        setSubmitError(errorMessage || 'Произошла ошибка при входе');
+      }
     }
-  } else {
-    setSubmitError(result.message || 'Неверный email или пароль');
-  }
-};
+  };
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 to-blue-50 py-12 flex items-center">

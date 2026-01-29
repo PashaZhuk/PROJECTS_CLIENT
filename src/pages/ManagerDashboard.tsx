@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   LayoutDashboard, ClipboardList, ShoppingCart, LogOut, 
-  Search, MessageSquare, Send, X, ChevronUp
+  Search
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useProjectSockets } from '../hooks/useProjectSockets'; // Наш сокет-хук
 
 // Импорт общих компонентов
 import { StatsView } from '../components/dashboard/StatsView';
 import { ProjectsListView } from '../components/dashboard/ProjectsListView';
+import { ChatDrawer } from '../components/dashboard/ChatDrawer';
 
 const ManagerDashboard = () => {
   const { logout, user } = useAuth();
@@ -17,59 +19,68 @@ const ManagerDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [expandedProjectId, setExpandedProjectId] = useState<number | null>(null);
   
-  // Состояния чата
+  // Состояние выбранного проекта для чата
   const [chatProject, setChatProject] = useState<any>(null);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [isChatMinimized, setIsChatMinimized] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const fetchAllProjects = useCallback(async () => {
-    setLoading(true);
+  // --- ПОДКЛЮЧЕНИЕ SOCKET.IO ---
+  // Хук будет автоматически обновлять стейт projects при новых сообщениях
+  // или когда сообщения помечаются как прочитанные.
+  useProjectSockets(setProjects, user?.id);
+
+  // --- ЛОГИКА ЗАГРУЗКИ ДАННЫХ ---
+  const fetchAllProjects = useCallback(async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     try {
-      const response = await fetch('http://192.168.85.110:5001/api/projects', { credentials: 'include' });
+      const response = await fetch('http://192.168.85.110:5001/api/projects', { 
+        credentials: 'include' 
+      });
+      if (!response.ok) throw new Error('Ошибка сервера');
       const data = await response.json();
-      setProjects(data);
-    } catch (err) { console.error(err); } 
-    finally { setLoading(false); }
+      
+      // Сортировка: новые сверху
+      const sorted = data.sort((a: any, b: any) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      
+      setProjects(sorted);
+    } catch (err) { 
+      console.error("Ошибка при обновлении данных:", err); 
+    } finally { 
+      if (showLoading) setLoading(false); 
+    }
   }, []);
 
-  useEffect(() => { fetchAllProjects(); }, [fetchAllProjects]);
-
-  // Авто-скролл чата
+  // Первичная загрузка (Interval удален — теперь всё через сокеты)
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, chatProject]);
+    fetchAllProjects(true);
+  }, [fetchAllProjects]);
+
+  // --- ОБРАБОТКА ПРОЧТЕНИЯ СООБЩЕНИЙ ---
+  const handleMessagesRead = useCallback((projectId: number) => {
+    // Обнуляем счетчики локально
+    setProjects(prev => prev.map(p => 
+      p.id === projectId ? { ...p, unreadCount: 0, hasUnread: false } : p
+    ));
+  }, []);
 
   const updateProjectStatus = async (projectId: number, newStatus: 'APPROVED' | 'REJECTED'| 'PENDING') => {
-  try {
-    const response = await fetch(`http://192.168.85.110:5001/api/projects/${projectId}/status`, {
-      method: 'PATCH',
-      headers: { 
-        'Content-Type': 'application/json',
-        // Мы НЕ добавляем Authorization вручную, 
-        // так как браузер сам отправит куку 'jwt'
-      },
-      // ВАЖНО: Разрешает браузеру отправлять куки на другой адрес/порт
-      credentials: 'include', 
-      body: JSON.stringify({ status: newStatus }),
-    });
+    try {
+      const response = await fetch(`http://192.168.85.110:5001/api/projects/${projectId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', 
+        body: JSON.stringify({ status: newStatus }),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Ошибка при обновлении статуса');
+      if (!response.ok) throw new Error('Ошибка при обновлении статуса');
+
+      setProjects(prev => prev.map(p => 
+        p.id === projectId ? { ...p, status: newStatus } : p
+      ));
+    } catch (err: any) {
+      alert(`Не удалось обновить: ${err.message}`);
     }
-
-    // Обновляем UI только если в БД все сохранилось
-    setProjects(prev => prev.map(p => 
-      p.id === projectId ? { ...p, status: newStatus } : p
-    ));
-
-  } catch (err: any) {
-    console.error("Ошибка:", err.message);
-    alert(`Не удалось обновить: ${err.message}`);
-  }
-};
+  };
 
   const filteredProjects = useMemo(() => {
     const search = searchQuery.toLowerCase();
@@ -90,7 +101,7 @@ const ManagerDashboard = () => {
     <div className="flex h-screen bg-[#F8FAFC] overflow-hidden font-sans text-slate-900">
       
       {/* SIDEBAR */}
-      <aside className="w-72 bg-white border-r border-slate-200 flex flex-col shrink-0 z-20">
+      <aside className="w-72 bg-white border-r border-slate-200 flex flex-col shrink-0 z-20 shadow-sm">
         <div className="p-8">
           <div className="flex items-center gap-3 text-emerald-600">
             <div className="w-11 h-11 bg-emerald-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg shadow-emerald-100">M</div>
@@ -106,7 +117,7 @@ const ManagerDashboard = () => {
           <NavBtn active={activeTab === 'orders'} onClick={() => setActiveTab('orders')} icon={<ShoppingCart size={20}/>} label="Заказы" />
         </nav>
         <div className="p-6 border-t border-slate-100">
-          <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-4 text-slate-400 hover:text-red-500 font-bold text-sm transition-colors">
+          <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-4 text-slate-400 hover:text-red-500 font-bold text-sm transition-all">
             <LogOut size={20} /> Выход
           </button>
         </div>
@@ -129,7 +140,9 @@ const ManagerDashboard = () => {
               <p className="text-sm font-black text-slate-900">{user?.name}</p>
               <p className="text-[10px] text-emerald-600 font-black uppercase">Manager Account</p>
             </div>
-            <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white font-black shadow-xl">{user?.name?.[0]}</div>
+            <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white font-black shadow-xl">
+              {user?.name?.[0]}
+            </div>
           </div>
         </header>
 
@@ -137,7 +150,7 @@ const ManagerDashboard = () => {
           {activeTab === 'stats' && (
             <StatsView 
               stats={stats} 
-              onRefresh={fetchAllProjects} 
+              onRefresh={() => fetchAllProjects(true)} 
               isLoading={loading} 
               title="Панель Управления"
             />
@@ -151,31 +164,25 @@ const ManagerDashboard = () => {
               setSearchQuery={setSearchQuery}
               expandedId={expandedProjectId}
               setExpandedId={setExpandedProjectId}
-              isAdminView={true} // Этот флаг включит кнопки управления в ProjectRow
+              isAdminView={true}
               onStatusUpdate={updateProjectStatus}
               onOpenChat={(p: any) => setChatProject(p)}
             />
           )}
         </main>
 
-        {/* ЧАТ ПЕРЕНЕСЕН В ОТДЕЛЬНЫЙ ФАЙЛ ИЛИ ОСТАВЛЕН ТУТ ДЛЯ КОМПАКТНОСТИ */}
-        <ChatWindow 
-          chatProject={chatProject} 
-          setChatProject={setChatProject}
-          messages={messages}
-          newMessage={newMessage}
-          setNewMessage={setNewMessage}
-          isMinimized={isChatMinimized}
-          setIsMinimized={setIsChatMinimized}
-          scrollRef={scrollRef}
+        <ChatDrawer 
+          isOpen={!!chatProject}
+          project={chatProject}
           user={user}
+          onClose={() => setChatProject(null)}
+          onMessagesRead={handleMessagesRead}
+          variant="emerald"
         />
       </div>
     </div>
   );
 };
-
-// --- Вспомогательные компоненты ---
 
 const NavBtn = ({ active, onClick, icon, label }: any) => (
   <button onClick={onClick} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all group ${active ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200 font-bold' : 'text-slate-500 hover:bg-slate-50'}`}>
@@ -183,68 +190,5 @@ const NavBtn = ({ active, onClick, icon, label }: any) => (
     <span className="text-sm tracking-tight">{label}</span>
   </button>
 );
-
-// Компонент чата (логику можно оставить здесь, так как она уникальна для менеджера)
-const ChatWindow = ({ chatProject, setChatProject, messages, newMessage, setNewMessage, isMinimized, setIsMinimized, scrollRef, user }: any) => {
-  if (!chatProject) return null;
-
-  if (isMinimized) {
-    return (
-      <button 
-        onClick={() => setIsMinimized(false)}
-        className="fixed right-0 top-1/2 -translate-y-1/2 bg-slate-900 text-white p-4 rounded-l-3xl shadow-2xl hover:bg-emerald-600 transition-all duration-300 z-[60] flex flex-col items-center gap-3 border-y border-l border-white/10"
-      >
-        <MessageSquare size={24} />
-        <span className="[writing-mode:vertical-lr] rotate-180 text-[10px] font-black uppercase tracking-[0.2em] py-2">
-          Чат: PRJ-{chatProject.id}
-        </span>
-      </button>
-    );
-  }
-
-  return (
-    <div className="absolute inset-0 bg-slate-900/5 z-50 flex justify-end">
-      <div className="w-[450px] bg-white h-full shadow-[-30px_0_60px_rgba(0,0,0,0.12)] flex flex-col animate-in slide-in-from-right duration-300 border-l border-slate-200">
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center font-black">
-              {chatProject.partner?.name?.[0] || 'P'}
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-slate-900">Чат с партнером</h3>
-              <p className="text-[10px] text-slate-400 font-bold uppercase truncate max-w-[150px]">{chatProject.partner?.name}</p>
-            </div>
-          </div>
-          <div className="flex gap-1">
-            <button onClick={() => setIsMinimized(true)} className="p-2 hover:bg-slate-100 rounded-lg transition-all"><ChevronUp className="rotate-90" size={20}/></button>
-            <button onClick={() => setChatProject(null)} className="p-2 hover:bg-red-50 hover:text-red-500 rounded-lg transition-all"><X size={20}/></button>
-          </div>
-        </div>
-        
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4">
-          {messages.map((msg: any, idx: number) => (
-            <div key={idx} className={`flex flex-col ${msg.senderId === user?.id ? 'items-end' : 'items-start'}`}>
-              <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${msg.senderId === user?.id ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 border border-slate-200'}`}>
-                {msg.text}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="p-6 border-t">
-          <div className="relative flex items-center">
-            <input 
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Введите сообщение..."
-              className="w-full pl-4 pr-12 py-3 bg-slate-50 border rounded-xl outline-none focus:border-emerald-500 transition-all text-sm"
-            />
-            <button className="absolute right-2 p-2 bg-emerald-600 text-white rounded-lg shadow-md hover:bg-emerald-700"><Send size={16}/></button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default ManagerDashboard;
