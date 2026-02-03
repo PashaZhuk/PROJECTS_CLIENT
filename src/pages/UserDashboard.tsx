@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
-import { useProjectSockets } from '../hooks/useProjectSockets'; // Наш новый хук
+import { useProjectSockets } from '../hooks/useProjectSockets';
 import DynamicProjectForm from '../components/DynamicProjectForm';
 import { StatsView } from '../components/dashboard/StatsView';
 import { ProjectsListView } from '../components/dashboard/ProjectsListView';
@@ -20,7 +20,7 @@ interface Project {
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   createdAt: string;
   updatedAt: string;
-  unreadCount?: number; // Счетчик для сокетов
+  unreadCount?: number;
   hasUnread?: boolean;
 }
 
@@ -40,10 +40,26 @@ const UserDashboard = () => {
   // Состояние чата
   const [chatProject, setChatProject] = useState<Project | null>(null);
 
-  // --- ПОДКЛЮЧЕНИЕ SOCKET.IO ---
-  // Этот хук автоматически слушает 'unread_update' и 'messages_read'
-  // и обновляет массив projects в реальном времени.
+  /**
+   * --- ПОДКЛЮЧЕНИЕ SOCKET.IO ---
+   * Этот хук теперь слушает не только сообщения, но и 'project_status_changed'.
+   * Когда менеджер одобрит проект, список 'projects' обновится автоматически.
+   */
   useProjectSockets(setProjects, user?.id);
+
+  /**
+   * --- СИНХРОНИЗАЦИЯ ОТКРЫТОГО ЧАТА ---
+   * Если у пользователя открыт ChatDrawer, и через сокет пришло обновление этого проекта,
+   * нам нужно обновить объект в chatProject, чтобы интерфейс внутри чата тоже изменился.
+   */
+  useEffect(() => {
+    if (chatProject) {
+      const updatedInList = projects.find(p => p.id === chatProject.id);
+      if (updatedInList && JSON.stringify(updatedInList) !== JSON.stringify(chatProject)) {
+        setChatProject(updatedInList);
+      }
+    }
+  }, [projects, chatProject]);
 
   // --- ЛОГИКА ЗАГРУЗКИ ДАННЫХ ---
   const fetchProjects = useCallback(async (showLoading = false) => {
@@ -54,7 +70,6 @@ const UserDashboard = () => {
       });
       const data = await response.json();
       
-      // Сортировка: новые сверху
       setProjects(data.sort((a: any, b: any) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       ));
@@ -65,21 +80,18 @@ const UserDashboard = () => {
     }
   }, []);
 
-  // Первичная загрузка при монтировании (setInterval удален, так как есть сокеты)
   useEffect(() => {
     fetchProjects(true);
   }, [fetchProjects]);
 
   // --- ОБРАБОТКА ПРОЧТЕНИЯ ---
   const handleMessagesRead = useCallback((projectId: number) => {
-    // Просто очищаем локальный статус в списке, 
-    // так как PATCH-запрос на бэкенд уже ушел из ChatDrawer
     setProjects(prev => prev.map(p => 
       p.id === projectId ? { ...p, unreadCount: 0, hasUnread: false } : p
     ));
   }, []);
 
-  // Статистика
+  // Статистика (обновляется сама, когда меняется массив projects через сокет)
   const stats = useMemo(() => ({
     pending: projects.filter(p => p.status === 'PENDING').length,
     approved: projects.filter(p => p.status === 'APPROVED').length,

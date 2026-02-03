@@ -4,7 +4,7 @@ import {
   Search
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useProjectSockets } from '../hooks/useProjectSockets'; // Наш сокет-хук
+import { useProjectSockets } from '../hooks/useProjectSockets';
 
 // Импорт общих компонентов
 import { StatsView } from '../components/dashboard/StatsView';
@@ -22,12 +22,26 @@ const ManagerDashboard = () => {
   // Состояние выбранного проекта для чата
   const [chatProject, setChatProject] = useState<any>(null);
 
-  // --- ПОДКЛЮЧЕНИЕ SOCKET.IO ---
-  // Хук будет автоматически обновлять стейт projects при новых сообщениях
-  // или когда сообщения помечаются как прочитанные.
+  /**
+   * --- ПОДКЛЮЧЕНИЕ SOCKET.IO ---
+   * Слушает обновления статусов и новые сообщения в реальном времени.
+   */
   useProjectSockets(setProjects, user?.id);
 
-  // --- ЛОГИКА ЗАГРУЗКИ ДАННЫХ ---
+  /**
+   * --- СИНХРОНИЗАЦИЯ ОТКРЫТОГО ЧАТА ---
+   * Если у менеджера открыт чат, и статус проекта изменился (сокетом),
+   * обновляем объект в chatProject, чтобы заголовок чата тоже обновился.
+   */
+  useEffect(() => {
+    if (chatProject) {
+      const updated = projects.find(p => String(p.id) === String(chatProject.id));
+      if (updated && JSON.stringify(updated) !== JSON.stringify(chatProject)) {
+        setChatProject(updated);
+      }
+    }
+  }, [projects, chatProject]);
+
   const fetchAllProjects = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true);
     try {
@@ -37,7 +51,6 @@ const ManagerDashboard = () => {
       if (!response.ok) throw new Error('Ошибка сервера');
       const data = await response.json();
       
-      // Сортировка: новые сверху
       const sorted = data.sort((a: any, b: any) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
@@ -50,20 +63,28 @@ const ManagerDashboard = () => {
     }
   }, []);
 
-  // Первичная загрузка (Interval удален — теперь всё через сокеты)
   useEffect(() => {
     fetchAllProjects(true);
   }, [fetchAllProjects]);
 
-  // --- ОБРАБОТКА ПРОЧТЕНИЯ СООБЩЕНИЙ ---
   const handleMessagesRead = useCallback((projectId: number) => {
-    // Обнуляем счетчики локально
     setProjects(prev => prev.map(p => 
-      p.id === projectId ? { ...p, unreadCount: 0, hasUnread: false } : p
+      String(p.id) === String(projectId) ? { ...p, unreadCount: 0, hasUnread: false } : p
     ));
   }, []);
 
+  /**
+   * --- ОБНОВЛЕНИЕ СТАТУСА ---
+   * Используем "Оптимистичное обновление": сначала меняем в интерфейсе,
+   * затем отправляем на сервер. Это делает кнопки мгновенными.
+   */
   const updateProjectStatus = async (projectId: number, newStatus: 'APPROVED' | 'REJECTED'| 'PENDING') => {
+    // 1. Мгновенно обновляем локальный стейт (Optimistic Update)
+    const previousProjects = [...projects];
+    setProjects(prev => prev.map(p => 
+      String(p.id) === String(projectId) ? { ...p, status: newStatus } : p
+    ));
+
     try {
       const response = await fetch(`http://192.168.85.110:5001/api/projects/${projectId}/status`, {
         method: 'PATCH',
@@ -72,12 +93,16 @@ const ManagerDashboard = () => {
         body: JSON.stringify({ status: newStatus }),
       });
 
-      if (!response.ok) throw new Error('Ошибка при обновлении статуса');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка при обновлении статуса');
+      }
 
-      setProjects(prev => prev.map(p => 
-        p.id === projectId ? { ...p, status: newStatus } : p
-      ));
+      console.log(`Статус проекта ${projectId} успешно синхронизирован с сервером`);
+
     } catch (err: any) {
+      // 2. Если сервер вернул ошибку, откатываем изменения назад
+      setProjects(previousProjects);
       alert(`Не удалось обновить: ${err.message}`);
     }
   };
@@ -100,7 +125,6 @@ const ManagerDashboard = () => {
   return (
     <div className="flex h-screen bg-[#F8FAFC] overflow-hidden font-sans text-slate-900">
       
-      {/* SIDEBAR */}
       <aside className="w-72 bg-white border-r border-slate-200 flex flex-col shrink-0 z-20 shadow-sm">
         <div className="p-8">
           <div className="flex items-center gap-3 text-emerald-600">

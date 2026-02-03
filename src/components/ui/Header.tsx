@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LogIn, Home, LogOut, LayoutDashboard } from 'lucide-react';
+import { LogIn, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Header = () => {
@@ -18,67 +18,70 @@ const Header = () => {
     }
   };
 
-  // Путь для перехода в личный кабинет
   const dashboardPath = user?.role === 'ADMIN' ? "/admin/dashboard" : "/dashboard";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
+    <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         
-        {/* Логотип: ведет в соответствующий кабинет */}
+        {/* Логотип и Название */}
         <Link 
           to={isAuthenticated ? dashboardPath : "/"} 
-          className="flex items-center space-x-2 group"
+          className="flex items-center space-x-3 group"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 group-hover:from-blue-700 group-hover:to-purple-700 transition-all duration-200">
-            <Home className="h-5 w-5 text-white" />
+          {/* Контейнер для логотипа */}
+          <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-md shadow-slate-200 group-hover:scale-105 transition-transform duration-200 overflow-hidden border border-slate-50">
+            <img 
+              src="/src/assets/logo.webp" 
+              alt="АйПиМатика Лого" 
+              className="h-full w-full object-cover"
+            />
           </div>
-          <span className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-            АйПиМатика Бел 
-          </span>
+          
+          <div className="flex flex-col">
+            <span className="text-lg font-black text-slate-900 leading-none tracking-tight">
+              АйПиМАТИКА Бел
+            </span>
+            
+          </div>
         </Link>
 
-        {/* Навигация */}
-        <div className="flex items-center space-x-4">
+        {/* Правая часть: Профиль и Выход */}
+        <div className="flex items-center gap-6">
           {isAuthenticated ? (
             <>
               {/* Блок пользователя */}
-              <div className="flex items-center space-x-3 pr-2">
-                <div className="flex items-center justify-center h-9 w-9 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold">
-                  {user?.name?.charAt(0).toUpperCase() || 'U'}
+              <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
+                <div className="hidden md:flex flex-col items-end">
+                  <p className="text-sm font-bold text-slate-900 leading-none">{user?.name}</p>
+                  <p className="text-[9px] uppercase font-black text-slate-400 mt-1 tracking-tighter">
+    {user?.role === 'ADMIN' && 'Администратор'}
+    {user?.role === 'MANAGER' && 'Менеджер'}
+    {user?.role === 'USER' && 'Партнер'}
+  </p>
                 </div>
-                <div className="hidden md:block">
-                  <p className="text-sm font-medium text-gray-900 leading-none">{user?.name}</p>
-                  <p className="text-[10px] uppercase font-bold text-gray-400 mt-1 tracking-wider">
-                    {user?.role === 'ADMIN' ? 'Администратор' : 'Клиент'}
-                  </p>
+                {/* Аватар (заглушка с первой буквой) */}
+                <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-slate-100 to-slate-200 flex items-center justify-center border-2 border-white shadow-sm">
+                  <span className="text-sm font-bold text-blue-600">
+                    {user?.name?.charAt(0).toUpperCase()}
+                  </span>
                 </div>
               </div>
 
-              {/* Ссылка на Панель управления (Dashboard) */}
-              <Link
-                to={dashboardPath}
-                className="flex items-center space-x-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors border border-transparent"
-              >
-                <LayoutDashboard className="h-4 w-4 text-blue-600" />
-                <span className="hidden sm:inline">Панель</span>
-              </Link>
-              
               {/* Кнопка выхода */}
               <button
                 onClick={handleLogout}
-                className="flex items-center space-x-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
+                className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
+                title="Выйти"
               >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Выйти</span>
+                <LogOut className="h-5 w-5" />
               </button>
             </>
           ) : (
-            /* Если не вошел — только кнопка "Войти" */
             location.pathname !== '/login' && (
               <Link
                 to="/login"
-                className="flex items-center space-x-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:from-blue-700 hover:to-blue-800 transition-all duration-200"
+                className="flex items-center space-x-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95"
               >
                 <LogIn className="h-4 w-4" />
                 <span>Войти</span>

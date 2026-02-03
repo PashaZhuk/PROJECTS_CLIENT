@@ -7,7 +7,6 @@ import ProtectedRoute from '../src/components/auth/ProtectedRoute';
 // Компоненты
 import Header from './components/ui/Header';
 import Footer from './components/ui/Footer';
-import HomePage from './pages/HomePage';
 import LoginPage from './pages/Loginpage';
 import AdminDashboard from '../src/components/dashboard/admin/AdminDashboard';
 import Userdashboard from './pages/UserDashboard';
@@ -44,7 +43,7 @@ const AppContent = () => {
 
         <Routes>
           {/* ПУБЛИЧНЫЕ РОУТЫ */}
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<LoginPage />} />
           
           <Route path="/login" element={
             !isAuthenticated ? <LoginPage /> : <Navigate to={getRedirectPath(user?.role || 'USER')} replace />
