@@ -19,20 +19,67 @@ const ManagerDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [expandedProjectId, setExpandedProjectId] = useState<number | null>(null);
   
-  // Состояние выбранного проекта для чата
+  // --- СОСТОЯНИЕ ПАГИНАЦИИ ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0); 
+
+  // --- DEBOUNCE ПОИСКА ---
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
   const [chatProject, setChatProject] = useState<any>(null);
 
-  /**
-   * --- ПОДКЛЮЧЕНИЕ SOCKET.IO ---
-   * Слушает обновления статусов и новые сообщения в реальном времени.
-   */
+  // Подключаем сокеты для живого обновления статусов
   useProjectSockets(setProjects, user?.id);
 
+  // Эффект дебаунса: ждем 400мс после ввода, прежде чем отправить запрос на сервер
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1); // Сбрасываем на 1-ю страницу при новом поиске
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   /**
-   * --- СИНХРОНИЗАЦИЯ ОТКРЫТОГО ЧАТА ---
-   * Если у менеджера открыт чат, и статус проекта изменился (сокетом),
-   * обновляем объект в chatProject, чтобы заголовок чата тоже обновился.
+   * ГЛАВНАЯ ФУНКЦИЯ ЗАГРУЗКИ: 
+   * Теперь работает исключительно через API. Мы удалили локальную фильтрацию,
+   * чтобы не было конфликтов при поиске по ID.
    */
+  const fetchAllProjects = useCallback(async (showLoading = false) => {
+  if (showLoading) setLoading(true);
+  try {
+    const params = new URLSearchParams({
+      page: String(currentPage),
+      limit: '10',
+      search: debouncedSearch.trim() 
+    });
+
+    const url = `http://192.168.85.110:5001/api/projects?${params}`;
+    
+
+    const response = await fetch(url, { credentials: 'include' });
+    if (!response.ok) throw new Error(`Ошибка сервера: ${response.status}`);
+    
+    const data = await response.json();
+      
+
+    setProjects(data.projects || []);
+    setTotalPages(data.totalPages || 1);
+    setTotalCount(data.totalCount || 0);
+    
+  } catch (err) { 
+    console.error("ОШИБКА ДЕБАГА:", err); 
+  } finally { 
+    if (showLoading) setLoading(false); 
+  }
+}, [currentPage, debouncedSearch]);
+
+  useEffect(() => {
+    fetchAllProjects(true);
+  }, [fetchAllProjects]);
+
+  // Синхронизация данных в открытом чате
   useEffect(() => {
     if (chatProject) {
       const updated = projects.find(p => String(p.id) === String(chatProject.id));
@@ -42,45 +89,15 @@ const ManagerDashboard = () => {
     }
   }, [projects, chatProject]);
 
-  const fetchAllProjects = useCallback(async (showLoading = false) => {
-    if (showLoading) setLoading(true);
-    try {
-      const response = await fetch('http://192.168.85.110:5001/api/projects', { 
-        credentials: 'include' 
-      });
-      if (!response.ok) throw new Error('Ошибка сервера');
-      const data = await response.json();
-      
-      const sorted = data.sort((a: any, b: any) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-      
-      setProjects(sorted);
-    } catch (err) { 
-      console.error("Ошибка при обновлении данных:", err); 
-    } finally { 
-      if (showLoading) setLoading(false); 
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchAllProjects(true);
-  }, [fetchAllProjects]);
-
   const handleMessagesRead = useCallback((projectId: number) => {
     setProjects(prev => prev.map(p => 
       String(p.id) === String(projectId) ? { ...p, unreadCount: 0, hasUnread: false } : p
     ));
   }, []);
 
-  /**
-   * --- ОБНОВЛЕНИЕ СТАТУСА ---
-   * Используем "Оптимистичное обновление": сначала меняем в интерфейсе,
-   * затем отправляем на сервер. Это делает кнопки мгновенными.
-   */
   const updateProjectStatus = async (projectId: number, newStatus: 'APPROVED' | 'REJECTED'| 'PENDING') => {
-    // 1. Мгновенно обновляем локальный стейт (Optimistic Update)
     const previousProjects = [...projects];
+    // Оптимистичное обновление
     setProjects(prev => prev.map(p => 
       String(p.id) === String(projectId) ? { ...p, status: newStatus } : p
     ));
@@ -92,39 +109,22 @@ const ManagerDashboard = () => {
         credentials: 'include', 
         body: JSON.stringify({ status: newStatus }),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Ошибка при обновлении статуса');
-      }
-
-      console.log(`Статус проекта ${projectId} успешно синхронизирован с сервером`);
-
+      if (!response.ok) throw new Error('Ошибка обновления на сервере');
     } catch (err: any) {
-      // 2. Если сервер вернул ошибку, откатываем изменения назад
       setProjects(previousProjects);
       alert(`Не удалось обновить: ${err.message}`);
     }
   };
 
-  const filteredProjects = useMemo(() => {
-    const search = searchQuery.toLowerCase();
-    return projects.filter(p => 
-      (p.partner?.name || '').toLowerCase().includes(search) || 
-      (p.customerName || '').toLowerCase().includes(search) || 
-      p.id.toString().includes(search)
-    );
-  }, [projects, searchQuery]);
-
+  // Статистика теперь опирается на totalCount от сервера для точности
   const stats = useMemo(() => ({
     pending: projects.filter(p => p.status === 'PENDING').length,
     approved: projects.filter(p => p.status === 'APPROVED').length,
-    total: projects.length
-  }), [projects]);
+    total: totalCount 
+  }), [projects, totalCount]);
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] overflow-hidden font-sans text-slate-900">
-      
       <aside className="w-72 bg-white border-r border-slate-200 flex flex-col shrink-0 z-20 shadow-sm">
         <div className="p-8">
           <div className="flex items-center gap-3 text-emerald-600">
@@ -150,10 +150,10 @@ const ManagerDashboard = () => {
       <div className="flex-1 flex flex-col overflow-hidden relative">
         <header className="h-24 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-10 shrink-0">
           <div className="relative w-full max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <Search className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${loading ? 'text-emerald-500 animate-pulse' : 'text-slate-400'}`} size={18} />
             <input 
               type="text" 
-              placeholder="Поиск по партнеру или ID..." 
+              placeholder="Поиск по партнеру, ID или заказчику..." 
               className="w-full pl-12 pr-4 py-3.5 bg-slate-100 rounded-2xl outline-none text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -182,7 +182,7 @@ const ManagerDashboard = () => {
 
           {activeTab === 'projects' && (
             <ProjectsListView
-              projects={filteredProjects}
+              projects={projects} // Используем массив напрямую от сервера
               isLoading={loading}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
@@ -191,6 +191,9 @@ const ManagerDashboard = () => {
               isAdminView={true}
               onStatusUpdate={updateProjectStatus}
               onOpenChat={(p: any) => setChatProject(p)}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
             />
           )}
         </main>

@@ -27,31 +27,72 @@ interface Project {
 const UserDashboard = () => {
   const { logout, user } = useAuth();
 
-  // Основные состояния
   const [activeTab, setActiveTab] = useState<'stats' | 'my-projects' | 'create-project'>('stats');
   const [isProjectsMenuOpen, setIsProjectsMenuOpen] = useState(true);
+  
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // --- СОСТОЯНИЕ ПАГИНАЦИИ И ПОИСКА ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0); // Добавили общее кол-во для статистики
+  const [debouncedSearch, setDebouncedSearch] = useState(''); // Debounce стейт
+
   const [expandedProjectId, setExpandedProjectId] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-
-  // Состояние чата
   const [chatProject, setChatProject] = useState<Project | null>(null);
 
-  /**
-   * --- ПОДКЛЮЧЕНИЕ SOCKET.IO ---
-   * Этот хук теперь слушает не только сообщения, но и 'project_status_changed'.
-   * Когда менеджер одобрит проект, список 'projects' обновится автоматически.
-   */
   useProjectSockets(setProjects, user?.id);
 
+  // Эффект для Debounce (400мс задержки перед поиском)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1); // Сброс на 1 страницу при новом поиске
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   /**
-   * --- СИНХРОНИЗАЦИЯ ОТКРЫТОГО ЧАТА ---
-   * Если у пользователя открыт ChatDrawer, и через сокет пришло обновление этого проекта,
-   * нам нужно обновить объект в chatProject, чтобы интерфейс внутри чата тоже изменился.
+   * ЗАГРУЗКА ДАННЫХ
+   * Теперь зависит от debouncedSearch
    */
+  const fetchProjects = useCallback(async (showLoading = false) => {
+    if (showLoading) setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(currentPage),
+        limit: '10',
+        search: debouncedSearch.trim() // Используем отложенное значение
+      });
+
+      const response = await fetch(`http://192.168.85.110:5001/api/projects?${params}`, { 
+        credentials: 'include' 
+      });
+      
+      if (!response.ok) throw new Error('Ошибка при загрузке');
+      
+      const data = await response.json();
+      
+      setProjects(data.projects || []);
+      setTotalPages(data.totalPages || 1);
+      setTotalCount(data.totalCount || 0); // Получаем реальное число из БД
+      
+    } catch (err) {
+      console.error("Fetch error:", err);
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  }, [currentPage, debouncedSearch]);
+
+  useEffect(() => {
+    fetchProjects(true);
+  }, [fetchProjects]);
+
+  // Синхронизация чата
   useEffect(() => {
     if (chatProject) {
       const updatedInList = projects.find(p => p.id === chatProject.id);
@@ -61,52 +102,22 @@ const UserDashboard = () => {
     }
   }, [projects, chatProject]);
 
-  // --- ЛОГИКА ЗАГРУЗКИ ДАННЫХ ---
-  const fetchProjects = useCallback(async (showLoading = false) => {
-    if (showLoading) setLoading(true);
-    try {
-      const response = await fetch('http://192.168.85.110:5001/api/projects', { 
-        credentials: 'include' 
-      });
-      const data = await response.json();
-      
-      setProjects(data.sort((a: any, b: any) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      ));
-    } catch (err) {
-      console.error("Fetch error:", err);
-    } finally {
-      if (showLoading) setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchProjects(true);
-  }, [fetchProjects]);
-
-  // --- ОБРАБОТКА ПРОЧТЕНИЯ ---
   const handleMessagesRead = useCallback((projectId: number) => {
     setProjects(prev => prev.map(p => 
       p.id === projectId ? { ...p, unreadCount: 0, hasUnread: false } : p
     ));
   }, []);
 
-  // Статистика (обновляется сама, когда меняется массив projects через сокет)
+  /**
+   * СТАТИСТИКА
+   * Теперь берем 'total' из totalCount от сервера, 
+   * чтобы цифры были верными, даже если на текущей странице всего 1 проект
+   */
   const stats = useMemo(() => ({
     pending: projects.filter(p => p.status === 'PENDING').length,
     approved: projects.filter(p => p.status === 'APPROVED').length,
-    total: projects.length
-  }), [projects]);
-
-  // Фильтрация
-  const filteredProjects = useMemo(() => {
-    const query = searchQuery.toLowerCase();
-    return projects.filter(p =>
-      p.customerName?.toLowerCase().includes(query) ||
-      p.id.toString().includes(query) ||
-      p.formType.toLowerCase().includes(query)
-    );
-  }, [projects, searchQuery]);
+    total: totalCount 
+  }), [projects, totalCount]);
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-900 relative">
@@ -158,14 +169,21 @@ const UserDashboard = () => {
 
         {activeTab === 'my-projects' && (
           <ProjectsListView
-            projects={filteredProjects}
+            projects={projects}
             isLoading={loading}
             searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
+            setSearchQuery={setSearchQuery} // Используем напрямую из стейта
             expandedId={expandedProjectId}
             setExpandedId={setExpandedProjectId}
-            onEdit={(p) => { setEditingProject(p); setSelectedCategory(p.formType); setActiveTab('create-project'); }}
+            onEdit={(p) => { 
+              setEditingProject(p); 
+              setSelectedCategory(p.formType); 
+              setActiveTab('create-project'); 
+            }}
             onOpenChat={(p) => setChatProject(p)}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
           />
         )}
 
@@ -186,7 +204,6 @@ const UserDashboard = () => {
         )}
       </main>
 
-      {/* УНИВЕРСАЛЬНЫЙ ЧАТ */}
       <ChatDrawer 
         isOpen={!!chatProject}
         project={chatProject}
@@ -199,7 +216,7 @@ const UserDashboard = () => {
   );
 };
 
-// --- SIDEBAR HELPERS ---
+// Вспомогательные компоненты без изменений...
 const SidebarButton = ({ active, onClick, icon, label }: any) => (
   <button onClick={onClick} className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl transition-all ${active ? 'bg-blue-600 text-white shadow-xl shadow-blue-900/40' : 'text-slate-500 hover:text-slate-200'}`}>
     {icon} <span className="text-[11px] uppercase tracking-widest font-black">{label}</span>
@@ -212,7 +229,6 @@ const SidebarSubButton = ({ active, onClick, label }: any) => (
   </button>
 );
 
-// --- CATEGORY SELECTION ---
 const CategorySelection = ({ onSelect }: { onSelect: (val: string) => void }) => (
   <div className="py-12 text-center">
     <span className="text-blue-600 font-black text-[10px] uppercase tracking-[0.4em] mb-4 block">Этап 1</span>
