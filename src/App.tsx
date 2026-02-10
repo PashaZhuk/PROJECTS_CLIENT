@@ -1,19 +1,20 @@
-import React from 'react';
 import './App.css';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import ProtectedRoute from '../src/components/auth/ProtectedRoute';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+
+// Layouts
+import DashboardLayout from './components/layouts/DashboardLayout';
 
 // Компоненты
 import Header from './components/ui/Header';
 import Footer from './components/ui/Footer';
 import LoginPage from './pages/Loginpage';
-import AdminDashboard from '../src/components/dashboard/admin/AdminDashboard';
-import Userdashboard from './pages/UserDashboard';
-import ManagerDashboard from './pages/ManagerDashboard'; // Не забудь создать этот файл
 import ForcePasswordChange from './components/auth/ForсePasswordChange';
+import DashboardDispatcher from './pages/dashboard/DashboardDispatcher';
 
 const AppContent = () => {
+  // Теперь user типизирован как User | null из твоего файла типов
   const { user, isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
@@ -24,55 +25,29 @@ const AppContent = () => {
     );
   }
 
-  // Функция для определения, куда редиректить залогиненного юзера с экрана логина
-  const getRedirectPath = (role: string) => {
-    switch (role) {
-      case 'ADMIN': return "/admin/dashboard";
-      case 'MANAGER': return "/manager/dashboard";
-      case 'USER': return "/dashboard";
-      default: return "/dashboard";
-    }
-  };
-
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
-      <main className="flex-grow">
-        {/* Принудительная смена пароля поверх любого контента */}
+      <main className="grow flex flex-col">
         {user && user.mustChangePassword && <ForcePasswordChange />}
 
         <Routes>
-          {/* ПУБЛИЧНЫЕ РОУТЫ */}
-          <Route path="/" element={<LoginPage />} />
-          
-          <Route path="/login" element={
-            !isAuthenticated ? <LoginPage /> : <Navigate to={getRedirectPath(user?.role || 'USER')} replace />
-          } />
+          <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />} />
+          <Route path="/" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />} />
 
-          {/* ТОЛЬКО АДМИН */}
-          <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          {/* Защищенные роуты с проверкой ролей */}
+          <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'USER']} />}>
+            <Route element={<DashboardLayout />}>
+              <Route path="/dashboard" element={<DashboardDispatcher />} />
+            </Route>
           </Route>
 
-          {/* ТОЛЬКО МЕНЕДЖЕР */}
-          <Route element={<ProtectedRoute allowedRoles={['MANAGER']} />}>
-            <Route path="/manager/dashboard" element={<ManagerDashboard />} />
-          </Route>
-
-          {/* ТОЛЬКО ПОЛЬЗОВАТЕЛЬ */}
-          <Route element={<ProtectedRoute allowedRoles={['USER']} />}>
-            <Route path="/dashboard" element={<Userdashboard />} />
-          </Route>
-
-          {/* СТРАНИЦА ОШИБКИ ДОСТУПА */}
           <Route path="/unauthorized" element={
             <div className="p-10 text-center">
               <h1 className="text-2xl font-bold text-red-600">Доступ запрещен</h1>
-              <p>У вас нет прав для просмотра этого раздела.</p>
             </div>
           } />
-
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>
       <Footer />

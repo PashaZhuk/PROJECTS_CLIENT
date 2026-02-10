@@ -3,8 +3,8 @@ import {
   ArrowLeft, Check, Loader2, Plus, Trash2, Info, 
   CheckCircle2, Save, Calendar, ChevronDown, MessageSquare, ClipboardList
 } from 'lucide-react';
-import { PROJECT_CATEGORIES } from '../config/projectFields';
-import { useAuth } from '../context/AuthContext';
+import { PROJECT_CATEGORIES } from '../../../config/projectFields';
+import { useAuth } from '../../../context/AuthContext';
 
 // Объект примеров (Placeholders)
 const PLACEHOLDERS: Record<string, string> = {

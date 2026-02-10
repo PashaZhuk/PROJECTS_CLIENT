@@ -2,16 +2,10 @@ import React, { createContext, useContext, useState, useEffect, type ReactNode }
 import authAPI from '../api/auth';
 import userAPI from '../api/user';
 
-// --- 1. ТИПИЗАЦИЯ ---
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  mustChangePassword: boolean;
-  companyName?: string;
-  role: 'ADMIN' | 'MANAGER' | 'USER';
-}
+// --- 1. ИМПОРТ ЦЕНТРАЛЬНЫХ ТИПОВ ---
+import type { User } from '../types'; 
 
+// Интерфейс ответа (можно оставить тут или тоже вынести в типы)
 interface AuthResponse {
   success: boolean;
   user?: User;
@@ -41,14 +35,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const checkAuth = async () => {
       try {
         const response = await authAPI.profile();
-        // Берем данные. Если axios интерцептор поймает 401, он сам сделает редирект,
-        // сюда выполнение может и не дойти при конфликте сессий.
+        // Данные теперь автоматически типизируются как User
         setUser(response.data.data);
       } catch (error: any) {
         setUser(null);
-        // Если нет ответа от сервера (error.response отсутствует) — значит сервер реально лежит
         if (!error.response) {
-          console.error("Критическая ошибка: Сервер не отвечает (Offline)");
+          console.error("Критическая ошибка: Сервер Offline");
         }
       } finally {
         setIsLoading(false);
@@ -57,8 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkAuth();
   }, []);
 
-  // --- ФУНКЦИИ ---
-
+  // --- РЕГИСТРАЦИЯ ---
   const register = async (userData: any): Promise<AuthResponse> => {
     try {
       await userAPI.register(userData);
@@ -71,48 +62,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // --- ВХОД ---
   const login = async (credentials: any): Promise<AuthResponse> => {
     try {
       const response = await authAPI.login(credentials);
-      // Важно: проверяем структуру твоего ответа (response.data.data.user)
-      const userData = response.data.data.user; 
+      const userData: User = response.data.data.user; 
       
       setUser(userData);
       return { success: true, user: userData }; 
     } catch (error: any) {
       console.error("Auth error:", error);
-
       if (error.response) {
-        // Ошибка от самого сервера (401, 403, 400 и т.д.)
         return { 
           success: false, 
           message: error.response.data?.error || 'Неверный логин или пароль',
           status: error.response.status 
         };
       } 
-      
-      // Ошибка сети (Server Offline / ERR_CONNECTION_REFUSED)
       return { 
         success: false, 
-        message: 'Сервер недоступен. Проверьте подключение или VPN.',
+        message: 'Сервер недоступен. Проверьте подключение.',
         status: 503 
       };
     }
   };
 
- const logout = async () => {
-  try {
-    await authAPI.logout();
-  } catch (error) {
-    console.error("Logout error", error);
-  } finally {
-    // 1. Сначала обнуляем пользователя (это скроет Dashboard)
-    setUser(null);
-    // 2. Вместо window.location.href используй навигацию, 
-    // либо, если хочешь именно перезагрузку, убедись, что она одна.
-    // Если используешь react-router-dom: navigate('/login');
-  }
-};
+  // --- ВЫХОД ---
+  const logout = async () => {
+    try {
+      await authAPI.logout();
+    } catch (error) {
+      console.error("Logout error", error);
+    } finally {
+      setUser(null);
+      // Если используешь react-router, редирект сработает автоматически 
+      // благодаря смене стейта user на null в защищенных роутах
+    }
+  };
 
   return (
     <AuthContext.Provider value={{ 
@@ -124,13 +110,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       login, 
       logout 
     }}>
+      {/* Красивый лоадер системы */}
       {!isLoading ? children : (
         <div className="h-screen w-full flex items-center justify-center bg-slate-50">
           <div className="flex flex-col items-center gap-4">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest animate-pulse">
-              Загрузка системы...
-            </p>
+            <div className="relative">
+               <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-blue-600"></div>
+               <div className="absolute inset-0 flex items-center justify-center">
+                 <div className="h-2 w-2 bg-blue-600 rounded-full animate-pulse"></div>
+               </div>
+            </div>
+            <div className="text-center">
+              <p className="text-slate-900 font-black text-[10px] uppercase tracking-[0.3em] mb-1">
+                Система Hub
+              </p>
+              <p className="text-slate-400 text-[9px] font-bold uppercase tracking-widest animate-pulse italic">
+                Авторизация...
+              </p>
+            </div>
           </div>
         </div>
       )}

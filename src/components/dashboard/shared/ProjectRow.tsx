@@ -3,8 +3,8 @@ import {
   ChevronDown, ChevronUp, FileText, CheckCircle, 
   XCircle, MessageSquare, Building2, ShoppingCart, Clock, RefreshCw, Globe, RotateCcw 
 } from 'lucide-react';
-import { StatusBadge } from './UIHelpers';
-import { FIELD_LABELS } from '../../config/projectFields';
+import { StatusBadge } from '../shared/UIHelpers';
+import { FIELD_LABELS } from '../../../config/projectFields';
 
 interface ProjectRowProps {
   project: any;

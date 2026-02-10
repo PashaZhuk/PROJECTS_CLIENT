@@ -201,7 +201,7 @@ const AdminCreateUser = ({ onUserCreated, onCancel }: CreateUserProps) => {
             <button type="button" onClick={onCancel} className="flex-1 px-6 py-4 font-bold text-gray-400 hover:text-gray-600 transition-all">
               Отмена
             </button>
-            <button disabled={loading} className="flex-[2] px-6 py-4 font-bold text-white bg-slate-900 rounded-2xl hover:bg-slate-800 shadow-xl shadow-slate-200 disabled:opacity-50 transition-all active:scale-95 flex justify-center items-center gap-2">
+            <button disabled={loading} className="flex-2 px-6 py-4 font-bold text-white bg-slate-900 rounded-2xl hover:bg-slate-800 shadow-xl shadow-slate-200 disabled:opacity-50 transition-all active:scale-95 flex justify-center items-center gap-2">
               {loading ? (
                 <>
                   <RefreshCw className="animate-spin" size={18} />

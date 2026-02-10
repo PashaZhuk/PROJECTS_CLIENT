@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, AlertCircle, CheckCircle, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { login, isLoading: authLoading } = useAuth();
   
   // Состояния основной формы
@@ -91,11 +90,11 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 to-blue-50 py-12 flex items-center">
+    <div className="min-h-[calc(100vh-4rem)] bg-linear-to-br from-gray-50 to-blue-50 py-12 flex items-center">
       <div className="container mx-auto px-3">
         <div className="max-w-md mx-auto">
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-center">
+            <div className="bg-linear-to-r from-blue-600 to-purple-600 p-8 text-center">
               <h1 className="text-3xl font-bold text-white mb-2">Вход в портал</h1>
               <p className="text-blue-100">Используйте данные, выданные администратором</p>
             </div>
@@ -173,7 +172,7 @@ const LoginPage = () => {
                 disabled={!isFormValid() || authLoading}
                 className={`w-full py-4 px-4 rounded-xl font-bold text-white transition-all duration-300 shadow-lg
                   ${isFormValid() && !authLoading
-                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-[1.02] active:scale-95 shadow-blue-200'
+                    ? 'bg-linear-to-r from-blue-600 to-purple-600 hover:scale-[1.02] active:scale-95 shadow-blue-200'
                     : 'bg-gray-300 cursor-not-allowed'}`}
               >
                 {authLoading ? 'Вход...' : 'Войти в систему'}

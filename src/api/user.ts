@@ -1,7 +1,8 @@
 import api from './axios';
 
 const userApi = {
-  getAllUsers: () => api.get('/user/users').then(res => res.data),
+ // В файле api/user.ts
+getAllUsers: (params?: any) => api.get('/user/users', { params }).then(res => res.data),
   register: (data: any) => api.post('/user/register', data),
   deleteUser: (id: number) => api.delete(`/user/users/${id}`),
   changePw: (data: any) => api.post('/user/change-password', data),

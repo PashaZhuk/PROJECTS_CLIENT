@@ -1,20 +1,30 @@
-import React from 'react';
-import { Users, UserCheck, Activity, ShieldCheck, Loader2 } from 'lucide-react';
-import { StatCard, ServerStatus } from './StatCardStatus'; // импорт созданных выше
+import { ShieldCheck, Loader2, Activity, Users, UserCheck } from 'lucide-react';
+import { StatCard, ServerStatus } from '../shared/StatCardStatus';
 
 const AdminOverview = ({ stats, loading, isOnline, onRefresh }: any) => {
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Заголовок в стиле StatsView */}
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Управление доступом</h2>
-          <p className="text-slate-500 font-medium mt-1">Мониторинг активности {!isOnline && <span className="text-red-500 font-black">— СВЯЗЬ ПОТЕРЯНА</span>}</p>
+          <h1 className="text-5xl font-black text-slate-900 tracking-tight">
+            Root <span className="text-purple-600">Administrator</span>
+          </h1>
+          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.3em] mt-4 flex items-center gap-2">
+            <Activity size={12} className={isOnline ? "text-emerald-500" : "text-red-500"} /> 
+            Мониторинг системы: {isOnline ? 'АКТИВЕН' : 'СВЯЗЬ ПОТЕРЯНА'}
+          </p>
         </div>
-        <button onClick={onRefresh} disabled={loading} className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-blue-600 transition-all shadow-sm active:scale-95">
-           <Loader2 size={20} className={loading ? "animate-spin" : ""} />
+        <button 
+          onClick={onRefresh} 
+          disabled={loading} 
+          className="group p-4 bg-white border border-slate-200 rounded-3xl text-slate-400 hover:text-purple-600 shadow-sm transition-all active:scale-90"
+        >
+          <Loader2 size={24} className={loading ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"} />
         </button>
       </div>
       
+      {/* Сетка твоих StatCard */}
       <div className={`grid grid-cols-1 md:grid-cols-3 gap-8 transition-opacity ${!isOnline ? 'opacity-50' : ''}`}>
         <StatCard title="Партнеры (Users)" value={stats.totalUsers} loading={loading} icon={<Users className="text-blue-600" />} color="blue" />
         <StatCard title="Менеджеры" value={stats.totalManagers} loading={loading} icon={<UserCheck className="text-purple-600" />} color="purple" />
@@ -39,11 +49,12 @@ const AdminOverview = ({ stats, loading, isOnline, onRefresh }: any) => {
         />
       </div>
 
-      <div className="bg-white rounded-[2rem] border border-slate-200 p-8 shadow-sm">
-        <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 uppercase tracking-wider mb-6">
-          <ShieldCheck size={20} className="text-blue-500" /> Состояние узлов управления
+      {/* Статус серверов */}
+      <div className="bg-white rounded-[3rem] border border-slate-200 p-10 shadow-sm">
+        <h3 className="text-xl font-black text-slate-800 flex items-center gap-3 uppercase tracking-wider mb-8">
+          <ShieldCheck size={24} className="text-purple-500" /> Состояние узлов управления
         </h3>
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <ServerStatus label="Реестр авторизации" isOnline={isOnline} />
           <ServerStatus label="База данных пользователей" isOnline={isOnline} />
         </div>
