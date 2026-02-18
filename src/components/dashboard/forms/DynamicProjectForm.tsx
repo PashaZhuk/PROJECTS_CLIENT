@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  ArrowLeft, Check, Loader2, Plus, Trash2, Info, 
-  CheckCircle2, Save, Calendar, ChevronDown, MessageSquare, ClipboardList
+  ArrowLeft, Plus, Trash2, Info, 
+  CheckCircle2, Save, Calendar, ChevronDown, Loader2
 } from 'lucide-react';
 import { PROJECT_CATEGORIES } from '../../../config/projectFields';
-import { useAuth } from '../../../context/AuthContext';
+import { useAuthStore } from '../../../store/useAuthStore';
+import type { Project } from '../../../types';
 
-// Объект примеров (Placeholders)
 const PLACEHOLDERS: Record<string, string> = {
   customerName: 'ООО "Вектор Плюс"',
   customerInn: '123456789',
@@ -25,39 +25,54 @@ const PLACEHOLDERS: Record<string, string> = {
 
 interface Props {
   category: string;
-  onBack: () => void;
-  onSubmit: () => void; // Сделали обязательным для синхронизации с Dashboard
-  initialData?: any; 
-  isEditing?: boolean;
+  onCancel: () => void;
+  onSuccess: () => void;
+  project?: Project | null;
 }
 
-const DynamicProjectForm: React.FC<Props> = ({ category, onBack, onSubmit, initialData, isEditing }) => {
-  const { user } = useAuth();
-  const allFields = useMemo(() => PROJECT_CATEGORIES[category] || [], [category]);
+const DynamicProjectForm: React.FC<Props> = ({ category, onCancel, onSuccess, project }) => {
+  const user = useAuthStore((state) => state.user);
+  const isEditing = !!project;
 
-  const [formData, setFormData] = useState<Record<string, any>>(() => {
-    if (isEditing && initialData) {
-      return {
-        ...(initialData.dynamicData || {}),
-        customerName: initialData.customerName || initialData.dynamicData?.customerName || '',
-        customerInn: initialData.customerInn || initialData.dynamicData?.customerInn || '',
-        purchaseMethod: initialData.purchaseMethod || '',
-        executionDate: initialData.executionDate ? initialData.executionDate.split('T')[0] : '',
-      };
-    }
-    
-    const initialState: Record<string, any> = {};
-    const hasItems = allFields.find(f => f.type === 'items');
-    if (hasItems) initialState[hasItems.name] = [{ model: '', count: '' }];
-    return initialState;
-  });
+  // Защита: если категория не передана или не найдена
+  const safeCategory = category || (project as any)?.formType || (project as any)?.category || '';
   
+  const allFields = useMemo(() => {
+    if (!safeCategory) return [];
+    return PROJECT_CATEGORIES[safeCategory] || [];
+  }, [safeCategory]);
+
+  const [formData, setFormData] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (isEditing && project) {
+      setFormData({
+        ...(project.dynamicData || {}),
+        customerName: project.customerName || '',
+        customerInn: project.unp || project.customerInn || '',
+        purchaseMethod: (project as any).purchaseMethod || '',
+        executionDate: project.updatedAt ? project.updatedAt.split('T')[0] : '',
+      });
+    } else {
+      const initialState: Record<string, any> = {};
+      allFields.forEach(field => {
+        if (field.type === 'items') {
+          initialState[field.name] = [{ model: '', count: '' }];
+        } else {
+          initialState[field.name] = '';
+        }
+      });
+      setFormData(initialState);
+    }
+  }, [project, isEditing, allFields]);
+
   const sections = useMemo(() => {
     const groups: Record<string, any[]> = {};
+    if (!allFields.length) return [];
+    
     allFields.forEach(field => {
       const s = field.section || 'Общая информация';
       if (!groups[s]) groups[s] = [];
@@ -67,8 +82,8 @@ const DynamicProjectForm: React.FC<Props> = ({ category, onBack, onSubmit, initi
   }, [allFields]);
 
   const handleChange = (name: string, value: any) => {
-    if (name.toLowerCase().includes('inn')) {
-      const digitsOnly = value.replace(/\D/g, '');
+    if (name.toLowerCase().includes('inn') || name.toLowerCase() === 'unp') {
+      const digitsOnly = value.toString().replace(/\D/g, '');
       if (digitsOnly.length <= 9) {
         setFormData(prev => ({ ...prev, [name]: digitsOnly }));
       }
@@ -79,29 +94,28 @@ const DynamicProjectForm: React.FC<Props> = ({ category, onBack, onSubmit, initi
   };
 
   const handleItemChange = (fieldName: string, index: number, subField: string, value: any) => {
-    const newItems = [...(formData[fieldName] || [])];
-    newItems[index] = { ...newItems[index], [subField]: value };
-    setFormData(prev => ({ ...prev, [fieldName]: newItems }));
+    const currentItems = Array.isArray(formData[fieldName]) ? [...formData[fieldName]] : [];
+    if (!currentItems[index]) currentItems[index] = {};
+    currentItems[index] = { ...currentItems[index], [subField]: value };
+    setFormData(prev => ({ ...prev, [fieldName]: currentItems }));
   };
 
   const addItem = (fieldName: string) => {
     setFormData(prev => ({
       ...prev,
-      [fieldName]: [...(prev[fieldName] || []), { model: '', count: '' }]
+      [fieldName]: [...(Array.isArray(prev[fieldName]) ? prev[fieldName] : []), { model: '', count: '' }]
     }));
   };
 
   const removeItem = (fieldName: string, index: number) => {
-    const newItems = formData[fieldName].filter((_: any, i: number) => i !== index);
+    const newItems = (formData[fieldName] || []).filter((_: any, i: number) => i !== index);
     setFormData(prev => ({ ...prev, [fieldName]: newItems }));
   };
 
-  // --- ОСНОВНАЯ ЛОГИКА ОТПРАВКИ ---
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Валидация УНП
-    const innFields = Object.keys(formData).filter(key => key.toLowerCase().includes('inn'));
+    const innFields = Object.keys(formData).filter(key => key.toLowerCase().includes('inn') || key.toLowerCase() === 'unp');
     for (const field of innFields) {
       const val = formData[field];
       if (val && val.length !== 9) {
@@ -116,7 +130,7 @@ const DynamicProjectForm: React.FC<Props> = ({ category, onBack, onSubmit, initi
 
     try {
       const url = isEditing 
-        ? `http://192.168.85.110:5001/api/projects/${initialData.id}`
+        ? `http://192.168.85.110:5001/api/projects/${project.id}`
         : 'http://192.168.85.110:5001/api/projects';
       
       const method = isEditing ? 'PUT' : 'POST';
@@ -127,9 +141,9 @@ const DynamicProjectForm: React.FC<Props> = ({ category, onBack, onSubmit, initi
         credentials: 'include', 
         body: JSON.stringify({ 
           ...formData, 
-          formType: category,
+          formType: safeCategory,
           customerName: formData.customerName,
-          customerInn: formData.customerInn,
+          customerInn: formData.customerInn || formData.unp,
           executionDate: formData.executionDate,
           purchaseMethod: formData.purchaseMethod
         })
@@ -138,14 +152,8 @@ const DynamicProjectForm: React.FC<Props> = ({ category, onBack, onSubmit, initi
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Ошибка при сохранении');
 
-      // 1. Сначала показываем успех локально
       setIsSuccess(true);
-      
-      // 2. Ждем небольшую паузу для визуального подтверждения (Checkmark)
-      // 3. Вызываем onSubmit из Dashboard, который обновит список и закроет форму
-      setTimeout(() => {
-        onSubmit();
-      }, 1000);
+      setTimeout(() => onSuccess(), 1000);
 
     } catch (err: any) {
       setError(err.message);
@@ -153,6 +161,16 @@ const DynamicProjectForm: React.FC<Props> = ({ category, onBack, onSubmit, initi
       setIsSubmitting(false);
     }
   };
+
+  // Если категория не найдена, не даем компоненту упасть
+  if (!safeCategory && !isSuccess) {
+    return (
+      <div className="p-8 text-center bg-white rounded-3xl border border-slate-100">
+        <p className="text-slate-500 mb-4">Загрузка конфигурации или категория не определена...</p>
+        <button onClick={onCancel} className="text-blue-600 font-bold uppercase text-xs">Вернуться</button>
+      </div>
+    );
+  }
 
   if (isSuccess) {
     return (
@@ -174,13 +192,14 @@ const DynamicProjectForm: React.FC<Props> = ({ category, onBack, onSubmit, initi
         </div>
       )}
 
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-        <button type="button" onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-blue-600 transition-all font-bold text-[10px] uppercase tracking-widest">
+        <button type="button" onClick={onCancel} className="flex items-center gap-2 text-slate-400 hover:text-blue-600 transition-all font-bold text-[10px] uppercase tracking-widest">
           <ArrowLeft size={16} /> Назад
         </button>
         <div className="md:text-right">
-          <h1 className="text-xl font-black text-slate-900 uppercase tracking-tight italic">{category.replace(/_/g, ' ')}</h1>
+          <h1 className="text-xl font-black text-slate-900 uppercase tracking-tight italic">
+            {safeCategory?.replace(/_/g, ' ') || 'Заявка'}
+          </h1>
           <p className="text-blue-600 text-[9px] font-black uppercase tracking-[0.2em] mt-1">{isEditing ? 'Редактирование' : 'Новая регистрация'}</p>
         </div>
       </div>
@@ -201,7 +220,7 @@ const DynamicProjectForm: React.FC<Props> = ({ category, onBack, onSubmit, initi
               
               <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
                 {fields.map((field) => {
-                  const isInnField = field.name.toLowerCase().includes('inn');
+                  const isInnField = field.name.toLowerCase().includes('inn') || field.name.toLowerCase() === 'unp';
                   const displayLabel = isInnField ? field.label.replace('ИНН', 'УНП') : field.label;
                   const placeholderValue = PLACEHOLDERS[field.name] || '';
 
@@ -214,14 +233,14 @@ const DynamicProjectForm: React.FC<Props> = ({ category, onBack, onSubmit, initi
                       {field.type === 'items' ? (
                         <div className="bg-slate-50/80 p-6 rounded-3xl border-2 border-dashed border-slate-200">
                           <div className="space-y-4">
-                            {(formData[field.name] || []).map((item: any, idx: number) => (
+                            {(Array.isArray(formData[field.name]) ? formData[field.name] : []).map((item: any, idx: number) => (
                               <div key={idx} className="flex flex-col md:flex-row gap-3 items-start md:items-end animate-in slide-in-from-right-4 duration-300">
                                 <div className="flex-1 w-full">
                                   <p className="text-[9px] font-bold text-slate-400 uppercase mb-1.5 ml-1">Модель устройства</p>
                                   <div className="relative">
                                     <select 
                                       required 
-                                      value={item.model} 
+                                      value={item.model || ''} 
                                       onChange={(e) => handleItemChange(field.name, idx, 'model', e.target.value)} 
                                       className="w-full p-3.5 bg-white border border-slate-200 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all appearance-none"
                                     >
@@ -237,12 +256,12 @@ const DynamicProjectForm: React.FC<Props> = ({ category, onBack, onSubmit, initi
                                     type="number" 
                                     required 
                                     min="1" 
-                                    value={item.count} 
+                                    value={item.count || ''} 
                                     onChange={(e) => handleItemChange(field.name, idx, 'count', e.target.value)} 
                                     className="w-full p-3.5 bg-white border border-slate-200 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all" 
                                   />
                                 </div>
-                                {formData[field.name].length > 1 && (
+                                {(formData[field.name]?.length > 1) && (
                                   <button type="button" onClick={() => removeItem(field.name, idx)} className="p-3.5 text-slate-300 hover:text-red-500 transition-colors mb-0.5">
                                     <Trash2 size={20} />
                                   </button>
@@ -303,10 +322,6 @@ const DynamicProjectForm: React.FC<Props> = ({ category, onBack, onSubmit, initi
               <><Save size={20} /> {isEditing ? 'Сохранить изменения' : 'Зарегистрировать проект'}</>
             )}
           </button>
-          
-          <p className="text-center text-[9px] text-slate-400 font-bold uppercase tracking-widest">
-            Нажимая кнопку, вы подтверждаете достоверность данных
-          </p>
         </div>
       </form>
     </div>

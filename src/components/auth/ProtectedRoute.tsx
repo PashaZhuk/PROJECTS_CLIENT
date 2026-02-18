@@ -1,44 +1,44 @@
 import type { ReactNode } from 'react';
 import { Navigate, Outlet, useOutletContext } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuthStore } from '../../store/useAuthStore';
 
-// Описываем типы ролей
 type UserRole = 'ADMIN' | 'MANAGER' | 'USER';
 
 interface ProtectedRouteProps {
   allowedRoles?: UserRole[];
-  children?: ReactNode; // Добавляем поддержку вложенных элементов
+  children?: ReactNode;
 }
 
 const ProtectedRoute = ({ allowedRoles, children }: ProtectedRouteProps) => {
-  const { user, isAuthenticated, isLoading } = useAuth();
-  
-  // Важно: получаем контекст от родительского Outlet (если он есть)
+  const { user, isAuthenticated, isLoading, isInitialized, _hasHydrated } = useAuthStore();
   const context = useOutletContext();
 
-  // 1. Пока идет проверка сессии — ждем
-  if (isLoading) return null;
+  // 1. Ждем, пока Zustand подтянет данные из LocalStorage
+  if (!_hasHydrated) return null;
 
-  // 2. Если не авторизован — на логин
-  if (!isAuthenticated) {
+  // 2. Если мы ЕЩЕ НЕ получили ответ от сервера (isInitialized === false)
+  // И при этом в памяти НЕТ данных о юзере (из localStorage) — только тогда показываем лоадер.
+  if (!isInitialized && !isAuthenticated) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-slate-50">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // 3. РЕДИРЕКТ: Только если проверка на сервере ЗАВЕРШЕНА и юзер не найден
+  // Это предотвращает вылет в момент, когда checkAuth еще в процессе
+  if (isInitialized && !isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // 3. Проверка ролей
-  if (allowedRoles && user && !allowedRoles.includes(user.role as UserRole)) {
+  // 4. Проверка ролей (если пользователь авторизован)
+  if (isAuthenticated && allowedRoles && user && !allowedRoles.includes(user.role as UserRole)) {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // 4. РЕНДЕРИНГ:
-  // Если мы используем компонент как обертку <ProtectedRoute>...</ProtectedRoute>, 
-  // то возвращаем children.
-  // Если мы используем его в Route element={<ProtectedRoute />}, 
-  // то возвращаем Outlet и ОБЯЗАТЕЛЬНО пробрасываем context дальше.
-  if (children) {
-    return <>{children}</>;
-  }
-
-  return <Outlet context={context} />;
+  // Если всё ок — рендерим контент
+  return children ? <>{children}</> : <Outlet context={context} />;
 };
 
 export default ProtectedRoute;

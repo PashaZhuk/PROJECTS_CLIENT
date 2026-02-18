@@ -1,12 +1,12 @@
-import { useAuth } from '../../context/AuthContext';
+import { useAuthStore } from '../../store/useAuthStore';
 import AdminDashboard from '../../pages/AdminDashboard';
 import ManagerDashboard from '../../pages/ManagerDashboard';
 import UserDashboard from '../../pages/UserDashboard';
 
 const DashboardDispatcher = () => {
-  const { user } = useAuth();
+  // Получаем юзера из Zustand
+  const user = useAuthStore((state) => state.user);
 
-  // Логика переключения между полноценными дашбордами
   switch (user?.role) {
     case 'ADMIN':
       return <AdminDashboard />;

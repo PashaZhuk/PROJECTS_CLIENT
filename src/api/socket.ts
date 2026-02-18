@@ -1,9 +1,9 @@
 import { io } from 'socket.io-client';
 
-// Указываем URL твоего бэкенда
-const URL = 'http://localhost:5001'; 
+// Используем тот же IP, что и в API клиенте
+const URL = 'http://192.168.85.110:5001'; 
 
 export const socket = io(URL, {
   withCredentials: true,
-  autoConnect: true, // Сокет подключится сам при загрузке приложения
+  autoConnect: true,
 });

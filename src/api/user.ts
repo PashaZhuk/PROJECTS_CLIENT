@@ -1,15 +1,23 @@
-import api from './axios';
+import api from './ky';
 
 const userApi = {
- // В файле api/user.ts
-getAllUsers: (params?: any) => api.get('/user/users', { params }).then(res => res.data),
-  register: (data: any) => api.post('/user/register', data),
-  deleteUser: (id: number) => api.delete(`/user/users/${id}`),
-  changePw: (data: any) => api.post('/user/change-password', data),
-  getAdminStats: () => api.get('/user/admin/stats').then(res => res.data),
-// НОВЫЙ: Обновление данных пользователя (для админа: смена роли, почты и т.д.)
-  updateUser: (id: number, data: any) => api.put(`/user/users/${id}`, data).then(res => res.data),
-  
+  getAllUsers: (params?: any) => 
+    api.get('user/users', { searchParams: params }).json(),
+    
+  register: (data: any) => 
+    api.post('auth/register', { json: data }).json(),
+    
+  deleteUser: (id: number) => 
+    api.delete(`user/users/${id}`).json(),
+    
+  changePw: (data: any) => 
+    api.post('user/change-password', { json: data }).json(),
+    
+  getAdminStats: () => 
+    api.get('user/admin/stats').json(),
+
+  updateUser: (id: number, data: any) => 
+    api.put(`user/users/${id}`, { json: data }).json(),
 };
 
-export default userApi
+export default userApi;

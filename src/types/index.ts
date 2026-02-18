@@ -3,7 +3,7 @@ export type UserRole = 'ADMIN' | 'MANAGER' | 'USER';
 
 export interface User {
   id: string;
-  username: string;
+  name: string;
   email: string;
   role: UserRole;
   mustChangePassword: boolean;
@@ -15,12 +15,15 @@ export interface Project {
   id: number;
   name: string;
   unp: string; // УНП
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'MODIFICATION';
+  status: 'PENDING' | 'IN_PROGRESS' | 'APPROVED' | 'REJECTED' | 'REVISION' | 'CLOSED';
   managerId?: string;
   userId: string;
   createdAt: string;
   updatedAt: string;
   description?: string;
+  dynamicData: JSON;
+  customerName: String;
+  customerInn:String;
   // Добавь остальные поля из твоей базы данных
 }
 

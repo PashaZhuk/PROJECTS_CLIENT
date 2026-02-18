@@ -1,12 +1,15 @@
-import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LogIn, LogOut } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuthStore } from '../../store/useAuthStore';
 
 const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
+  
+  // Достаем данные из Zustand стора
+  const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const logout = useAuthStore((state) => state.logout);
 
   const handleLogout = async () => {
     try {
@@ -18,18 +21,16 @@ const Header = () => {
     }
   };
 
-  const dashboardPath = user?.role === 'ADMIN' ? "/admin/dashboard" : "/dashboard";
+  const dashboardPath = "/dashboard";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         
-        {/* Логотип и Название */}
         <Link 
           to={isAuthenticated ? dashboardPath : "/"} 
           className="flex items-center space-x-3 group"
         >
-          {/* Контейнер для логотипа */}
           <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-md shadow-slate-200 group-hover:scale-105 transition-transform duration-200 overflow-hidden border border-slate-50">
             <img 
               src="/src/assets/logo.webp" 
@@ -37,38 +38,36 @@ const Header = () => {
               className="h-full w-full object-cover"
             />
           </div>
-          
           <div className="flex flex-col">
             <span className="text-lg font-black text-slate-900 leading-none tracking-tight">
               АйПиМАТИКА Бел
             </span>
-            
           </div>
         </Link>
 
-        {/* Правая часть: Профиль и Выход */}
         <div className="flex items-center gap-6">
           {isAuthenticated ? (
             <>
-              {/* Блок пользователя */}
               <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
                 <div className="hidden md:flex flex-col items-end">
-                  <p className="text-sm font-bold text-slate-900 leading-none">{user?.name}</p>
+                  {/* ИСПОЛЬЗУЕМ user.name вместо username */}
+                  <p className="text-sm font-bold text-slate-900 leading-none">
+                    {user?.name || 'Пользователь'}
+                  </p>
                   <p className="text-[9px] uppercase font-black text-slate-400 mt-1 tracking-tighter">
-    {user?.role === 'ADMIN' && 'Администратор'}
-    {user?.role === 'MANAGER' && 'Менеджер'}
-    {user?.role === 'USER' && 'Партнер'}
-  </p>
+                    {user?.role === 'ADMIN' && 'Администратор'}
+                    {user?.role === 'MANAGER' && 'Менеджер'}
+                    {user?.role === 'USER' && 'Партнер'}
+                  </p>
                 </div>
-                {/* Аватар (заглушка с первой буквой) */}
-                <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-slate-100 to-slate-200 flex items-center justify-center border-2 border-white shadow-sm">
+                {/* Аватар (первая буква name) */}
+                <div className="h-9 w-9 rounded-full bg-linear-to-tr from-slate-100 to-slate-200 flex items-center justify-center border-2 border-white shadow-sm">
                   <span className="text-sm font-bold text-blue-600">
-                    {user?.name?.charAt(0).toUpperCase()}
+                    {user?.name?.charAt(0).toUpperCase() || 'U'}
                   </span>
                 </div>
               </div>
 
-              {/* Кнопка выхода */}
               <button
                 onClick={handleLogout}
                 className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"

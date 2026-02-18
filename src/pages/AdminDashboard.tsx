@@ -1,22 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useUserSockets } from '../hooks/useUserSockets';
+
 import userAPI from '../api/user';
 
 // Импорт типов
 import type { ActiveTabType, AdminStats } from '../types'; 
 
-// Только необходимые компоненты
+// Компоненты
 import AdminOverview from '../components/dashboard/admin/AdminOverview';
 import UsersList from '../components/dashboard/admin/UsersList';
 import AdminCreateUser from '../components/dashboard/admin/AdminCreateUser';
 
 const AdminDashboard = () => {
-  // 1. УБИРАЕМ 'user', чтобы не было ошибки "never read"
-  // Если понадобится logout, достаем только его: const { logout } = useAuth();
-  const { } = useAuth(); 
+  // Активируем сокеты
+  useUserSockets();
   
-  // 2. Типизируем контекст
+  // Типизируем контекст из Layout
   const { activeTab, setActiveTab } = useOutletContext<{ 
     activeTab: ActiveTabType,
     setActiveTab: (tab: ActiveTabType) => void 
@@ -25,7 +25,7 @@ const AdminDashboard = () => {
   // --- СОСТОЯНИЕ МОНИТОРИНГА ---
   const [isSystemOnline, setIsSystemOnline] = useState(true);
   
-  // 3. Используем интерфейс AdminStats вместо сырого объекта
+  // Состояние статистики
   const [stats, setStats] = useState<AdminStats>({ 
     totalUsers: 0, 
     totalManagers: 0, 
@@ -34,28 +34,54 @@ const AdminDashboard = () => {
   });
   const [isStatsLoading, setIsStatsLoading] = useState(false);
 
+  // Мемоизированная функция загрузки данных
   const fetchData = useCallback(async (quiet = false) => {
     try {
       if (!quiet) setIsStatsLoading(true);
-      const data = await userAPI.getAdminStats();
-      // TypeScript теперь проверит соответствие данных из userAPI интерфейсу AdminStats
+      
+      /** * ИЗМЕНЕНИЕ ПОД KY: 
+       * userAPI.getAdminStats() теперь возвращает сразу распарсенный JSON.
+       * Больше не нужно обращаться к .data, как в axios.
+       */
+      const response: any = await userAPI.getAdminStats();
+      
+      // Если бэкенд все еще оборачивает данные в { status: 'success', data: {...} }
+      // оставляем проверку, но учитываем, что axios-обертки .data больше нет.
+      const data = response.data || response;
+      
       setStats(data);
       setIsSystemOnline(true);
     } catch (err: any) {
+      /**
+       * В ky объект ошибки содержит response вместо error.response.
+       */
       setIsSystemOnline(!!err.response);
+      console.error("Dashboard statistics fetch error:", err);
     } finally {
       if (!quiet) {
-        // Небольшая задержка для плавности анимации лоадера
         setTimeout(() => setIsStatsLoading(false), 300);
       }
     }
   }, []);
 
+  // --- УПРАВЛЕНИЕ ЖИЗНЕННЫМ ЦИКЛОМ ЗАПРОСОВ ---
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(() => fetchData(true), 20000);
-    return () => clearInterval(interval);
-  }, [fetchData]);
+    let interval: ReturnType<typeof setInterval>;
+
+    if (activeTab === 'stats') {
+      fetchData(); 
+
+      interval = setInterval(() => {
+        fetchData(true); 
+      }, 20000);
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [fetchData, activeTab]);
 
   return (
     <div className="w-full animate-in fade-in duration-500">
@@ -66,7 +92,7 @@ const AdminDashboard = () => {
           stats={stats} 
           loading={isStatsLoading} 
           isOnline={isSystemOnline} 
-          onRefresh={() => fetchData()} 
+          onRefresh={() => fetchData(false)} 
         />
       )}
 
@@ -76,11 +102,7 @@ const AdminDashboard = () => {
       {/* 3. СОЗДАНИЕ ПОЛЬЗОВАТЕЛЯ */}
       {activeTab === 'users-create' && (
         <AdminCreateUser 
-          onUserCreated={() => { 
-            fetchData(); 
-            setActiveTab('users-list'); 
-          }} 
-          onCancel={() => setActiveTab('stats')} 
+          onCancel={() => setActiveTab('users-list')} 
         />
       )}
     </div>

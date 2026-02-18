@@ -1,6 +1,8 @@
 import React from 'react';
 import { ClipboardList, Search, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { ProjectRow } from '../shared/ProjectRow';
+// Импортируем типы из вашего центрального файла типов
+import type { Project, User } from '../../../types'; 
 
 interface ProjectsListViewProps {
   projects: any[];
@@ -12,18 +14,36 @@ interface ProjectsListViewProps {
   onEdit?: (p: any) => void;
   onCreateNew?: () => void;
   isAdminView?: boolean;
-  onStatusUpdate?: (id: number, status: 'APPROVED' | 'REJECTED' | 'PENDING') => void;
-  onOpenChat?: (p: any) => void;
+  /** * Исправление ошибки: используем Project['status'], 
+   * чтобы MODIFICATION и другие статусы подтягивались автоматически 
+   */
+  onStatusUpdate?: (id: number, status: Project['status']) => void;
+  onOpenChat?: (projectId: number) => void;
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  /** * ОБЯЗАТЕЛЬНО: Передаем текущего юзера, 
+   * чтобы ProjectRow мог инициализировать чат 
+   */
+  user: User | null; 
 }
 
 export const ProjectsListView = ({
-  projects, isLoading, searchQuery, setSearchQuery,
-  expandedId, setExpandedId, onEdit, onCreateNew,
-  isAdminView, onStatusUpdate, onOpenChat,
-  currentPage, totalPages, onPageChange
+  projects,
+  isLoading,
+  searchQuery,
+  setSearchQuery,
+  expandedId,
+  setExpandedId,
+  onEdit,
+  onCreateNew,
+  isAdminView,
+  onStatusUpdate,
+  onOpenChat,
+  currentPage,
+  totalPages,
+  onPageChange,
+  user // Принимаем юзера
 }: ProjectsListViewProps) => {
 
   const headers = isAdminView
@@ -54,10 +74,7 @@ export const ProjectsListView = ({
             placeholder={isAdminView ? "Поиск по партнеру, заказчику или ID..." : "Поиск по заказчику или ID..."}
             className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-[1.5rem] outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all text-sm font-medium shadow-sm"
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              // onPageChange(1) теперь вызывается в родителе через useEffect на debouncedSearch
-            }}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
@@ -65,7 +82,7 @@ export const ProjectsListView = ({
       {/* Основной контейнер таблицы */}
       <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl flex flex-col relative overflow-hidden">
         
-        {/* ОВЕРЛЕЙ ЗАГРУЗКИ: предотвращает дергание таблицы */}
+        {/* ОВЕРЛЕЙ ЗАГРУЗКИ */}
         {isLoading && (
           <div className="absolute inset-0 z-20 bg-white/40 backdrop-blur-[1px] flex items-center justify-center animate-in fade-in duration-300">
             <div className="bg-white p-4 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-3">
@@ -75,7 +92,7 @@ export const ProjectsListView = ({
           </div>
         )}
 
-        <div className="overflow-x-auto min-h-[500px]"> {/* Фиксируем мин-высоту */}
+        <div className="overflow-x-auto min-h-[500px]">
           <table className={`w-full border-collapse transition-all duration-500 ${isLoading ? 'opacity-40 grayscale-[0.5]' : 'opacity-100'}`}>
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/30">
@@ -96,6 +113,11 @@ export const ProjectsListView = ({
                     isAdminView={isAdminView}
                     onStatusUpdate={onStatusUpdate}
                     onOpenChat={onOpenChat}
+                    /**
+                     * ПРОБРАСЫВАЕМ USER ДАЛЬШЕ
+                     * Это устраняет ошибку "Property 'user' is missing"
+                     */
+                    user={user} 
                   />
                 ))
               ) : !isLoading ? (
@@ -109,7 +131,7 @@ export const ProjectsListView = ({
           </table>
         </div>
 
-        {/* --- ПАНЕЛЬ ПАГИНАЦИИ --- */}
+        {/* ПАНЕЛЬ ПАГИНАЦИИ */}
         <div className="flex flex-col sm:flex-row items-center justify-between px-8 py-6 bg-slate-50/50 border-t border-slate-100 gap-4 mt-auto">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
@@ -129,7 +151,6 @@ export const ProjectsListView = ({
             <div className="flex items-center gap-1">
               {[...Array(totalPages)].map((_, i) => {
                 const pageNum = i + 1;
-                // Показываем страницы (умная пагинация)
                 if (
                   pageNum === 1 ||
                   pageNum === totalPages ||
