@@ -10,15 +10,20 @@ const api = ky.create({
       async (request, options, response) => {
         if (response.status === 401 || response.status === 403) {
           const url = request.url;
-
-          // /auth/profile сам обрабатывается в checkAuth — не трогаем
+          
+          // /auth/profile обрабатывается в checkAuth — пропускаем
           if (url.includes('/auth/profile')) return;
 
-          // Для всех остальных эндпоинтов — сбрасываем store,
-          // React Router сам перенаправит через ProtectedRoute
-          const { isAuthenticated } = useAuthStore.getState();
+          const { isAuthenticated, isSessionExpired, setSessionExpired } = useAuthStore.getState();
+          
+          // Если модалка уже висит — ничего не делаем
+          if (isSessionExpired) return;
+
+          // Иначе помечаем сессию как истёкшую и вызываем logout для очистки куки
           if (isAuthenticated) {
-            useAuthStore.getState().logout();
+            // <-- ДОБАВЛЕНО: вызываем logout API, чтобы сервер удалил куку
+            useAuthStore.getState().logout().catch(console.error);
+            setSessionExpired(true);
           }
         }
       }
