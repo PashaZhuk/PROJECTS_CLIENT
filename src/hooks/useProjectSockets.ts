@@ -1,101 +1,50 @@
-import { useEffect, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
-import { useChatStore } from '../store/useChatStore';
+import { useEffect } from 'react';
+import { socket } from '../api/socket';
+import { useProjectStore } from '../store/useProjectStore';
 
-const SOCKET_URL = 'http://192.168.85.110:5001';
-
-export const useProjectSockets = (setProjects: any, userId: number | undefined) => {
-  const socketRef = useRef<Socket | null>(null);
+export const useProjectSockets = (userId: number | undefined) => {
+  const setProjects = useProjectStore((state) => state.setProjects);
 
   useEffect(() => {
     if (!userId) {
-      console.log('⚠️ [Socket Debug] Пропуск подключения: userId не определен');
+      console.log('[ProjectSockets] ⏭️ Skipping - no userId');
       return;
     }
 
-    const socket = io(SOCKET_URL, {
-      withCredentials: true,
-      transports: ['websocket'],
-      forceNew: true,
-      reconnectionAttempts: 5
-    });
+    console.log('[ProjectSockets] 🚀 Initializing for user:', userId);
 
-    socketRef.current = socket;
+    const handleConnect = () => {
+      console.log('[ProjectSockets] ✅ Socket connected, joining rooms');
+      socket.emit('join_self_room', userId);
+      socket.emit('subscribe_admin_stats');
+    };
 
-    // --- ЛОГИРОВАНИЕ СЛУЖЕБНЫХ СОБЫТИЙ ---
-    socket.on('connect', () => {
-      console.log(`✅ [Socket Debug] Подключено! ID: ${socket.id}. Для User: ${userId}`);
-      
-      // Проверяем, в какие комнаты заходим
-      console.log(`📡 [Socket Debug] Отправка запросов на вход в комнаты: user_${userId} и admin_room`);
-      socket.emit('join_self_room', { userId }); 
-      socket.emit('subscribe_admin_stats'); 
-    });
+    if (socket.connected) handleConnect();
+    socket.on('connect', handleConnect);
 
-    socket.on('connect_error', (err) => {
-      console.error('❌ [Socket Debug] Ошибка подключения:', err.message);
-    });
-
-    // ОЧЕНЬ ВАЖНО: Слушаем ВООБЩЕ ВСЕ входящие события
-    socket.onAny((eventName, ...args) => {
-      console.log(`🔹 [Socket Debug] Поймано любое событие: [${eventName}]`, args);
-    });
-
-    // 1. ОБРАБОТЧИК ИЗМЕНЕНИЯ СТАТУСА
-    socket.on('project_status_changed', (updatedProject) => {
-      console.log('🚀 [Socket Debug] ЦЕЛЕВОЕ СОБЫТИЕ: project_status_changed', updatedProject);
-      
+    const handleStatusChanged = (updatedProject: any) => {
+      console.log('[ProjectSockets] 📊 Project status changed:', updatedProject);
       setProjects((prev: any[]) => {
-        const existingProject = prev.find(p => p.id === updatedProject.id);
-        
-        if (!existingProject) {
-          console.warn(`⚠️ [Socket Debug] Проект ${updatedProject.id} не найден в текущем списке стейта.`);
-        }
-
+        const existing = prev.find(p => p.id === updatedProject.id);
         const filtered = prev.filter(p => p.id !== updatedProject.id);
         const processed = {
-          ...existingProject,
+          ...existing,
           ...updatedProject,
-          unreadCount: updatedProject._count?.messages ?? existingProject?.unreadCount ?? 0,
-          hasUnread: (updatedProject._count?.messages ?? existingProject?.unreadCount ?? 0) > 0
+          unreadCount: existing?.unreadCount ?? 0,
+          hasUnread: existing?.hasUnread ?? false,
         };
-
-        const newList = [processed, ...filtered];
-        return newList.sort((a, b) => 
-          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        return [processed, ...filtered].sort(
+          (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
         );
       });
-    });
+    };
 
-    // 2. ОБРАБОТЧИК НОВЫХ СООБЩЕНИЙ
-    socket.on('new_message', (msg) => {
-      console.log('🔔 [Socket Debug] Новое сообщение:', msg);
-      const pId = Number(msg.projectId);
-      useChatStore.getState().addMessage(pId, msg);
-
-      setProjects((prev: any[]) => {
-        const projectIndex = prev.findIndex(p => p.id === pId);
-        if (projectIndex === -1) return prev;
-
-        const updatedProjects = [...prev];
-        const project = { ...updatedProjects[projectIndex] };
-        project.hasUnread = true;
-        project.unreadCount = (project.unreadCount || 0) + 1;
-        project.updatedAt = new Date().toISOString(); 
-
-        updatedProjects.splice(projectIndex, 1);
-        return [project, ...updatedProjects];
-      });
-    });
+    socket.on('project_status_changed', handleStatusChanged);
 
     return () => {
-      if (socket) {
-        console.log('🔌 [Socket Debug] Отключение сокета...');
-        socket.offAny(); // Снимаем дебаг-слушатель
-        socket.disconnect();
-      }
+      console.log('[ProjectSockets] 🧹 Cleaning up listeners');
+      socket.off('connect', handleConnect);
+      socket.off('project_status_changed', handleStatusChanged);
     };
   }, [userId, setProjects]);
-
-  return socketRef.current;
 };

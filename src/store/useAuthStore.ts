@@ -18,7 +18,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isLoading: false,
       isAuthenticated: false,
@@ -35,28 +35,42 @@ export const useAuthStore = create<AuthState>()(
       }),
 
       checkAuth: async () => {
+        // Защита от параллельных запросов
+        if (get().isLoading) return;
+
         set({ isLoading: true });
         try {
-          // В ky мы уже вызвали .json() в authAPI.profile(), 
-          // поэтому здесь 'response' — это уже тело ответа.
           const response: any = await authAPI.profile();
-          
           const userData = response.data?.user || response.data;
 
-          if (response.status === 'success' || (userData && userData.id)) {
+          if (userData && userData.id) {
             set({ 
               user: userData, 
-              isAuthenticated: true 
+              isAuthenticated: true,
+              isInitialized: true,
+              isLoading: false,
             });
           } else {
-            set({ user: null, isAuthenticated: false });
+            throw new Error('User data missing');
           }
-        } catch (error) {
-          // Если 401 ошибка, ky-hook в ky.ts сработает автоматически,
-          // а здесь мы просто сбрасываем состояние
-          set({ user: null, isAuthenticated: false });
-        } finally {
-          set({ isLoading: false, isInitialized: true });
+        } catch (error: any) {
+          // Определяем — это сетевая ошибка или 401
+          const isNetworkError = !error?.response;
+
+          if (isNetworkError) {
+            // Сеть недоступна — не сбрасываем сессию, просто помечаем как инициализированных
+            // Пользователь остаётся авторизованным из localStorage
+            set({ isLoading: false, isInitialized: true });
+          } else {
+            // Сервер явно ответил ошибкой (401 и т.д.) — сбрасываем сессию
+            set({ 
+              user: null, 
+              isAuthenticated: false, 
+              isInitialized: true,
+              isLoading: false,
+            });
+            localStorage.removeItem('auth-storage');
+          }
         }
       },
 
@@ -64,11 +78,9 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           const response: any = await authAPI.login(credentials);
-          
-          // Извлекаем данные пользователя
           const userData = response.data?.user || response.data;
           
-          if (response.status === 'success' || userData) {
+          if (userData) {
             set({ 
               user: userData, 
               isAuthenticated: true, 
@@ -79,11 +91,9 @@ export const useAuthStore = create<AuthState>()(
           }
           
           set({ isLoading: false });
-          return { success: false, message: response.message || 'Ошибка входа' };
+          return { success: false, message: 'Данные пользователя не получены' };
         } catch (error: any) {
           set({ isLoading: false });
-          
-          // Обработка ошибок в ky: нужно прочитать JSON из ответа ошибки
           let errorMessage = 'Ошибка входа';
           try {
             const errorBody = await error.response?.json();
@@ -91,7 +101,6 @@ export const useAuthStore = create<AuthState>()(
           } catch (e) {
             errorMessage = error.message || errorMessage;
           }
-
           return { success: false, message: errorMessage };
         }
       },
@@ -101,7 +110,6 @@ export const useAuthStore = create<AuthState>()(
           await authAPI.logout();
         } finally {
           set({ user: null, isAuthenticated: false, isInitialized: true });
-          // Очищаем localStorage вручную, если persist не подхватил
           localStorage.removeItem('auth-storage');
         }
       },

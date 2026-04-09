@@ -1,89 +1,88 @@
 import { create } from 'zustand';
+import { useProjectStore } from './useProjectStore';
 
 interface Message {
   id: number;
   projectId: number;
-  senderId: string | number; // Исправлено: может быть и строка, и число
+  senderId: string | number;
   text: string;
   isRead: boolean;
-  isSystem?: boolean;
   createdAt: string;
 }
 
 interface ChatStore {
   messages: Record<number, Message[]>;
-  loading: boolean;
+  activeChatId: number | null;
+  setActiveChatId: (id: number | null) => void;
   setMessages: (projectId: number, messages: Message[]) => void;
   addMessage: (projectId: number, message: Message) => void;
-  setLoading: (val: boolean) => void;
   markMessagesAsReadLocally: (projectId: number, currentUserId: string | number) => void;
+  markMyMessagesAsRead: (projectId: number, readerId: string | number) => void;
   getUnreadCount: (projectId: number, userId: string | number | undefined) => number;
 }
 
 export const useChatStore = create<ChatStore>((set, get) => ({
   messages: {},
-  loading: false,
+  activeChatId: null,
 
-  // Установка истории сообщений
+  setActiveChatId: (id) => set({ activeChatId: id }),
+
   setMessages: (projectId, msgs) => {
     set((state) => ({
       messages: { ...state.messages, [projectId]: msgs }
     }));
   },
 
-  // Добавление одного нового сообщения (от сокета)
-  addMessage: (projectId, message) => set((state) => {
-    const prev = state.messages[projectId] || [];
-    
-    // Проверка на дубликаты по id
-    if (prev.some(m => m.id === message.id)) return state;
-    
-    console.log(`[ChatStore] Новое сообщение в проекте ${projectId}:`, message);
-    
-    return {
-      messages: { ...state.messages, [projectId]: [...prev, message] }
-    };
-  }),
+  addMessage: (projectId, message) => {
+    set((state) => {
+      const prev = state.messages[projectId] || [];
+      if (prev.some(m => m.id === message.id)) return state;
+      return { messages: { ...state.messages, [projectId]: [...prev, message] } };
+    });
+  },
 
-  setLoading: (val) => set({ loading: val }),
+  markMessagesAsReadLocally: (projectId, currentUserId) => {
+    if (!currentUserId) return;
+    const pId = Number(projectId);
 
-  // Помечаем как прочитанные локально (чтобы кружок исчез сразу, не дожидаясь ответа сервера)
-  markMessagesAsReadLocally: (projectId, currentUserId) => set((state) => {
-    const msgs = state.messages[projectId];
-    if (!msgs) return state;
-
-    console.log(`[ChatStore] Помечаем сообщения проекта ${projectId} как прочитанные`);
-
-    return {
-      messages: {
-        ...state.messages,
-        [projectId]: msgs.map(m => 
-          String(m.senderId) !== String(currentUserId) ? { ...m, isRead: true } : m
-        )
-      }
-    };
-  }),
-
-  // ГЛАВНАЯ ФУНКЦИЯ ДЛЯ КРАСНОГО КРУЖКА
-  getUnreadCount: (projectId, userId) => {
-    if (!userId) return 0;
-    
-    const msgs = get().messages[projectId] || [];
-    
-    // Фильтруем: 
-    // 1. Не системное
-    // 2. Отправлено НЕ мной (сравниваем через String)
-    // 3. Статус isRead === false
-    const unread = msgs.filter(m => 
-      !m.isSystem && 
-      String(m.senderId) !== String(userId) && 
-      m.isRead === false
+    // Сбрасываем счетчик непрочитанных в списке проектов
+    useProjectStore.getState().setProjects((prev) => 
+      prev.map(p => Number(p.id) === pId ? { ...p, unreadCount: 0, hasUnread: false } : p)
     );
 
-    if (unread.length > 0) {
-        console.log(`[ChatStore] Проект ${projectId}: ${unread.length} непрочитанных`);
-    }
+    set((state) => {
+      const msgs = state.messages[pId];
+      if (!msgs) return state;
 
-    return unread.length;
+      const updated = msgs.map(m => 
+        String(m.senderId) !== String(currentUserId) && !m.isRead ? { ...m, isRead: true } : m
+      );
+
+      return { messages: { ...state.messages, [pId]: updated } };
+    });
+  },
+
+  // Вызывается когда СОБЕСЕДНИК прочитал сообщения. readerId = тот, кто открыл чат.
+  markMyMessagesAsRead: (projectId, readerId) => {
+    if (!readerId) return;
+    const pId = Number(projectId);
+
+    set((state) => {
+      const msgs = state.messages[pId];
+      if (!msgs) return state;
+
+      // Если отправитель НЕ тот, кто прочитал -> значит это моё сообщение
+      const updated = msgs.map(m => 
+        String(m.senderId) !== String(readerId) && !m.isRead ? { ...m, isRead: true } : m
+      );
+
+      return { messages: { ...state.messages, [pId]: updated } };
+    });
+  },
+
+  getUnreadCount: (projectId, userId) => {
+    if (!userId) return 0;
+    const msgs = get().messages[projectId] || [];
+    return msgs.filter(m => !m.isRead && String(m.senderId) !== String(userId)).length;
   }
 }));

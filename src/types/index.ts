@@ -2,7 +2,7 @@
 export type UserRole = 'ADMIN' | 'MANAGER' | 'USER';
 
 export interface User {
-  id: string;
+  id: number;
   name: string;
   email: string;
   role: UserRole;
@@ -14,17 +14,19 @@ export interface User {
 export interface Project {
   id: number;
   name: string;
-  unp: string; // УНП
-  status: 'PENDING' | 'IN_PROGRESS' | 'APPROVED' | 'REJECTED' | 'REVISION' | 'CLOSED';
+  unp: string;
+  status: 'PENDING' | 'IN_PROGRESS' | 'APPROVED' | 'REJECTED' | 'REVISION' | 'CLOSED' | 'START' | 'COMPLETED';
   managerId?: string;
   userId: string;
   createdAt: string;
   updatedAt: string;
   description?: string;
-  dynamicData: JSON;
-  customerName: String;
-  customerInn:String;
-  // Добавь остальные поля из твоей базы данных
+  dynamicData: any;
+  customerName: string;
+  customerInn: string;
+  // Добавляем эти поля, чтобы TS не ругался в сторах и сокетах
+  unreadCount?: number; 
+  hasUnread?: boolean;
 }
 
 // Типы для статистики (используются в AdminOverview)
@@ -61,3 +63,11 @@ export type ActiveTabType =
   | 'users-list' 
   | 'users-create' 
   | 'orders';
+
+export interface ProjectStats {
+  total: number;
+  active: number;
+  completed: number;
+  pending: number;
+  approved: number; // Добавлено, так как StatsView его требует
+}

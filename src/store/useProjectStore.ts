@@ -13,7 +13,7 @@ interface ProjectState {
   updateProjectStatus: (id: number, status: string) => Promise<void>;
   setSearchQuery: (query: string) => void;
   setCurrentPage: (page: number) => void;
-  setProjects: (projects: Project[]) => void;
+  setProjects: (projects: Project[] | ((prev: Project[]) => Project[])) => void;
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
@@ -24,8 +24,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   currentPage: 1,
   searchQuery: '',
 
-  setProjects: (projects) => set({ projects }),
+ setProjects: (next) => {
+  set((state) => ({
+    projects: typeof next === 'function' ? next(state.projects) : next
+  }));
+},
+
   setSearchQuery: (searchQuery) => set({ searchQuery, currentPage: 1 }),
+
   setCurrentPage: (currentPage) => set({ currentPage }),
 
   fetchProjects: async (silent = false) => {
@@ -36,14 +42,18 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       // Вызываем API. Ky автоматически возвращает распарсенный JSON
       const response = await projectApi.getProjects(currentPage, searchQuery);
       
-      // На скриншоте видно структуру: { projects: [...], totalCount: 57, totalPages: 6 }
+      // Защита от некорректного ответа API
+      const projects = Array.isArray(response?.projects) ? response.projects : [];
+      
       set({ 
-        projects: response.projects || [], 
-        totalPages: response.totalPages || 1,
-        totalCount: response.totalCount || 0 // Теперь берем реальное число из базы
+        projects: projects, 
+        totalPages: response?.totalPages ?? 1,
+        totalCount: response?.totalCount ?? 0
       });
     } catch (error) {
       console.error('Ошибка стора при загрузке проектов:', error);
+      // При ошибке сбрасываем проекты в пустой массив
+      set({ projects: [] });
     } finally {
       set({ loading: false });
     }
@@ -55,11 +65,19 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       await projectApi.updateStatus(id, status);
       
       // Оптимистичное обновление: меняем статус в локальном стейте мгновенно
-      set((state) => ({
-        projects: state.projects.map((p) => 
-          p.id === id ? { ...p, status: status as any } : p
-        ),
-      }));
+      set((state) => {
+        // Критическая проверка: убеждаемся, что projects - это массив
+        if (!Array.isArray(state.projects)) {
+          console.error('updateProjectStatus: state.projects не является массивом!', state.projects);
+          return { projects: [] };
+        }
+        
+        return {
+          projects: state.projects.map((p) => 
+            p.id === id ? { ...p, status: status as any } : p
+          ),
+        };
+      });
     } catch (error: any) {
       console.error('Ошибка при обновлении статуса:', error);
       throw error;

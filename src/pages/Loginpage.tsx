@@ -10,6 +10,7 @@ const LoginPage = () => {
   const login = useAuthStore((state) => state.login);
   const authLoading = useAuthStore((state) => state.isLoading);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isInitialized = useAuthStore((state) => state.isInitialized); // Добавлено
   const user = useAuthStore((state) => state.user);
   
   // Состояния формы
@@ -26,9 +27,9 @@ const LoginPage = () => {
   const [resetSuccess, setResetSuccess] = useState(false);
 
   // --- ЭФФЕКТ ДЛЯ ПЕРЕНАПРАВЛЕНИЯ ---
-  // Сработает сразу, как только isAuthenticated станет true
   useEffect(() => {
-    if (isAuthenticated && user) {
+    // Редирект только если инициализация завершена И пользователь авторизован
+    if (isInitialized && isAuthenticated && user) {
       const routes = { 
         ADMIN: '/admin/dashboard', 
         MANAGER: '/manager/dashboard', 
@@ -36,15 +37,9 @@ const LoginPage = () => {
       };
       
       const targetRoute = routes[user.role as keyof typeof routes] || '/dashboard';
-      
-      // Используем небольшую задержку для плавности и стабильности стейта
-      const timer = setTimeout(() => {
-        navigate(targetRoute, { replace: true });
-      }, 100);
-
-      return () => clearTimeout(timer);
+      navigate(targetRoute, { replace: true });
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, isInitialized, user, navigate]);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -93,9 +88,7 @@ const LoginPage = () => {
       return;
     }
     
-    // Просто вызываем логин. Редирект произойдет в useEffect выше
     const result = await login(formData);
-
     if (!result.success) {
       setSubmitError(result.message || 'Неверный email или пароль');
     }
@@ -115,18 +108,18 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-linear-to-br from-gray-50 to-blue-50 py-12 flex items-center">
+    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 to-blue-50 py-12 flex items-center">
       <div className="container mx-auto px-3">
         <div className="max-w-md mx-auto">
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-            <div className="bg-linear-to-r from-blue-600 to-purple-600 p-8 text-center">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-center">
               <h1 className="text-3xl font-bold text-white mb-2">Вход в портал</h1>
               <p className="text-blue-100">Используйте данные, выданные администратором</p>
             </div>
 
             <form onSubmit={handleSubmit} className="p-8 space-y-6">
               {submitError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center animate-shake">
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center animate-bounce">
                   <AlertCircle className="h-5 w-5 mr-2" />
                   {submitError}
                 </div>
@@ -191,7 +184,7 @@ const LoginPage = () => {
                 disabled={!isFormValid() || authLoading}
                 className={`w-full py-4 px-4 rounded-xl font-bold text-white transition-all duration-300 shadow-lg
                   ${isFormValid() && !authLoading
-                    ? 'bg-linear-to-r from-blue-600 to-purple-600 hover:scale-[1.02] active:scale-95 shadow-blue-200'
+                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-[1.02] active:scale-95 shadow-blue-200'
                     : 'bg-gray-300 cursor-not-allowed'}`}
               >
                 {authLoading ? 'Вход...' : 'Войти в систему'}

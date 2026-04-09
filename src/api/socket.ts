@@ -1,9 +1,11 @@
 import { io } from 'socket.io-client';
 
-// Используем тот же IP, что и в API клиенте
-const URL = 'http://192.168.85.110:5001'; 
+export const SOCKET_URL = 'http://192.168.85.110:5001';
 
-export const socket = io(URL, {
+// Единственный глобальный сокет-синглтон для всего приложения.
+// НЕ создавать новые io() экземпляры в других хуках — только этот.
+export const socket = io(SOCKET_URL, {
   withCredentials: true,
   autoConnect: true,
+  transports: ['websocket', 'polling'],
 });

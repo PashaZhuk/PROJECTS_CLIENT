@@ -1,23 +1,24 @@
 import ky from 'ky';
+import { useAuthStore } from '../store/useAuthStore';
 
 const api = ky.create({
   prefixUrl: 'http://192.168.85.110:5001/api',
   credentials: 'include',
-  timeout: 20000, // 20 секунд
+  timeout: 20000,
   hooks: {
-    beforeRequest: [
-      (request) => {
-        // Ky автоматически обрабатывает куки с credentials: 'include'
-        // если они нужны для CORS
-      }
-    ],
     afterResponse: [
       async (request, options, response) => {
-        // Обработка ошибок 401 и 403 (аналог interceptors в axios)
         if (response.status === 401 || response.status === 403) {
-          if (window.location.pathname !== '/login') {
-            console.warn("Сессия завершена");
-            window.location.replace('/login');
+          const url = request.url;
+
+          // /auth/profile сам обрабатывается в checkAuth — не трогаем
+          if (url.includes('/auth/profile')) return;
+
+          // Для всех остальных эндпоинтов — сбрасываем store,
+          // React Router сам перенаправит через ProtectedRoute
+          const { isAuthenticated } = useAuthStore.getState();
+          if (isAuthenticated) {
+            useAuthStore.getState().logout();
           }
         }
       }

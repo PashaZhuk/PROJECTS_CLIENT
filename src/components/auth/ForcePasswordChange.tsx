@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import userAPI from '../../api/user'; // Наш API на базе ky
+import userAPI from '../../api/user';
 import { useAuthStore } from '../../store/useAuthStore';
 import { KeyRound, RefreshCw, ShieldAlert } from 'lucide-react';
 
@@ -8,7 +8,7 @@ const ForcePasswordChange = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
 
@@ -16,32 +16,27 @@ const ForcePasswordChange = () => {
     e.preventDefault();
     setError('');
 
-    // Валидация
     if (newPassword.length < 6) {
-      return setError("Пароль должен быть не менее 6 символов");
+      return setError('Пароль должен быть не менее 6 символов');
     }
     if (newPassword !== confirmPassword) {
-      return setError("Пароли не совпадают");
+      return setError('Пароли не совпадают');
     }
 
     setLoading(true);
     try {
-      // 1. Запрос через ky. В userAPI.changePw({ newPassword }) уже настроен .json()
       await userAPI.changePw({ newPassword });
-      
-      // 2. Успешное обновление стейта
+
       if (user) {
         setUser({ ...user, mustChangePassword: false });
       }
-      
     } catch (err: any) {
-      console.error("Change password error:", err);
-      // 3. Обработка ошибки ky
+      console.error('Change password error:', err);
       if (err.response) {
         const errorData = await err.response.json().catch(() => ({}));
-        setError(errorData.message || "Ошибка при смене пароля");
+        setError(errorData.message || 'Ошибка при смене пароля');
       } else {
-        setError("Сетевая ошибка. Попробуйте позже.");
+        setError('Сетевая ошибка. Попробуйте позже.');
       }
     } finally {
       setLoading(false);
@@ -65,19 +60,22 @@ const ForcePasswordChange = () => {
         </p>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-red-100 animate-shake">
+          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-red-100">
             {error}
           </div>
         )}
-        
+
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Новый пароxtль</label>
+            {/* Исправлена опечатка: было "пароxtль" */}
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+              Новый пароль
+            </label>
             <div className="relative">
               <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-              <input 
-                type="password" 
-                placeholder="••••••••" 
+              <input
+                type="password"
+                placeholder="••••••••"
                 className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-mono"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
@@ -88,12 +86,14 @@ const ForcePasswordChange = () => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Подтвердите пароль</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+              Подтвердите пароль
+            </label>
             <div className="relative">
               <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-              <input 
-                type="password" 
-                placeholder="••••••••" 
+              <input
+                type="password"
+                placeholder="••••••••"
                 className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all font-mono"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -103,11 +103,11 @@ const ForcePasswordChange = () => {
             </div>
           </div>
 
-          <button 
+          <button
             disabled={loading}
             className="w-full bg-slate-900 hover:bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
           >
-            {loading ? <RefreshCw className="animate-spin" size={16} /> : "Обновить и войти"}
+            {loading ? <RefreshCw className="animate-spin" size={16} /> : 'Обновить и войти'}
           </button>
         </form>
       </div>
