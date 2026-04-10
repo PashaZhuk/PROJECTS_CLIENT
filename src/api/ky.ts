@@ -2,7 +2,7 @@ import ky from 'ky';
 import { useAuthStore } from '../store/useAuthStore';
 
 const api = ky.create({
-  prefixUrl: 'http://192.168.85.110:5001/api',
+  prefixUrl: 'http://192.168.0.105:5001/api',
   credentials: 'include',
   timeout: 20000,
   hooks: {

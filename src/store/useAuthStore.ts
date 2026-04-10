@@ -10,11 +10,9 @@ interface AuthState {
   _hasHydrated: boolean;
   isInitialized: boolean;
   isSessionExpired: boolean;
-  
   setUser: (user: User | null) => void;
   setHasHydrated: (state: boolean) => void;
-  setSessionExpired: (expired: boolean) => void;
-  
+  setSessionExpired: (val: boolean) => void;
   checkAuth: () => Promise<void>;
   login: (credentials: any) => Promise<{ success: boolean; user?: User; message?: string }>;
   logout: () => Promise<void>;
@@ -31,19 +29,19 @@ export const useAuthStore = create<AuthState>()(
       isSessionExpired: false,
 
       setHasHydrated: (state) => set({ _hasHydrated: state }),
-      
-      setSessionExpired: (expired) => set({ isSessionExpired: expired }),
+
+      setSessionExpired: (val) => set({ isSessionExpired: val }),
 
       setUser: (user) => set({
         user,
         isAuthenticated: !!user,
         isLoading: false,
         isInitialized: true,
-        isSessionExpired: false,
       }),
 
       checkAuth: async () => {
         if (get().isLoading) return;
+
         set({ isLoading: true });
         try {
           const response: any = await authAPI.profile();
@@ -61,6 +59,7 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (error: any) {
           const isNetworkError = !error?.response;
+
           if (isNetworkError) {
             set({ isLoading: false, isInitialized: true });
           } else {
@@ -76,9 +75,9 @@ export const useAuthStore = create<AuthState>()(
       },
 
       login: async (credentials) => {
-        set({ isLoading: true, isSessionExpired: false });
+        set({ isLoading: true });
         try {
-          const response: any = await authAPI.login(credentials); 
+          const response: any = await authAPI.login(credentials);
           const userData = response.data?.user || response.data;
 
           if (userData) {
@@ -87,6 +86,7 @@ export const useAuthStore = create<AuthState>()(
               isAuthenticated: true,
               isLoading: false,
               isInitialized: true,
+              isSessionExpired: false,
             });
             return { success: true, user: userData };
           }
@@ -107,15 +107,14 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
+        const user = get().user;
         try {
-          await authAPI.logout();
+          // Передаём reason и userId в теле — protect на сервере не нужен
+          await authAPI.logout('manual', user?.id);
+        } catch (err) {
+          console.warn('[Auth] Logout request failed (ignored):', err);
         } finally {
-          set({
-            user: null,
-            isAuthenticated: false,
-            isInitialized: true,
-            // isSessionExpired не сбрасываем здесь — модалка сама управляет
-          });
+          set({ user: null, isAuthenticated: false, isInitialized: true });
           localStorage.removeItem('auth-storage');
         }
       },
@@ -129,7 +128,6 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
-        // isSessionExpired не сохраняем в localStorage
       }),
     }
   )

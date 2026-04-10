@@ -26,19 +26,17 @@ export const useInactivityTimer = () => {
     timerRef.current = setTimeout(async () => {
       console.log(`[SessionTimer] ⏰ Сессия истекла (${user.role})`);
 
-      // 1. Сначала вызываем logout и ждём ответа (сервер удалит куку)
-      try {
-        await authAPI.logout();
-      } catch (err) {
-        console.error('[SessionTimer] Ошибка logout:', err);
-        // Даже при ошибке продолжаем – чистим локальное состояние
-      }
-
-      // 2. Очищаем клиентское состояние и localStorage
+      // 1. Сначала чистим клиентское состояние
       localStorage.removeItem('auth-storage');
       useAuthStore.getState().setUser(null);
 
-      // 3. Показываем модалку (кука уже удалена)
+      // 2. Тихо уведомляем сервер (fire & forget) — передаём reason и userId в теле,
+      //    поэтому protect middleware на сервере больше не нужен
+      authAPI.logout('inactivity', user.id).catch((err) => {
+        console.warn('[SessionTimer] Logout request failed (ignored):', err?.message);
+      });
+
+      // 3. Показываем модалку
       setSessionExpired(true);
     }, limit);
   }, [isAuthenticated, user, setSessionExpired]);
