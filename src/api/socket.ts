@@ -1,11 +1,17 @@
 import { io } from 'socket.io-client';
 
-export const SOCKET_URL = 'http://192.168.0.105:5001';
+// Получаем URL из переменных окружения
+export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
 
-// Единственный глобальный сокет-синглтон для всего приложения.
-// НЕ создавать новые io() экземпляры в других хуках — только этот.
-export const socket = io(SOCKET_URL, {
+if (!SOCKET_URL) {
+  console.error('❌ Ошибка: Переменная окружения VITE_SOCKET_URL не найдена! Проверьте файл .env');
+}
+
+// Единственный глобальный сокет-синглтон
+export const socket = io(SOCKET_URL || 'http://localhost:5001', {
   withCredentials: true,
   autoConnect: true,
   transports: ['websocket', 'polling'],
+  reconnection: true,
+  reconnectionAttempts: 5,
 });

@@ -1,9 +1,8 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
-import authAPI from '../api/auth';
 
 const INACTIVITY_LIMIT_MS: Record<string, number> = {
-  USER: 1 * 60 * 1000,
+  USER: 30 * 60 * 1000,
   MANAGER: 2 * 60 * 60 * 1000,
   ADMIN: 2 * 60 * 60 * 1000,
 };
@@ -26,13 +25,19 @@ export const useInactivityTimer = () => {
     timerRef.current = setTimeout(async () => {
       console.log(`[SessionTimer] ⏰ Сессия истекла (${user.role})`);
 
-      // 1. Сначала чистим клиентское состояние
+      // 1. Чистим клиентское состояние
       localStorage.removeItem('auth-storage');
       useAuthStore.getState().setUser(null);
 
-      // 2. Тихо уведомляем сервер (fire & forget) — передаём reason и userId в теле,
-      //    поэтому protect middleware на сервере больше не нужен
-      authAPI.logout('inactivity', user.id).catch((err) => {
+      // 2. Тихо уведомляем сервер (fire & forget).
+      // Передаём reason и userId напрямую через fetch, минуя authAPI,
+      // т.к. authAPI.logout() не принимает аргументов.
+      fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: 'inactivity', userId: String(user.id) }),
+      }).catch((err) => {
         console.warn('[SessionTimer] Logout request failed (ignored):', err?.message);
       });
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import type { Project, ActiveTabType } from '../types';
 import { useAuthStore } from '../store/useAuthStore';
@@ -13,11 +13,7 @@ import { ChatDrawer } from '../components/dashboard/shared/ChatDrawer';
 
 const UserDashboard = () => {
   const user = useAuthStore((state) => state.user);
-  // Добавили setActiveTab чтобы closeForm мог переключать таб обратно
-  const { activeTab, setActiveTab } = useOutletContext<{ 
-    activeTab: ActiveTabType; 
-    setActiveTab: (t: ActiveTabType) => void; 
-  }>();
+  const { activeTab } = useOutletContext<{ activeTab: ActiveTabType }>();
   const {
     projects, loading, totalCount, totalPages, currentPage, searchQuery,
     fetchProjects, setSearchQuery, setCurrentPage
@@ -27,23 +23,12 @@ const UserDashboard = () => {
   const markMessagesAsReadLocally = useChatStore((state) => state.markMessagesAsReadLocally);
   
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [chatProject, setChatProject] = useState<Project | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   useGlobalChatLoader(user, projects);
   useProjectSockets(user?.id);
-
-  // Открываем форму при переходе на вкладку "Новая заявка" через сайдбар.
-  // Зависимость только от activeTab — не вызывает лишних перерендеров.
-  useEffect(() => {
-    if (activeTab === 'projects-create') {
-      setEditingProject(null);
-      setSelectedCategory(null);
-      setIsFormOpen(true);
-    }
-  }, [activeTab]);
 
   useEffect(() => { fetchProjects(); }, [currentPage, searchQuery, fetchProjects]);
 
@@ -53,8 +38,10 @@ const UserDashboard = () => {
       setChatProject(project);
       setActiveChatId(projectId);
       
+      // 1. Локально помечаем чужие сообщения как прочитанные
       markMessagesAsReadLocally(projectId, user.id);
       
+      // 2. 🛑 ОТПРАВЛЯЕМ ЗАПРОС НА СЕРВЕР, чтобы тот уведомил Менеджера (отправили)
       try {
         await fetch(`/api/chat/${projectId}/read`, { 
           method: 'POST', 
@@ -73,17 +60,8 @@ const UserDashboard = () => {
 
   const handleEdit = (project: Project) => {
     setEditingProject(project);
-    setSelectedCategory((project as any).formType || (project as any).category || null);
     setIsFormOpen(true);
   };
-
-  // Закрытие формы — сбрасываем всё состояние и возвращаемся на список
-  const handleCloseForm = useCallback(() => {
-    setIsFormOpen(false);
-    setSelectedCategory(null);
-    setEditingProject(null);
-    setActiveTab('projects-list');
-  }, [setActiveTab]);
 
   const stats = useMemo(() => ({
     total: totalCount,
@@ -112,19 +90,14 @@ const UserDashboard = () => {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
-          onCreateNew={() => { setEditingProject(null); setSelectedCategory(null); setIsFormOpen(true); }}
+          onCreateNew={() => { setEditingProject(null); setIsFormOpen(true); }}
         />
       )}
       <ChatDrawer isOpen={!!chatProject} project={chatProject} user={user} onClose={handleCloseChat} variant="blue" />
       {isFormOpen && (
-        <DynamicProjectForm
-          onClose={handleCloseForm}
-          onSuccess={async () => { handleCloseForm(); await fetchProjects(); }}
-          initialData={editingProject}
-        />
+        <DynamicProjectForm onClose={() => setIsFormOpen(false)} onSuccess={async () => { setIsFormOpen(false); await fetchProjects(); }} initialData={editingProject} />
       )}
     </div>
   );
 };
-
 export default UserDashboard;

@@ -109,8 +109,14 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         const user = get().user;
         try {
-          // Передаём reason и userId в теле — protect на сервере не нужен
-          await authAPI.logout('manual', user?.id);
+          // authAPI.logout() не принимает аргументов — передаём reason и userId
+          // напрямую через fetch, чтобы сервер мог залогировать причину выхода
+          await fetch('http://192.168.85.110:5001/api/auth/logout', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason: 'manual', userId: user?.id }),
+          });
         } catch (err) {
           console.warn('[Auth] Logout request failed (ignored):', err);
         } finally {
