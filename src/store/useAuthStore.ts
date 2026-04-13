@@ -9,10 +9,12 @@ interface AuthState {
   isAuthenticated: boolean;
   _hasHydrated: boolean;
   isInitialized: boolean;
-  isSessionExpired: boolean;
+  isSessionExpired: boolean;      // Таймаут неактивности
+  isSessionSuperseded: boolean;   // Вход с другого устройства
   setUser: (user: User | null) => void;
   setHasHydrated: (state: boolean) => void;
-  setSessionExpired: (val: boolean) => void;
+  setSessionExpired: (expired: boolean) => void;
+  setSessionSuperseded: (superseded: boolean) => void;
   checkAuth: () => Promise<void>;
   login: (credentials: any) => Promise<{ success: boolean; user?: User; message?: string }>;
   logout: () => Promise<void>;
@@ -27,21 +29,24 @@ export const useAuthStore = create<AuthState>()(
       _hasHydrated: false,
       isInitialized: false,
       isSessionExpired: false,
+      isSessionSuperseded: false,
 
       setHasHydrated: (state) => set({ _hasHydrated: state }),
-
-      setSessionExpired: (val) => set({ isSessionExpired: val }),
+      
+      setSessionExpired: (expired) => set({ isSessionExpired: expired }),
+      setSessionSuperseded: (superseded) => set({ isSessionSuperseded: superseded }),
 
       setUser: (user) => set({
         user,
         isAuthenticated: !!user,
         isLoading: false,
         isInitialized: true,
+        isSessionExpired: false,
+        isSessionSuperseded: false, // Сброс при успешном входе
       }),
 
       checkAuth: async () => {
         if (get().isLoading) return;
-
         set({ isLoading: true });
         try {
           const response: any = await authAPI.profile();
@@ -55,11 +60,10 @@ export const useAuthStore = create<AuthState>()(
               isLoading: false,
             });
           } else {
-            throw new Error('User data missing');
+             throw new Error('User data missing');
           }
         } catch (error: any) {
           const isNetworkError = !error?.response;
-
           if (isNetworkError) {
             set({ isLoading: false, isInitialized: true });
           } else {
@@ -75,7 +79,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       login: async (credentials) => {
-        set({ isLoading: true });
+        set({ isLoading: true, isSessionExpired: false, isSessionSuperseded: false });
         try {
           const response: any = await authAPI.login(credentials);
           const userData = response.data?.user || response.data;
@@ -86,7 +90,6 @@ export const useAuthStore = create<AuthState>()(
               isAuthenticated: true,
               isLoading: false,
               isInitialized: true,
-              isSessionExpired: false,
             });
             return { success: true, user: userData };
           }
@@ -107,20 +110,16 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
-        const user = get().user;
         try {
-          // authAPI.logout() не принимает аргументов — передаём reason и userId
-          // напрямую через fetch, чтобы сервер мог залогировать причину выхода
-          await fetch('http://192.168.85.110:5001/api/auth/logout', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reason: 'manual', userId: user?.id }),
-          });
-        } catch (err) {
-          console.warn('[Auth] Logout request failed (ignored):', err);
+          await authAPI.logout();
         } finally {
-          set({ user: null, isAuthenticated: false, isInitialized: true });
+          set({
+            user: null,
+            isAuthenticated: false,
+            isInitialized: true,
+            isSessionExpired: false,
+            isSessionSuperseded: false,
+          });
           localStorage.removeItem('auth-storage');
         }
       },
@@ -134,6 +133,7 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        // Флаги сессий не сохраняем в localStorage
       }),
     }
   )
