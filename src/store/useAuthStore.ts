@@ -9,8 +9,8 @@ interface AuthState {
   isAuthenticated: boolean;
   _hasHydrated: boolean;
   isInitialized: boolean;
-  isSessionExpired: boolean;      // Таймаут неактивности
-  isSessionSuperseded: boolean;   // Вход с другого устройства
+  isSessionExpired: boolean;
+  isSessionSuperseded: boolean;
   setUser: (user: User | null) => void;
   setHasHydrated: (state: boolean) => void;
   setSessionExpired: (expired: boolean) => void;
@@ -32,9 +32,40 @@ export const useAuthStore = create<AuthState>()(
       isSessionSuperseded: false,
 
       setHasHydrated: (state) => set({ _hasHydrated: state }),
-      
-      setSessionExpired: (expired) => set({ isSessionExpired: expired }),
-      setSessionSuperseded: (superseded) => set({ isSessionSuperseded: superseded }),
+
+      setSessionExpired: (expired) => {
+        if (expired) {
+          // Чистим localStorage и стейт немедленно
+          localStorage.removeItem('auth-storage');
+          // Вызываем logout на сервере чтобы сбросить httpOnly-куку jwt
+          // fire-and-forget: не ждём результата, не блокируем показ модалки
+          authAPI.logout().catch(() => {});
+          set({
+            isSessionExpired: true,
+            user: null,
+            isAuthenticated: false,
+          });
+        } else {
+          set({ isSessionExpired: false });
+        }
+      },
+
+      setSessionSuperseded: (superseded) => {
+        if (superseded) {
+          // Чистим localStorage и стейт немедленно
+          localStorage.removeItem('auth-storage');
+          // Вызываем logout на сервере чтобы сбросить httpOnly-куку jwt
+          // fire-and-forget: не ждём результата, не блокируем показ модалки
+          authAPI.logout().catch(() => {});
+          set({
+            isSessionSuperseded: true,
+            user: null,
+            isAuthenticated: false,
+          });
+        } else {
+          set({ isSessionSuperseded: false });
+        }
+      },
 
       setUser: (user) => set({
         user,
@@ -42,7 +73,7 @@ export const useAuthStore = create<AuthState>()(
         isLoading: false,
         isInitialized: true,
         isSessionExpired: false,
-        isSessionSuperseded: false, // Сброс при успешном входе
+        isSessionSuperseded: false,
       }),
 
       checkAuth: async () => {
@@ -60,7 +91,7 @@ export const useAuthStore = create<AuthState>()(
               isLoading: false,
             });
           } else {
-             throw new Error('User data missing');
+            throw new Error('User data missing');
           }
         } catch (error: any) {
           const isNetworkError = !error?.response;
@@ -133,7 +164,6 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
-        // Флаги сессий не сохраняем в localStorage
       }),
     }
   )
