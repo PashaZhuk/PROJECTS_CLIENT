@@ -18,6 +18,9 @@ const userApi = {
 
   updateUser: (id: number, data: any) =>
     api.put(`user/users/${id}`, { json: data }).json(),
+
+  toggleBlock: (id: number) =>
+    api.patch(`user/users/${id}/block`).json<{ isBlocked: boolean }>(),
 };
 
 export default userApi;

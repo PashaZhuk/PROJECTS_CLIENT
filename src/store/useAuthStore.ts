@@ -11,10 +11,12 @@ interface AuthState {
   isInitialized: boolean;
   isSessionExpired: boolean;
   isSessionSuperseded: boolean;
+  isUserBlocked: boolean; // ← новый флаг
   setUser: (user: User | null) => void;
   setHasHydrated: (state: boolean) => void;
   setSessionExpired: (expired: boolean) => void;
   setSessionSuperseded: (superseded: boolean) => void;
+  setUserBlocked: (blocked: boolean) => void; // ← новый метод
   checkAuth: () => Promise<void>;
   login: (credentials: any) => Promise<{ success: boolean; user?: User; message?: string }>;
   logout: () => Promise<void>;
@@ -30,21 +32,15 @@ export const useAuthStore = create<AuthState>()(
       isInitialized: false,
       isSessionExpired: false,
       isSessionSuperseded: false,
+      isUserBlocked: false,
 
       setHasHydrated: (state) => set({ _hasHydrated: state }),
 
       setSessionExpired: (expired) => {
         if (expired) {
-          // Чистим localStorage и стейт немедленно
           localStorage.removeItem('auth-storage');
-          // Вызываем logout на сервере чтобы сбросить httpOnly-куку jwt
-          // fire-and-forget: не ждём результата, не блокируем показ модалки
           authAPI.logout().catch(() => {});
-          set({
-            isSessionExpired: true,
-            user: null,
-            isAuthenticated: false,
-          });
+          set({ isSessionExpired: true, user: null, isAuthenticated: false });
         } else {
           set({ isSessionExpired: false });
         }
@@ -52,18 +48,21 @@ export const useAuthStore = create<AuthState>()(
 
       setSessionSuperseded: (superseded) => {
         if (superseded) {
-          // Чистим localStorage и стейт немедленно
           localStorage.removeItem('auth-storage');
-          // Вызываем logout на сервере чтобы сбросить httpOnly-куку jwt
-          // fire-and-forget: не ждём результата, не блокируем показ модалки
           authAPI.logout().catch(() => {});
-          set({
-            isSessionSuperseded: true,
-            user: null,
-            isAuthenticated: false,
-          });
+          set({ isSessionSuperseded: true, user: null, isAuthenticated: false });
         } else {
           set({ isSessionSuperseded: false });
+        }
+      },
+
+      setUserBlocked: (blocked) => {
+        if (blocked) {
+          localStorage.removeItem('auth-storage');
+          authAPI.logout().catch(() => {});
+          set({ isUserBlocked: true, user: null, isAuthenticated: false });
+        } else {
+          set({ isUserBlocked: false });
         }
       },
 
@@ -74,6 +73,7 @@ export const useAuthStore = create<AuthState>()(
         isInitialized: true,
         isSessionExpired: false,
         isSessionSuperseded: false,
+        isUserBlocked: false,
       }),
 
       checkAuth: async () => {
@@ -82,14 +82,8 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response: any = await authAPI.profile();
           const userData = response.data?.user || response.data;
-
           if (userData && userData.id) {
-            set({
-              user: userData,
-              isAuthenticated: true,
-              isInitialized: true,
-              isLoading: false,
-            });
+            set({ user: userData, isAuthenticated: true, isInitialized: true, isLoading: false });
           } else {
             throw new Error('User data missing');
           }
@@ -98,33 +92,21 @@ export const useAuthStore = create<AuthState>()(
           if (isNetworkError) {
             set({ isLoading: false, isInitialized: true });
           } else {
-            set({
-              user: null,
-              isAuthenticated: false,
-              isInitialized: true,
-              isLoading: false,
-            });
+            set({ user: null, isAuthenticated: false, isInitialized: true, isLoading: false });
             localStorage.removeItem('auth-storage');
           }
         }
       },
 
       login: async (credentials) => {
-        set({ isLoading: true, isSessionExpired: false, isSessionSuperseded: false });
+        set({ isLoading: true, isSessionExpired: false, isSessionSuperseded: false, isUserBlocked: false });
         try {
           const response: any = await authAPI.login(credentials);
           const userData = response.data?.user || response.data;
-
           if (userData) {
-            set({
-              user: userData,
-              isAuthenticated: true,
-              isLoading: false,
-              isInitialized: true,
-            });
+            set({ user: userData, isAuthenticated: true, isLoading: false, isInitialized: true });
             return { success: true, user: userData };
           }
-
           set({ isLoading: false });
           return { success: false, message: 'Данные пользователя не получены' };
         } catch (error: any) {
@@ -150,6 +132,7 @@ export const useAuthStore = create<AuthState>()(
             isInitialized: true,
             isSessionExpired: false,
             isSessionSuperseded: false,
+            isUserBlocked: false,
           });
           localStorage.removeItem('auth-storage');
         }

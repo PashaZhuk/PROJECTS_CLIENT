@@ -10,29 +10,24 @@ const api = ky.create({
       async (request, options, response) => {
         if (response.status === 401 || response.status === 403) {
           const url = request.url;
-          
-          // /auth/profile обрабатывается в checkAuth — пропускаем
           if (url.includes('/auth/profile')) return;
 
           try {
             const errorBody = await response.clone().json();
-            const { isAuthenticated, setSessionExpired, setSessionSuperseded } = useAuthStore.getState();
-            
+            const { isAuthenticated, setSessionExpired, setSessionSuperseded, setUserBlocked } = useAuthStore.getState();
+
             if (!isAuthenticated) return;
 
-            // Разделяем логику по коду ошибки
-            if (errorBody.code === "SESSION_SUPERSEDED") {
-              // Вход с другого устройства
+            if (errorBody.code === "USER_BLOCKED") {
+              setUserBlocked(true);
+            } else if (errorBody.code === "SESSION_SUPERSEDED") {
               setSessionSuperseded(true);
             } else if (errorBody.code === "SESSION_EXPIRED") {
-              // Таймаут неактивности
               setSessionExpired(true);
             } else {
-              // Другие ошибки авторизации (например, просто неверный токен)
               useAuthStore.getState().logout();
             }
           } catch (e) {
-            // Fallback
             useAuthStore.getState().logout();
           }
         }
