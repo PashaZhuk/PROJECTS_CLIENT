@@ -1,3 +1,4 @@
+import React from 'react';
 import { Ban } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
@@ -10,7 +11,10 @@ const UserBlockedModal = () => {
   if (!isBlocked) return null;
 
   const handleConfirm = () => {
+    // 1. Скрываем модалку
     setUserBlocked(false);
+    
+    // 2. Переходим на логин (сессия уже убита в useUserSockets)
     navigate('/login', { replace: true });
   };
 

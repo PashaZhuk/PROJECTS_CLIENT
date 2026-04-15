@@ -1,10 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react'; // Добавил useRef
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 
 // Stores & Hooks
 import { useAuthStore } from './store/useAuthStore';
-import { useSessionManager } from './hooks/useSessionManager'; // <-- Новый супер-хук
+import { useSessionManager } from './hooks/useSessionManager';
 
 // Layouts & Pages
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -30,27 +30,35 @@ const AppContent = () => {
     checkAuth 
   } = useAuthStore();
 
-  // 🔥 ВСЯ ЛОГИКА БЕЗОПАСНОСТИ ТЕПЕРЬ ЗДЕСЬ (одной строкой)
-  // Таймеры, сокеты, слушатели событий — всё внутри
+  // Реф, чтобы не спамить проверкой авторизации
+  const authChecked = useRef(false);
+
+  // 🔥 1. Сначала запускаем менеджер сессий
   useSessionManager();
 
-  // Проверка авторизации при старте
+  // 🔥 2. Проверка авторизации: строго после гидрации и только один раз
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+    if (_hasHydrated && !authChecked.current) {
+      checkAuth();
+      authChecked.current = true;
+    }
+  }, [_hasHydrated, checkAuth]);
 
-  // Экраны загрузки
-  if (!_hasHydrated || !isInitialized || isLoading) {
+  // 🔥 3. Экраны загрузки: 
+  // Ждем _hasHydrated (чтение из диска) И isInitialized (ответ от сервера)
+  if (!_hasHydrated || !isInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600"></div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600"></div>
+          <p className="text-gray-500 text-sm animate-pulse">Проверка сессии...</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 relative">
-      {/* Модалки глобального состояния */}
       <SessionExpiredModal />
       <SessionSupersededModal />
       <UserBlockedModal />
@@ -58,6 +66,7 @@ const AppContent = () => {
       <Header />
       
       <main className="grow flex flex-col">
+        {/* Если авторизован, но должен сменить пароль — блокируем весь контент */}
         {isAuthenticated && user?.mustChangePassword ? (
           <ForcePasswordChange />
         ) : (
@@ -71,6 +80,7 @@ const AppContent = () => {
               element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />} 
             />
 
+            {/* Защищенные роуты */}
             <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'USER']} />}>
               <Route element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<DashboardDispatcher />} />

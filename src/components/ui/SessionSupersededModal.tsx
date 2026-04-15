@@ -11,8 +11,10 @@ const SessionSupersededModal = () => {
   if (!isSuperseded) return null;
 
   const handleConfirm = () => {
-    // logout() и чистка уже выполнены в setSessionSuperseded — просто закрываем и редиректим
+    // 1. Скрываем модалку
     setSuperseded(false);
+    
+    // 2. Переходим на логин (сессия уже убита в useUserSockets)
     navigate('/login', { replace: true });
   };
 

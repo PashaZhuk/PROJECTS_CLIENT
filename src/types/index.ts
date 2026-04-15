@@ -62,7 +62,8 @@ export type ActiveTabType =
   | 'projects-create' 
   | 'users-list' 
   | 'users-create' 
-  | 'orders';
+  | 'orders-list' 
+  | 'orders-create';
 
 export interface ProjectStats {
   total: number;

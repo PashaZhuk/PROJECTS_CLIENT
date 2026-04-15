@@ -11,7 +11,7 @@ interface UserData {
   companyName?: string;
   unp?: string;
   isOnline?: boolean;
-  isBlocked?: boolean; // ← добавили
+  isBlocked?: boolean;
 }
 
 interface AdminStats {
@@ -32,16 +32,18 @@ interface UserStore {
   currentPage: number;
   totalPages: number;
   totalCount: number;
-
+  
+  // Actions
   setSearchQuery: (query: string) => void;
   setCurrentPage: (page: number) => void;
+  setStats: (stats: AdminStats) => void;
   fetchUsers: () => Promise<void>;
   fetchStats: (silent?: boolean) => Promise<void>;
   createUser: (formData: any) => Promise<void>;
   deleteUser: (id: number) => Promise<void>;
-  toggleBlock: (id: number) => Promise<void>; // ← добавили
+  toggleBlock: (id: number) => Promise<void>;
   updateUserStatus: (userId: number, isOnline: boolean) => void;
-  updateUserBlockedStatus: (userId: number, isBlocked: boolean) => void; // ← добавили
+  updateUserBlockedStatus: (userId: number, isBlocked: boolean) => void;
 }
 
 export const useUserStore = create<UserStore>((set, get) => ({
@@ -54,38 +56,45 @@ export const useUserStore = create<UserStore>((set, get) => ({
   totalCount: 0,
 
   setSearchQuery: (query) => set({ searchQuery: query, currentPage: 1 }),
-  setCurrentPage: (page) => set({ currentPage: page }),
+  
+  setCurrentPage: (page) => {
+    set({ currentPage: page });
+    get().fetchUsers();
+  },
+
+  setStats: (stats: AdminStats) => set({ stats }),
 
   fetchUsers: async () => {
-    if (get().loading) return;
     set({ loading: true });
     try {
-      const { searchQuery, currentPage } = get();
-      const data: any = await userApi.getAllUsers({
-        page: currentPage,
-        limit: 10,
-        search: searchQuery
-      });
+      // Здесь мы указываем TS, что ожидаем объект с определенными полями
+      const response = await userApi.getAllUsers({
+        page: get().currentPage,
+        search: get().searchQuery,
+      }) as { users: UserData[]; totalPages: number; totalCount: number };
+      
       set({
-        users: data.users || [],
-        totalPages: data.totalPages || 1,
-        totalCount: data.totalCount || 0,
-        loading: false
+        users: response.users,
+        totalPages: response.totalPages,
+        totalCount: response.totalCount,
       });
     } catch (error) {
-      set({ loading: false });
       console.error('Fetch users error:', error);
+    } finally {
+      set({ loading: false });
     }
   },
 
   fetchStats: async (silent = false) => {
     if (!silent) set({ loading: true });
     try {
-      const data: any = await userApi.getAdminStats();
-      set({ stats: data, loading: false });
+      // КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: приведение к AdminStats
+      const stats = await userApi.getAdminStats() as AdminStats;
+      set({ stats });
     } catch (error) {
-      set({ loading: false });
       console.error('Fetch stats error:', error);
+    } finally {
+      if (!silent) set({ loading: false });
     }
   },
 
@@ -93,7 +102,8 @@ export const useUserStore = create<UserStore>((set, get) => ({
     set({ loading: true });
     try {
       await userApi.register(formData);
-      await Promise.all([get().fetchUsers(), get().fetchStats(true)]);
+      await get().fetchUsers();
+      await get().fetchStats(true);
     } catch (error: any) {
       if (error.response) {
         const errorData = await error.response.json().catch(() => ({}));
@@ -122,13 +132,9 @@ export const useUserStore = create<UserStore>((set, get) => ({
 
   toggleBlock: async (id) => {
     try {
-      const result = await userApi.toggleBlock(id);
-      // Оптимистичное обновление в списке
-      set((state) => ({
-        users: state.users.map(u =>
-          u.id === id ? { ...u, isBlocked: result.isBlocked } : u
-        )
-      }));
+      const result = await userApi.toggleBlock(id) as { isBlocked: boolean };
+      get().updateUserBlockedStatus(id, result.isBlocked);
+      get().fetchStats(true);
     } catch (error) {
       console.error('Toggle block error:', error);
       alert('Ошибка при изменении статуса блокировки');
@@ -137,13 +143,17 @@ export const useUserStore = create<UserStore>((set, get) => ({
 
   updateUserStatus: (userId, isOnline) => {
     set((state) => ({
-      users: state.users.map(u => u.id === userId ? { ...u, isOnline } : u)
+      users: state.users.map((u) => 
+        u.id === userId ? { ...u, isOnline } : u
+      ),
     }));
   },
 
   updateUserBlockedStatus: (userId, isBlocked) => {
     set((state) => ({
-      users: state.users.map(u => u.id === userId ? { ...u, isBlocked } : u)
+      users: state.users.map((u) => 
+        u.id === userId ? { ...u, isBlocked } : u
+      ),
     }));
   },
 }));

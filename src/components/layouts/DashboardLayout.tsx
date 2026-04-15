@@ -1,14 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../layouts/Sidebar';
-
-export type ActiveTabType = 
-  | 'stats'           
-  | 'projects-list'    
-  | 'projects-create'  
-  | 'users-list'       
-  | 'users-create'     
-  | 'orders';          
+import type { ActiveTabType } from '../../types'
 
 const DashboardLayout = () => {
   const [activeTab, setActiveTab] = useState<ActiveTabType>('stats');

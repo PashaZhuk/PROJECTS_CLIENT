@@ -6,26 +6,52 @@ import { useProjectStore } from '../store/useProjectStore';
 import { useChatStore } from '../store/useChatStore';
 import { useProjectSockets } from '../hooks/useProjectSockets';
 import { useGlobalChatLoader } from '../hooks/useGlobalChatLoader';
+import { useUserSockets } from '../hooks/useUserSockets';
+import { Rocket } from 'lucide-react'; // Иконка для заглушки
 import DynamicProjectForm from '../components/dashboard/forms/DynamicProjectForm';
 import { StatsView } from '../components/dashboard/shared/StatsView';
 import { ProjectsListView } from '../components/dashboard/shared/ProjectsListView';
 import { ChatDrawer } from '../components/dashboard/shared/ChatDrawer';
 
+// 🔥 ПЕРЕКЛЮЧАТЕЛЬ: поставь true, чтобы вернуть старый рабочий функционал
+const SHOW_WORKING_FEATURES = false;
+
+const WorkInProgressBanner = ({ title }: { title: string }) => (
+  <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in zoom-in-95 duration-500">
+    <div className="bg-white rounded-[3rem] border border-slate-200 shadow-xl p-12 max-w-2xl w-full text-center relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-200 via-blue-400 to-blue-200" />
+      <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-8 animate-pulse">
+        <Rocket className="text-blue-500" size={48} />
+      </div>
+      <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-4">{title}</h2>
+      <p className="text-slate-500 font-medium mb-8 max-w-md mx-auto leading-relaxed text-lg">
+        Этот раздел находится в активной разработке. Старый функционал скрыт до момента финальной демонстрации.
+      </p>
+      <div className="inline-flex items-center gap-3 px-6 py-3 bg-blue-50 border border-blue-200 rounded-full">
+        <span className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-ping" />
+        <span className="text-xs font-black text-blue-700 uppercase tracking-widest">Скоро доступно</span>
+      </div>
+    </div>
+  </div>
+);
+
 const UserDashboard = () => {
   const user = useAuthStore((state) => state.user);
-  // Добавили setActiveTab чтобы closeForm мог переключать таб обратно
-  const { activeTab, setActiveTab } = useOutletContext<{ 
-    activeTab: ActiveTabType; 
-    setActiveTab: (t: ActiveTabType) => void; 
+  const { activeTab, setActiveTab } = useOutletContext<{
+    activeTab: ActiveTabType;
+    setActiveTab: (t: ActiveTabType) => void;
   }>();
+
+  useUserSockets();
+
   const {
     projects, loading, totalCount, totalPages, currentPage, searchQuery,
     fetchProjects, setSearchQuery, setCurrentPage
   } = useProjectStore();
-  
+
   const setActiveChatId = useChatStore((state) => state.setActiveChatId);
   const markMessagesAsReadLocally = useChatStore((state) => state.markMessagesAsReadLocally);
-  
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -35,8 +61,6 @@ const UserDashboard = () => {
   useGlobalChatLoader(user, projects);
   useProjectSockets(user?.id);
 
-  // Открываем форму при переходе на вкладку "Новая заявка" через сайдбар.
-  // Зависимость только от activeTab — не вызывает лишних перерендеров.
   useEffect(() => {
     if (activeTab === 'projects-create') {
       setEditingProject(null);
@@ -52,14 +76,9 @@ const UserDashboard = () => {
     if (project && user?.id) {
       setChatProject(project);
       setActiveChatId(projectId);
-      
       markMessagesAsReadLocally(projectId, user.id);
-      
       try {
-        await fetch(`/api/chat/${projectId}/read`, { 
-          method: 'POST', 
-          credentials: 'include' 
-        });
+        await fetch(`/api/chat/${projectId}/read`, { method: 'POST', credentials: 'include' });
       } catch (err) {
         console.error("Failed to mark messages as read on server", err);
       }
@@ -77,7 +96,6 @@ const UserDashboard = () => {
     setIsFormOpen(true);
   };
 
-  // Закрытие формы — сбрасываем всё состояние и возвращаемся на список
   const handleCloseForm = useCallback(() => {
     setIsFormOpen(false);
     setSelectedCategory(null);
@@ -93,8 +111,23 @@ const UserDashboard = () => {
     approved: projects.filter(p => p.status === 'APPROVED').length
   }), [projects, totalCount]);
 
+  // 🔥 ЕСЛИ РЕЖИМ ДЕМО (false) - ПОКАЗЫВАЕМ ЗАГЛУШКИ ДЛЯ ВСЕГО
+  if (!SHOW_WORKING_FEATURES) {
+    // Если открыты вкладки заказов - показываем заглушку
+    if (activeTab === 'orders-list' || activeTab === 'orders-create') {
+      return <WorkInProgressBanner title={activeTab === 'orders-list' ? 'Мои заказы' : 'Создать новый заказ'} />;
+    }
+    // Если открыты вкладки проектов - тоже заглушка (так как флаг false)
+    if (activeTab === 'projects-list' || activeTab === 'projects-create' || activeTab === 'stats') {
+       return <WorkInProgressBanner title="Работа с проектами" />;
+    }
+    // Для любых других случаев
+    return <WorkInProgressBanner title="Раздел в разработке" />;
+  }
+
+  // 🔥 ЕСЛИ РЕЖИМ РАЗРАБОТКИ (true) - ПОКАЗЫВАЕМ РАБОЧИЙ ФУНКЦИОНАЛ
   return (
-    <div className="space-y-8">
+    <>
       {activeTab === 'stats' && (
         <StatsView stats={stats} onRefresh={() => fetchProjects()} isLoading={loading} title="Мои Проекты" variant="blue" />
       )}
@@ -115,6 +148,10 @@ const UserDashboard = () => {
           onCreateNew={() => { setEditingProject(null); setSelectedCategory(null); setIsFormOpen(true); }}
         />
       )}
+      {/* Заглушки для заказов, если вдруг флаг true, а функционал заказов еще не готов */}
+      {activeTab === 'orders-list' && <WorkInProgressBanner title="Мои заказы" />}
+      {activeTab === 'orders-create' && <WorkInProgressBanner title="Создать новый заказ" />}
+      
       <ChatDrawer isOpen={!!chatProject} project={chatProject} user={user} onClose={handleCloseChat} variant="blue" />
       {isFormOpen && (
         <DynamicProjectForm
@@ -123,7 +160,7 @@ const UserDashboard = () => {
           initialData={editingProject}
         />
       )}
-    </div>
+    </>
   );
 };
 

@@ -5,19 +5,46 @@ import { useProjectStore } from '../store/useProjectStore';
 import { useChatStore } from '../store/useChatStore';
 import { useProjectSockets } from '../hooks/useProjectSockets';
 import { useGlobalChatLoader } from '../hooks/useGlobalChatLoader';
+import { useUserSockets } from '../hooks/useUserSockets';
+import { Rocket } from 'lucide-react';
 import type { Project, ActiveTabType } from '../types';
 import { StatsView } from '../components/dashboard/shared/StatsView';
 import { ProjectsListView } from '../components/dashboard/shared/ProjectsListView';
 import { ChatDrawer } from '../components/dashboard/shared/ChatDrawer';
 
+// 🔥 ПЕРЕКЛЮЧАТЕЛЬ: поставь true, чтобы вернуть старый рабочий функционал
+const SHOW_WORKING_FEATURES = false;
+
+const WorkInProgressBanner = ({ title }: { title: string }) => (
+  <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in zoom-in-95 duration-500">
+    <div className="bg-white rounded-[3rem] border border-slate-200 shadow-xl p-12 max-w-2xl w-full text-center relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-200 via-emerald-400 to-emerald-200" />
+      <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-8 animate-pulse">
+        <Rocket className="text-emerald-500" size={48} />
+      </div>
+      <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-4">{title}</h2>
+      <p className="text-slate-500 font-medium mb-8 max-w-md mx-auto leading-relaxed text-lg">
+        Данный модуль находится в разработке. Доступ к текущему функционалу временно ограничен.
+      </p>
+      <div className="inline-flex items-center gap-3 px-6 py-3 bg-emerald-50 border border-emerald-200 rounded-full">
+        <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping" />
+        <span className="text-xs font-black text-emerald-700 uppercase tracking-widest">В процессе</span>
+      </div>
+    </div>
+  </div>
+);
+
 const ManagerDashboard = () => {
   const user = useAuthStore((state) => state.user);
   const { activeTab } = useOutletContext<{ activeTab: ActiveTabType }>();
+  
+  useUserSockets(); 
+
   const {
     projects, loading, totalCount, totalPages, currentPage, searchQuery,
     fetchProjects, updateProjectStatus, setSearchQuery, setCurrentPage
   } = useProjectStore();
-  
+
   const setActiveChatId = useChatStore((state) => state.setActiveChatId);
   const markMessagesAsReadLocally = useChatStore((state) => state.markMessagesAsReadLocally);
 
@@ -25,6 +52,7 @@ const ManagerDashboard = () => {
   const [chatProject, setChatProject] = useState<Project | null>(null);
 
   useGlobalChatLoader(user, projects);
+
   const userIdForSockets = useMemo(() => user?.id ? (typeof user.id === 'string' ? parseInt(user.id, 10) : user.id) : undefined, [user?.id]);
   useProjectSockets(userIdForSockets);
 
@@ -41,24 +69,29 @@ const ManagerDashboard = () => {
     if (project && user?.id) {
       setChatProject(project as Project);
       setActiveChatId(projectId);
-      
-      // 1. Локально помечаем чужие сообщения как прочитанные
       markMessagesAsReadLocally(projectId, user.id);
-
-      // 2. 🛑 ОТПРАВЛЯЕМ ЗАПРОС НА СЕРВЕР, чтобы тот уведомил Пользователя (отправили)
       try {
-        await fetch(`/api/chat/${projectId}/read`, { 
-          method: 'POST', 
-          credentials: 'include' 
-        });
+        await fetch(`/api/chat/${projectId}/read`, { method: 'POST', credentials: 'include' });
       } catch (err) {
         console.error("Failed to mark messages as read on server", err);
       }
     }
   }, [projects, setActiveChatId, markMessagesAsReadLocally, user?.id]);
 
+  // 🔥 ЕСЛИ РЕЖИМ ДЕМО (false) - ПОКАЗЫВАЕМ ЗАГЛУШКИ
+  if (!SHOW_WORKING_FEATURES) {
+    if (activeTab === 'orders-list') {
+      return <WorkInProgressBanner title="Все заказы" />;
+    }
+    if (activeTab === 'projects-list' || activeTab === 'stats') {
+      return <WorkInProgressBanner title="Управление проектами" />;
+    }
+    return <WorkInProgressBanner title="Раздел в разработке" />;
+  }
+
+  // 🔥 ЕСЛИ РЕЖИМ РАЗРАБОТКИ (true) - ПОКАЗЫВАЕМ РАБОЧИЙ ФУНКЦИОНАЛ
   return (
-    <div className="space-y-8">
+    <>
       {activeTab === 'stats' && (
         <StatsView stats={stats} onRefresh={() => fetchProjects(true)} isLoading={loading} title="Панель Менеджера" variant="emerald" />
       )}
@@ -70,17 +103,21 @@ const ManagerDashboard = () => {
           setSearchQuery={setSearchQuery}
           expandedId={expandedProjectId}
           setExpandedId={setExpandedProjectId}
-          isAdminView={true} 
+          isAdminView={true}
           onStatusUpdate={updateProjectStatus}
           onOpenChat={handleOpenChat}
-          user={user} 
+          user={user}
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
         />
       )}
+      {/* Заглушка для заказов, если функционал еще не готов */}
+      {activeTab === 'orders-list' && <WorkInProgressBanner title="Все заказы" />}
+      
       <ChatDrawer isOpen={!!chatProject} project={chatProject} user={user} onClose={() => setChatProject(null)} variant="emerald" />
-    </div>
+    </>
   );
 };
+
 export default ManagerDashboard;

@@ -1,109 +1,71 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { useUserStore } from '../store/useUserStore'; // Достаем стор
 import { useUserSockets } from '../hooks/useUserSockets';
-
-import userAPI from '../api/user';
-
-// Импорт типов
-import type { ActiveTabType, AdminStats } from '../types'; 
-
-// Компоненты
+import type { ActiveTabType } from '../types';
 import AdminOverview from '../components/dashboard/admin/AdminOverview';
 import UsersList from '../components/dashboard/admin/UsersList';
 import AdminCreateUser from '../components/dashboard/admin/AdminCreateUser';
 
 const AdminDashboard = () => {
-  // Активируем сокеты
+  // 1. Активируем сокеты (они обновляют useUserStore при событии stats_updated)
   useUserSockets();
-  
-  // Типизируем контекст из Layout
-  const { activeTab, setActiveTab } = useOutletContext<{ 
-    activeTab: ActiveTabType,
-    setActiveTab: (tab: ActiveTabType) => void 
+
+  const { activeTab, setActiveTab } = useOutletContext<{
+    activeTab: ActiveTabType;
+    setActiveTab: (tab: ActiveTabType) => void;
   }>();
 
-  // --- СОСТОЯНИЕ МОНИТОРИНГА ---
-  const [isSystemOnline, setIsSystemOnline] = useState(true);
-  
-  // Состояние статистики
-  const [stats, setStats] = useState<AdminStats>({ 
-    totalUsers: 0, 
-    totalManagers: 0, 
-    onlineCount: 0,
-    details: { onlineUsers: 0, onlineManagers: 0 } 
-  });
-  const [isStatsLoading, setIsStatsLoading] = useState(false);
+  // 2. Берем данные и методы напрямую из стора
+  // Теперь статистика реактивна: как только сокет получит данные, компонент перерисуется
+  const stats = useUserStore((state) => state.stats);
+  const fetchStats = useUserStore((state) => state.fetchStats);
+  const loading = useUserStore((state) => state.loading);
 
-  // Мемоизированная функция загрузки данных
+  // Используем заглушку для онлайна системы (можно завязать на socket.connected)
+  const isSystemOnline = true; 
+
   const fetchData = useCallback(async (quiet = false) => {
     try {
-      if (!quiet) setIsStatsLoading(true);
-      
-      /** * ИЗМЕНЕНИЕ ПОД KY: 
-       * userAPI.getAdminStats() теперь возвращает сразу распарсенный JSON.
-       * Больше не нужно обращаться к .data, как в axios.
-       */
-      const response: any = await userAPI.getAdminStats();
-      
-      // Если бэкенд все еще оборачивает данные в { status: 'success', data: {...} }
-      // оставляем проверку, но учитываем, что axios-обертки .data больше нет.
-      const data = response.data || response;
-      
-      setStats(data);
-      setIsSystemOnline(true);
+      await fetchStats(quiet);
     } catch (err: any) {
-      /**
-       * В ky объект ошибки содержит response вместо error.response.
-       */
-      setIsSystemOnline(!!err.response);
       console.error("Dashboard statistics fetch error:", err);
-    } finally {
-      if (!quiet) {
-        setTimeout(() => setIsStatsLoading(false), 300);
-      }
     }
-  }, []);
+  }, [fetchStats]);
 
-  // --- УПРАВЛЕНИЕ ЖИЗНЕННЫМ ЦИКЛОМ ЗАПРОСОВ ---
+  // 3. Первичная загрузка данных (только если данных в сторе еще нет)
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-
-    if (activeTab === 'stats') {
-      fetchData(); 
-
-      interval = setInterval(() => {
-        fetchData(true); 
-      }, 20000);
+    if (activeTab === 'stats' && !stats) {
+      fetchData();
     }
-
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [fetchData, activeTab]);
+  }, [activeTab, stats, fetchData]);
 
   return (
-    <div className="w-full animate-in fade-in duration-500">
-      
-      {/* 1. ОБЗОР (СТАТИСТИКА) */}
+    <div className="space-y-6">
+      {/* СТАТИСТИКА */}
       {activeTab === 'stats' && (
         <AdminOverview 
           stats={stats} 
-          loading={isStatsLoading} 
+          loading={loading} 
           isOnline={isSystemOnline} 
           onRefresh={() => fetchData(false)} 
         />
       )}
 
-      {/* 2. СПИСОК ПОЛЬЗОВАТЕЛЕЙ */}
+      {/* СПИСОК ПОЛЬЗОВАТЕЛЕЙ */}
       {activeTab === 'users-list' && <UsersList />}
 
-      {/* 3. СОЗДАНИЕ ПОЛЬЗОВАТЕЛЯ */}
+      {/* СОЗДАНИЕ ПОЛЬЗОВАТЕЛЯ */}
+      {/* Добавляем onCancel, чтобы избежать ошибки TS */}
       {activeTab === 'users-create' && (
-        <AdminCreateUser 
-          onCancel={() => setActiveTab('users-list')} 
-        />
+        <AdminCreateUser onCancel={() => setActiveTab('users-list')} />
+      )}
+
+      {/* Заглушки для остальных вкладок, если они выбраны */}
+      {(activeTab === 'projects-list' || activeTab === 'projects-create' || activeTab === 'orders-list') && (
+        <div className="p-8 text-center bg-white rounded-xl shadow-sm border border-gray-100">
+          <h2 className="text-xl font-semibold text-gray-400">Вкладка {activeTab} в разработке</h2>
+        </div>
       )}
     </div>
   );
