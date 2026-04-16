@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, AlertCircle, CheckCircle, X } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
+import authApi from '../api/auth'; // 🔥 Импортируем API
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -10,25 +11,25 @@ const LoginPage = () => {
   const login = useAuthStore((state) => state.login);
   const authLoading = useAuthStore((state) => state.isLoading);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isInitialized = useAuthStore((state) => state.isInitialized); // Добавлено
+  const isInitialized = useAuthStore((state) => state.isInitialized);
   const user = useAuthStore((state) => state.user);
   
-  // Состояния формы
+  // Состояния формы входа
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({ email: '', password: '' });
   const [touched, setTouched] = useState({ email: false, password: false });
   const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  // Состояния модалки
+  // Состояния модалки сброса пароля
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
+  const [resetError, setResetError] = useState('');
 
   // --- ЭФФЕКТ ДЛЯ ПЕРЕНАПРАВЛЕНИЯ ---
   useEffect(() => {
-    // Редирект только если инициализация завершена И пользователь авторизован
     if (isInitialized && isAuthenticated && user) {
       const routes = { 
         ADMIN: '/admin/dashboard', 
@@ -94,14 +95,21 @@ const LoginPage = () => {
     }
   };
 
+  // 🔥 РЕАЛЬНАЯ ЛОГИКА СБРОСА ПАРОЛЯ
   const handleResetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setResetLoading(true);
+    setResetError('');
+    
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Вызываем наш новый метод API
+      await authApi.forgotPassword(resetEmail);
+      
+      // Если запрос успешен (сервер всегда возвращает успех для безопасности)
       setResetSuccess(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setResetError(err.response?.data?.error || 'Ошибка сети. Попробуйте позже.');
     } finally {
       setResetLoading(false);
     }
@@ -201,26 +209,39 @@ const LoginPage = () => {
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold text-gray-900">Сброс пароля</h3>
-                <button onClick={() => {setShowResetModal(false); setResetSuccess(false);}} className="text-gray-400 hover:text-gray-600">
+                <button onClick={() => {setShowResetModal(false); setResetSuccess(false); setResetError('');}} className="text-gray-400 hover:text-gray-600">
                   <X size={20} />
                 </button>
               </div>
 
               {resetSuccess ? (
                 <div className="text-center py-4">
-                  <div className="bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="bg-emerald-100 text-emerald-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
                     <CheckCircle size={24} />
                   </div>
-                  <p className="text-gray-600 mb-6">Запрос отправлен! Мы свяжемся с вами.</p>
+                  <h4 className="font-bold text-gray-900 mb-2">Письмо отправлено!</h4>
+                  <p className="text-gray-600 text-sm mb-6">
+                    Мы отправили ссылку для сброса пароля на <strong>{resetEmail}</strong>. Проверьте папку "Входящие" или "Спам".
+                  </p>
                   <button 
-                    onClick={() => {setShowResetModal(false); setResetSuccess(false);}}
+                    onClick={() => {setShowResetModal(false); setResetSuccess(false); setResetEmail('');}}
                     className="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors"
                   >
-                    Понятно
+                    Вернуться ко входу
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleResetSubmit} className="space-y-4">
+                  {resetError && (
+                    <div className="bg-red-50 text-red-600 text-xs p-3 rounded-lg flex items-center gap-2">
+                      <AlertCircle size={14} /> {resetError}
+                    </div>
+                  )}
+                  
+                  <p className="text-sm text-gray-500 mb-2">
+                    Введите ваш email, и мы пришлем инструкцию по восстановлению доступа.
+                  </p>
+
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <input
@@ -231,9 +252,9 @@ const LoginPage = () => {
                   </div>
                   <button
                     type="submit" disabled={resetLoading || !resetEmail}
-                    className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 disabled:bg-gray-300"
+                    className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                   >
-                    {resetLoading ? 'Отправка...' : 'Отправить запрос'}
+                    {resetLoading ? 'Отправка...' : 'Прислать ссылку'}
                   </button>
                 </form>
               )}

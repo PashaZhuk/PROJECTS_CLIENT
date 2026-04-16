@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'; // Добавил useRef
+import { useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 
@@ -11,7 +11,8 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import DashboardLayout from './components/layouts/DashboardLayout';
 import Header from './components/ui/Header';
 import Footer from './components/ui/Footer';
-import LoginPage from './pages/Loginpage';
+import LoginPage from './pages/LoginPage';
+import ResetPasswordPage from './pages/ResetPasswordPage'; // 🔥 Импортируем новую страницу
 import ForcePasswordChange from './components/auth/ForcePasswordChange';
 import DashboardDispatcher from './pages/dashboard/DashboardDispatcher';
 
@@ -71,10 +72,18 @@ const AppContent = () => {
           <ForcePasswordChange />
         ) : (
           <Routes>
+            {/* Публичные маршруты (доступны без авторизации) */}
             <Route 
               path="/login" 
               element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />} 
             />
+            
+            {/* 🔥 НОВЫЙ МАРШРУТ: Восстановление пароля */}
+            <Route 
+              path="/reset-password" 
+              element={<ResetPasswordPage />} 
+            />
+
             <Route 
               path="/" 
               element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />} 
