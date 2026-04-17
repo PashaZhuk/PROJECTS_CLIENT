@@ -38,7 +38,7 @@ const Header = () => {
           </div>
           <div className="flex flex-col">
             <span className="text-lg font-black text-slate-900 leading-none tracking-tight">
-              АйПиМАТИКА Бел
+              АйПиМатика Бел
             </span>
           </div>
         </Link>

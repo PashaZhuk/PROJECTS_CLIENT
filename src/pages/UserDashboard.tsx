@@ -150,7 +150,7 @@ const UserDashboard = () => {
       )}
       {/* Заглушки для заказов, если вдруг флаг true, а функционал заказов еще не готов */}
       {activeTab === 'orders-list' && <WorkInProgressBanner title="Мои заказы" />}
-      {activeTab === 'orders-create' && <WorkInProgressBanner title="Создать новый заказ" />}
+      {activeTab === 'orders-create' && <WorkInProgressBanner title="Работа с заказами" />}
       
       <ChatDrawer isOpen={!!chatProject} project={chatProject} user={user} onClose={handleCloseChat} variant="blue" />
       {isFormOpen && (

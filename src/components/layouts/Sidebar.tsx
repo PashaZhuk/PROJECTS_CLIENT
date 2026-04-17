@@ -42,7 +42,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
           </span>
         </div>
         <h1 className="text-2xl font-black tracking-tighter text-slate-900">
-          IPMATICA <span className="text-slate-300">HUB</span>
+          IPMATIKA <span className="text-slate-300">B2B</span>
         </h1>
       </div>
 
