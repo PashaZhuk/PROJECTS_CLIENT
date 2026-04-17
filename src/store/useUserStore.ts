@@ -12,6 +12,14 @@ interface UserData {
   unp?: string;
   isOnline?: boolean;
   isBlocked?: boolean;
+  
+  // Блокировка входа
+  lockUntil?: string | null;
+  failedLoginAttempts?: number;
+  
+  // 🔥 НОВОЕ: Блокировка 2FA
+  twoFactorLockUntil?: string | null;
+  twoFactorAttempts?: number;
 }
 
 interface AdminStats {
@@ -33,7 +41,6 @@ interface UserStore {
   totalPages: number;
   totalCount: number;
   
-  // Actions
   setSearchQuery: (query: string) => void;
   setCurrentPage: (page: number) => void;
   setStats: (stats: AdminStats) => void;
@@ -44,6 +51,7 @@ interface UserStore {
   toggleBlock: (id: number) => Promise<void>;
   updateUserStatus: (userId: number, isOnline: boolean) => void;
   updateUserBlockedStatus: (userId: number, isBlocked: boolean) => void;
+  updateUserLockStatus: (userId: number, lockUntil: string | null, attempts: number) => void;
 }
 
 export const useUserStore = create<UserStore>((set, get) => ({
@@ -67,7 +75,6 @@ export const useUserStore = create<UserStore>((set, get) => ({
   fetchUsers: async () => {
     set({ loading: true });
     try {
-      // Здесь мы указываем TS, что ожидаем объект с определенными полями
       const response = await userApi.getAllUsers({
         page: get().currentPage,
         search: get().searchQuery,
@@ -88,7 +95,6 @@ export const useUserStore = create<UserStore>((set, get) => ({
   fetchStats: async (silent = false) => {
     if (!silent) set({ loading: true });
     try {
-      // КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: приведение к AdminStats
       const stats = await userApi.getAdminStats() as AdminStats;
       set({ stats });
     } catch (error) {
@@ -132,9 +138,8 @@ export const useUserStore = create<UserStore>((set, get) => ({
 
   toggleBlock: async (id) => {
     try {
-      const result = await userApi.toggleBlock(id) as { isBlocked: boolean };
-      get().updateUserBlockedStatus(id, result.isBlocked);
-      get().fetchStats(true);
+      await userApi.toggleBlock(id);
+      await get().fetchUsers(); // Полный перезапрос для актуализации всех статусов
     } catch (error) {
       console.error('Toggle block error:', error);
       alert('Ошибка при изменении статуса блокировки');
@@ -153,6 +158,14 @@ export const useUserStore = create<UserStore>((set, get) => ({
     set((state) => ({
       users: state.users.map((u) => 
         u.id === userId ? { ...u, isBlocked } : u
+      ),
+    }));
+  },
+
+  updateUserLockStatus: (userId, lockUntil, attempts) => {
+    set((state) => ({
+      users: state.users.map((u) => 
+        u.id === userId ? { ...u, lockUntil, failedLoginAttempts: attempts } : u
       ),
     }));
   },
