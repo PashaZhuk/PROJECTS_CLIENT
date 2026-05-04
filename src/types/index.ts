@@ -7,7 +7,14 @@ export interface User {
   email: string;
   role: UserRole;
   mustChangePassword: boolean;
+  companyName?: string;
+  unp?: string;
+  phone?: string;
+  isBlocked?: boolean;
+  lockUntil?: string | null;
+  twoFactorLockUntil?: string | null;
   createdAt?: string;
+  lastSeen?: string;
 }
 
 // Типы для проектов (регистраций)
@@ -15,7 +22,7 @@ export interface Project {
   id: number;
   name: string;
   unp: string;
-  status: 'PENDING' | 'IN_PROGRESS' | 'APPROVED' | 'REJECTED' | 'REVISION' | 'CLOSED' | 'START' | 'COMPLETED';
+  status: 'PENDING' | 'IN_PROGRESS' | 'APPROVED' | 'REJECTED' | 'REVISION' | 'CLOSED';
   managerId?: string;
   userId: string;
   createdAt: string;
@@ -24,8 +31,7 @@ export interface Project {
   dynamicData: any;
   customerName: string;
   customerInn: string;
-  // Добавляем эти поля, чтобы TS не ругался в сторах и сокетах
-  unreadCount?: number; 
+  unreadCount?: number;
   hasUnread?: boolean;
 }
 
@@ -70,5 +76,5 @@ export interface ProjectStats {
   active: number;
   completed: number;
   pending: number;
-  approved: number; // Добавлено, так как StatsView его требует
+  approved: number;
 }

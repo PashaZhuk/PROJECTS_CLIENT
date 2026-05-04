@@ -13,7 +13,7 @@ import { ProjectsListView } from '../components/dashboard/shared/ProjectsListVie
 import { ChatDrawer } from '../components/dashboard/shared/ChatDrawer';
 
 // 🔥 ПЕРЕКЛЮЧАТЕЛЬ: поставь true, чтобы вернуть старый рабочий функционал
-const SHOW_WORKING_FEATURES = false;
+const SHOW_WORKING_FEATURES = true;
 
 const WorkInProgressBanner = ({ title }: { title: string }) => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in zoom-in-95 duration-500">

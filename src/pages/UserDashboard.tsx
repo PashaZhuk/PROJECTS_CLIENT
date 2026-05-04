@@ -14,7 +14,7 @@ import { ProjectsListView } from '../components/dashboard/shared/ProjectsListVie
 import { ChatDrawer } from '../components/dashboard/shared/ChatDrawer';
 
 // 🔥 ПЕРЕКЛЮЧАТЕЛЬ: поставь true, чтобы вернуть старый рабочий функционал
-const SHOW_WORKING_FEATURES = false;
+const SHOW_WORKING_FEATURES = true;
 
 const WorkInProgressBanner = ({ title }: { title: string }) => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in zoom-in-95 duration-500">
@@ -104,12 +104,12 @@ const UserDashboard = () => {
   }, [setActiveTab]);
 
   const stats = useMemo(() => ({
-    total: totalCount,
-    active: projects.filter(p => p.status === 'IN_PROGRESS' || p.status === 'START').length,
-    completed: projects.filter(p => p.status === 'COMPLETED').length,
-    pending: projects.filter(p => p.status === 'PENDING' || p.status === 'REVISION').length,
-    approved: projects.filter(p => p.status === 'APPROVED').length
-  }), [projects, totalCount]);
+  total: totalCount,
+  active: projects.filter(p => p.status === 'IN_PROGRESS').length,
+  completed: projects.filter(p => p.status === 'CLOSED').length,
+  pending: projects.filter(p => p.status === 'PENDING' || p.status === 'REVISION').length,
+  approved: projects.filter(p => p.status === 'APPROVED').length
+}), [projects, totalCount]);
 
   // 🔥 ЕСЛИ РЕЖИМ ДЕМО (false) - ПОКАЗЫВАЕМ ЗАГЛУШКИ ДЛЯ ВСЕГО
   if (!SHOW_WORKING_FEATURES) {
