@@ -133,14 +133,7 @@ const UsersList = () => {
                           <div className="text-[10px] text-slate-400 font-bold flex items-center gap-1 uppercase tracking-tighter">
                             <Mail size={10} /> {user.email}
                           </div>
-                          {lockInfo && (
-                            <div className={`text-[9px] font-bold mt-1 ${
-                              lockInfo.type === 'LOGIN' ? 'text-red-500' : 'text-purple-500'
-                            }`}>
-                              Попыток: {lockInfo.attempts}/5
-                            </div>
-                          )}
-                        </div>
+                          </div>
                       </div>
                     </td>
 

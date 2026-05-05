@@ -12,7 +12,7 @@ import DashboardLayout from './components/layouts/DashboardLayout';
 import Header from './components/ui/Header';
 import Footer from './components/ui/Footer';
 import LoginPage from './pages/LoginPage';
-import ResetPasswordPage from './pages/ResetPasswordPage'; // 🔥 Импортируем новую страницу
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import ForcePasswordChange from './components/auth/ForcePasswordChange';
 import DashboardDispatcher from './pages/dashboard/DashboardDispatcher';
 
@@ -34,10 +34,10 @@ const AppContent = () => {
   // Реф, чтобы не спамить проверкой авторизации
   const authChecked = useRef(false);
 
-  // 🔥 1. Сначала запускаем менеджер сессий
+  // Запускаем менеджер сессий
   useSessionManager();
 
-  // 🔥 2. Проверка авторизации: строго после гидрации и только один раз
+  // Проверка авторизации: строго после гидрации и только один раз
   useEffect(() => {
     if (_hasHydrated && !authChecked.current) {
       checkAuth();
@@ -45,8 +45,7 @@ const AppContent = () => {
     }
   }, [_hasHydrated, checkAuth]);
 
-  // 🔥 3. Экраны загрузки: 
-  // Ждем _hasHydrated (чтение из диска) И isInitialized (ответ от сервера)
+  // Экраны загрузки
   if (!_hasHydrated || !isInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -67,41 +66,32 @@ const AppContent = () => {
       <Header />
       
       <main className="grow flex flex-col">
-        {/* Если авторизован, но должен сменить пароль — блокируем весь контент */}
         {isAuthenticated && user?.mustChangePassword ? (
           <ForcePasswordChange />
         ) : (
           <Routes>
-            {/* Публичные маршруты (доступны без авторизации) */}
             <Route 
               path="/login" 
               element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />} 
             />
-            
-            {/* 🔥 НОВЫЙ МАРШРУТ: Восстановление пароля */}
             <Route 
               path="/reset-password" 
               element={<ResetPasswordPage />} 
             />
-
             <Route 
               path="/" 
               element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />} 
             />
-
-            {/* Защищенные роуты */}
             <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'USER']} />}>
               <Route element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<DashboardDispatcher />} />
               </Route>
             </Route>
-
             <Route path="/unauthorized" element={
               <div className="grow flex items-center justify-center text-center p-10">
                 <h1 className="text-xl font-bold text-red-600 uppercase tracking-widest">Доступ запрещен</h1>
               </div>
             } />
-            
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         )}

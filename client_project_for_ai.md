@@ -1,8 +1,8 @@
-# 📦 Экспорт проекта: PROJECTS_CLIENT
+# 📦 Экспорт проекта: client
 
 ## 🌳 Структура проекта
 ```
-📁 F:\Sandbox\PROJECTS_CLIENT/
+📁 D:\2025\PROJECTS claude version\client/
   📄 README.md
   📄 eslint.config.js
   📄 export_for_ai.py
@@ -66,7 +66,7 @@
       📄 useUserSockets.ts
     📁 pages/
       📄 AdminDashboard.tsx
-      📄 Loginpage.tsx
+      📄 LoginPage.tsx
       📄 ManagerDashboard.tsx
       📄 ResetPasswordPage.tsx
       📄 UserDashboard.tsx
@@ -548,13 +548,15 @@ export default authApi;
 import ky from 'ky';
 import { useAuthStore } from '../store/useAuthStore';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+
 const api = ky.create({
-  prefixUrl: 'http://192.168.0.105:5001/api',
+  prefixUrl: API_BASE_URL,
   credentials: 'include',
   timeout: 20000,
   hooks: {
     afterResponse: [
-      async (request, options, response) => {
+      async (request, _options, response) => {
         if (response.status === 401 || response.status === 403) {
           const url = request.url;
           if (url.includes('/auth/profile')) return;
@@ -625,23 +627,48 @@ export default projectApi;
 
 ### 📄 `src\api\socket.ts`
 ```typescript
-import { io } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 
-// Получаем URL из переменных окружения
-export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
+export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
 
-if (!SOCKET_URL) {
-  console.error('❌ Ошибка: Переменная окружения VITE_SOCKET_URL не найдена! Проверьте файл .env');
-}
+let socket: Socket | null = null;
 
-// Единственный глобальный сокет-синглтон
-export const socket = io(SOCKET_URL || 'http://localhost:5001', {
-  withCredentials: true,
-  autoConnect: true,
-  transports: ['websocket', 'polling'],
-  reconnection: true,
-  reconnectionAttempts: 5,
-});
+export const getSocket = (): Socket | null => socket;
+
+export const initSocket = (): Socket => {
+  // Если уже есть активное соединение, возвращаем его
+  if (socket && socket.connected) {
+    return socket;
+  }
+  // Если есть отключённый экземпляр, переподключаем с включённым reconnection
+  if (socket) {
+    socket.io?.reconnection(true);
+    socket.connect();
+    return socket;
+  }
+  // Создаём новое соединение
+  socket = io(SOCKET_URL, {
+    withCredentials: true,
+    autoConnect: true,
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionAttempts: 5,
+  });
+  return socket;
+};
+
+export const disconnectSocket = () => {
+  if (socket) {
+    // Отключаем авто-переподключение, чтобы после разлогина не восстанавливалось
+    socket.io?.reconnection(false);
+    socket.removeAllListeners(); // очищаем обработчики, чтобы не было утечек
+    socket.disconnect();
+    socket = null;
+  }
+};
+
+// Для обратной совместимости, но рекомендуется использовать getSocket / initSocket
+export { socket };
 ```
 
 ### 📄 `src\api\user.ts`
@@ -3565,7 +3592,7 @@ export const FIELD_LABELS: Record<string, string> = Object.values(PROJECT_CATEGO
 ### 📄 `src\hooks\useChatLogic.ts`
 ```typescript
 import { useEffect, useCallback, useRef } from 'react';
-import { socket, SOCKET_URL } from '../api/socket';
+import { getSocket, SOCKET_URL } from '../api/socket';
 import { useChatStore } from '../store/useChatStore';
 
 export const useChatLogic = (
@@ -3586,18 +3613,12 @@ export const useChatLogic = (
   }, [isOpen, isMinimized, projectId, user?.id]);
 
   const sendReadReceipt = useCallback(async () => {
-    if (!projectId || !user?.id) {
-      console.log('[useChatLogic] ❌ sendReadReceipt skipped:', { projectId, userId: user?.id });
-      return;
-    }
-    console.log('[useChatLogic] 📡 Sending read receipt for project:', projectId);
+    if (!projectId || !user?.id) return;
     try {
       const response = await fetch(`${SOCKET_URL}/api/chat/${projectId}/read`, {
         method: 'PATCH',
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
       const data = await response.json();
       console.log('[useChatLogic] ✅ Read receipt response:', { status: response.status, data });
@@ -3607,44 +3628,28 @@ export const useChatLogic = (
   }, [projectId, user?.id]);
 
   const joinProjectRoom = useCallback(() => {
-    if (!projectId || !user?.id) return;
+    const socket = getSocket();
+    if (!projectId || !user?.id || !socket) return;
     if (!hasJoinedRoomRef.current) {
-      console.log('[useChatLogic] 🔌 Force joining project room:', `project_${projectId}`);
       socket.emit('join_project', { projectId, userId: user.id, userName: user.name, userRole: user.role });
       hasJoinedRoomRef.current = true;
     }
   }, [projectId, user?.id, user?.name, user?.role]);
 
   useEffect(() => {
-    console.log('[useChatLogic] 🚪 Open effect triggered:', { 
-      isOpen, 
-      isMinimized, 
-      projectId, 
-      userId: user?.id,
-      willMarkAsRead: isOpen && !isMinimized && projectId && user?.id
-    });
-    
     if (isOpen && !isMinimized && projectId && user?.id) {
-      console.log('[useChatLogic] 🔴 WILL MARK MESSAGES AS READ AND SEND RECEIPT');
       joinProjectRoom();
       setActiveChatId(projectId);
       markMessagesAsReadLocally(projectId, user.id);
       sendReadReceipt();
     } else if (!isOpen || isMinimized) {
-      console.log('[useChatLogic] 🟢 Clearing active chat');
       setActiveChatId(null);
       hasJoinedRoomRef.current = false;
     }
   }, [isOpen, isMinimized, projectId, user?.id, setActiveChatId, markMessagesAsReadLocally, sendReadReceipt, joinProjectRoom]);
 
   const sendMessage = async (text: string) => {
-    console.log('[useChatLogic] 📤 sendMessage called:', { text, projectId, userId: user?.id });
-    
-    if (!text.trim() || !projectId || !user?.id) {
-      console.log('[useChatLogic] ❌ sendMessage skipped - missing data');
-      return;
-    }
-    
+    if (!text.trim() || !projectId || !user?.id) return;
     try {
       const res = await fetch(`${SOCKET_URL}/api/chat/${projectId}/messages`, {
         method: 'POST',
@@ -3652,13 +3657,8 @@ export const useChatLogic = (
         credentials: 'include',
         body: JSON.stringify({ text }),
       });
-      
       const savedMsg = await res.json();
-      console.log('[useChatLogic] ✅ Message sent, response:', savedMsg);
-      
       addMessage(projectId, { ...savedMsg, isRead: false });
-      console.log('[useChatLogic] ✅ Message added with isRead: false');
-      
     } catch (err) {
       console.error('[ChatLogic] ❌ Send error:', err);
     }
@@ -3666,16 +3666,11 @@ export const useChatLogic = (
 
   useEffect(() => {
     if (!projectId) return;
-
-    console.log('[useChatLogic] 📥 Loading message history for project:', projectId);
-    
     fetch(`${SOCKET_URL}/api/chat/${projectId}/messages`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
-        console.log('[useChatLogic] ✅ Loaded messages:', data.length);
         setMessages(projectId, data);
         if (isOpenRef.current && !isMinimizedRef.current && user?.id) {
-          console.log('[useChatLogic] 🔴 Marking messages as read after load');
           markMessagesAsReadLocally(projectId, user.id);
           sendReadReceipt();
         }
@@ -3684,6 +3679,8 @@ export const useChatLogic = (
   }, [projectId, setMessages, user?.id, markMessagesAsReadLocally, sendReadReceipt]);
 
   useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
     const logAllEvents = (event: string, ...args: any[]) => {
       console.log('[useChatLogic] 📡 RAW SOCKET EVENT:', event, args);
     };
@@ -3695,36 +3692,19 @@ export const useChatLogic = (
 
   useEffect(() => {
     if (!projectId) return;
-
-    console.log('[useChatLogic] 🎧 Setting up messages_read listener for project:', projectId);
-    
+    const socket = getSocket();
+    if (!socket) return;
     const handleMessagesRead = ({ projectId: readProjectId, readerId, messageIds }: { 
       projectId: number; 
       readerId: number;
       messageIds?: number[];
     }) => {
-      console.log('[useChatLogic] 🔵 MESSAGES_READ EVENT RECEIVED:', { 
-        readProjectId, 
-        readerId, 
-        currentUserId: user?.id,
-        messageIds,
-        isMatch: readProjectId === projectId,
-        isDifferentUser: user?.id && String(readerId) !== String(user.id),
-        stack: new Error().stack
-      });
-      
       if (readProjectId === projectId && user?.id && String(readerId) !== String(user.id)) {
-        console.log('[useChatLogic] ✅ UPDATING MESSAGE READ STATUS - changing single check to double check');
         markMyMessagesAsRead(projectId, readerId);
-      } else {
-        console.log('[useChatLogic] ⏭️ Skipping messages_read update (same user or mismatch)');
       }
     };
-
     socket.on('messages_read', handleMessagesRead);
-
     return () => {
-      console.log('[useChatLogic] 🎧 Removing messages_read listener');
       socket.off('messages_read', handleMessagesRead);
     };
   }, [projectId, user?.id, markMyMessagesAsRead]);
@@ -3736,23 +3716,25 @@ export const useChatLogic = (
 ### 📄 `src\hooks\useGlobalChatLoader.ts`
 ```typescript
 import { useEffect } from 'react';
-import { socket } from '../api/socket';
+import { getSocket } from '../api/socket';
+import api from '../api/ky';
 import { useChatStore } from '../store/useChatStore';
 import { useProjectStore } from '../store/useProjectStore';
 
 export const useGlobalChatLoader = (user: any, projects: any[]) => {
-  const { addMessage, markMyMessagesAsRead } = useChatStore();
+  const { addMessage, markMyMessagesAsRead, activeChatId } = useChatStore();
   const setProjects = useProjectStore((state) => state.setProjects);
 
   useEffect(() => {
-    if (!user?.id || projects.length === 0) {
-      console.log('[GlobalChatLoader] ⏭️ Skipping - no user or projects');
+    if (!user?.id || projects.length === 0) return;
+
+    const socket = getSocket();
+    if (!socket) {
+      console.warn('[GlobalChatLoader] Socket not initialized');
       return;
     }
 
     console.log('[GlobalChatLoader] 🚀 Initializing for user:', user.id);
-
-    // Входим в личную комнату для получения событий прочтения
     socket.emit('join_self_room', user.id);
 
     projects.forEach(p => {
@@ -3764,26 +3746,25 @@ export const useGlobalChatLoader = (user: any, projects: any[]) => {
       });
     });
 
-    const handleNewMessage = (msg: any) => {
+    const handleNewMessage = async (msg: any) => {
       const pId = Number(msg.projectId);
       const chatStore = useChatStore.getState();
       const isChatOpen = chatStore.activeChatId === pId;
       const isMyOwnMessage = String(msg.senderId) === String(user.id);
 
       let isRead = false;
-
-      // 🛑 ИСПРАВЛЕНИЕ: Свои сообщения НЕ должны сразу помечаться как прочитанные (isRead: true).
-      // Они должны оставаться isRead: false (одна галочка), пока получатель не откроет чат.
       if (!isMyOwnMessage && isChatOpen) {
-        // Если сообщение ЧУЖОЕ и чат открыт -> мы его читаем прямо сейчас
         isRead = true;
+        try {
+          await api.patch(`chat/${pId}/read`, { json: {} });
+          console.log(`[GlobalChatLoader] Marked messages as read for project ${pId}`);
+        } catch (err) {
+          console.error('[GlobalChatLoader] Failed to mark as read:', err);
+        }
       }
-      // Если это мое сообщение (isMyOwnMessage = true), то isRead остается false.
-      // Двойная галочка появится только после события messages_read.
 
       addMessage(pId, { ...msg, isRead });
 
-      // Обновляем счетчик непрочитанных для списка проектов
       if (!isMyOwnMessage && !isChatOpen) {
         setProjects((prev: any[]) => {
           const idx = prev.findIndex(p => Number(p.id) === pId);
@@ -3801,10 +3782,8 @@ export const useGlobalChatLoader = (user: any, projects: any[]) => {
     };
 
     const handleMessagesRead = ({ projectId, readerId }: { projectId: number; readerId: number }) => {
-      // Обновляем галочки только если сообщения прочитал ДРУГОЙ человек
       if (String(readerId) !== String(user.id)) {
         markMyMessagesAsRead(projectId, readerId);
-        
         setProjects((prev: any[]) => {
           const idx = prev.findIndex(p => Number(p.id) === projectId);
           if (idx === -1) return prev;
@@ -3822,21 +3801,18 @@ export const useGlobalChatLoader = (user: any, projects: any[]) => {
       socket.off('new_message', handleNewMessage);
       socket.off('messages_read', handleMessagesRead);
     };
-  }, [user?.id, projects.length, setProjects, addMessage, markMyMessagesAsRead]);
+  }, [user?.id, projects.length, setProjects, addMessage, markMyMessagesAsRead, activeChatId]);
 };
 ```
 
 ### 📄 `src\hooks\useProjectSockets.ts`
 ```typescript
 import { useEffect, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
-import { useChatStore } from '../store/useChatStore';
+import { getSocket } from '../api/socket';
 import { useProjectStore } from '../store/useProjectStore';
 
-const SOCKET_URL = 'http://192.168.0.105:5001';
-
 export const useProjectSockets = (userId: number | string | undefined) => {
-  const socketRef = useRef<Socket | null>(null);
+  const socketRef = useRef<ReturnType<typeof getSocket>>(null);
   const setProjects = useProjectStore((state) => state.setProjects);
 
   useEffect(() => {
@@ -3845,49 +3821,45 @@ export const useProjectSockets = (userId: number | string | undefined) => {
       return;
     }
 
-    const socket = io(SOCKET_URL, {
-      withCredentials: true,
-      transports: ['websocket'],
-      forceNew: true,
-      reconnectionAttempts: 5
-    });
+    const socket = getSocket();
+    if (!socket) {
+      console.log('⚠️ [Socket Debug] Socket не инициализирован');
+      return;
+    }
 
     socketRef.current = socket;
 
-    socket.on('connect', () => {
+    const onConnect = () => {
       console.log(`✅ [Socket Debug] Подключено! ID: ${socket.id}. Для User: ${userId}`);
       socket.emit('join_self_room', userId);
       socket.emit('subscribe_admin_stats');
-    });
+    };
 
-    socket.on('connect_error', (err) => {
+    const onConnectError = (err: Error) => {
       console.error('❌ [Socket Debug] Ошибка подключения:', err.message);
-    });
+    };
 
-    socket.onAny((eventName, ...args) => {
+    const onAny = (eventName: string, ...args: any[]) => {
       console.log(`🔹 [Socket Debug] Поймано любое событие: [${eventName}]`, args);
-    });
+    };
 
-    // 1. НОВЫЙ ПРОЕКТ СОЗДАН (другая вкладка)
-    socket.on('project_created', (newProject) => {
+    const onProjectCreated = (newProject: any) => {
       console.log('🆕 [Socket Debug] project_created:', newProject);
       setProjects((prev: any[]) => {
         if (prev.some((p: any) => p.id === newProject.id)) return prev;
         return [newProject, ...prev];
       });
-    });
+    };
 
-    // 2. ПРОЕКТ ОБНОВЛЁН (редактирование с другой вкладки)
-    socket.on('project_updated', (updatedProject) => {
+    const onProjectUpdated = (updatedProject: any) => {
       console.log('✏️ [Socket Debug] project_updated:', updatedProject);
       setProjects((prev: any[]) => {
         if (!prev.some((p: any) => p.id === updatedProject.id)) return prev;
         return prev.map((p: any) => p.id === updatedProject.id ? { ...p, ...updatedProject } : p);
       });
-    });
+    };
 
-    // 3. ИЗМЕНЕНИЕ СТАТУСА
-    socket.on('project_status_changed', (updatedProject) => {
+    const onProjectStatusChanged = (updatedProject: any) => {
       console.log('🚀 [Socket Debug] project_status_changed', updatedProject);
       setProjects((prev: any[]) => {
         const existingProject = prev.find((p: any) => p.id === updatedProject.id);
@@ -3900,58 +3872,45 @@ export const useProjectSockets = (userId: number | string | undefined) => {
           unreadCount: updatedProject._count?.messages ?? existingProject?.unreadCount ?? 0,
           hasUnread: (updatedProject._count?.messages ?? existingProject?.unreadCount ?? 0) > 0
         };
-
         return [processed, ...filtered].sort((a: any, b: any) =>
           new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
         );
       });
-    });
+    };
 
-    // 4. НОВОЕ СООБЩЕНИЕ
-    socket.on('new_message', (msg) => {
-      console.log('🔔 [Socket Debug] Новое сообщение:', msg);
-      const pId = Number(msg.projectId);
-      useChatStore.getState().addMessage(pId, msg);
-
-      setProjects((prev: any[]) => {
-        const projectIndex = prev.findIndex((p: any) => p.id === pId);
-        if (projectIndex === -1) return prev;
-
-        const updatedProjects = [...prev];
-        const project = { ...updatedProjects[projectIndex] };
-        project.hasUnread = true;
-        project.unreadCount = (project.unreadCount || 0) + 1;
-        project.updatedAt = new Date().toISOString();
-
-        updatedProjects.splice(projectIndex, 1);
-        return [project, ...updatedProjects];
-      });
-    });
+    socket.on('connect', onConnect);
+    socket.on('connect_error', onConnectError);
+    socket.onAny(onAny);
+    socket.on('project_created', onProjectCreated);
+    socket.on('project_updated', onProjectUpdated);
+    socket.on('project_status_changed', onProjectStatusChanged);
+    // ❌ Удаляем socket.on('new_message', ...) – теперь чат обрабатывается в useGlobalChatLoader
 
     return () => {
       if (socket) {
-        console.log('🔌 [Socket Debug] Отключение сокета...');
-        socket.offAny();
-        socket.disconnect();
+        socket.off('connect', onConnect);
+        socket.off('connect_error', onConnectError);
+        socket.offAny(onAny);
+        socket.off('project_created', onProjectCreated);
+        socket.off('project_updated', onProjectUpdated);
+        socket.off('project_status_changed', onProjectStatusChanged);
       }
     };
-  }, [userId]);
-
-  return socketRef.current;
+  }, [userId, setProjects]);
 };
 ```
 
 ### 📄 `src\hooks\useSessionManager.ts`
 ```typescript
-// client/src/hooks/useSessionManager.ts
+// src/hooks/useSessionManager.ts
 import { useEffect, useRef, useCallback } from 'react';
+import { getSocket } from '../api/socket'; // Импортируем наш новый метод
 import { useAuthStore } from '../store/useAuthStore';
-import { socket } from '../api/socket'; // Убедись, что путь верный
 
 const INACTIVITY_LIMITS = {
-  USER: 1 * 60 * 1000,      // 30 мин
-  MANAGER: 2 * 60 * 60 * 1000, // 2 часа
-  ADMIN: 2 * 60 * 60 * 1000,
+  USER: 30 * 60 * 1000,      // 30 минут (поправил на 30 мин, как в серверной логике)
+  MANAGER: 120 * 60 * 1000,   // 2 часа
+  ADMIN: 120 * 60 * 1000,     // 2 часа
 };
 
 const ACTIVITY_EVENTS = ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'];
@@ -3960,7 +3919,7 @@ export const useSessionManager = () => {
   const { user, isAuthenticated, logout, setSessionExpired, setSessionSuperseded, setUserBlocked } = useAuthStore();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // --- ЛОГИКА ТАЙМЕРА НЕАКТИВНОСТИ ---
+  // --- ЛОГИКА ТАЙМЕРА НЕАКТИВНОСТИ (остается без изменений) ---
   const resetTimer = useCallback(() => {
     if (!isAuthenticated || !user) return;
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -3970,11 +3929,11 @@ export const useSessionManager = () => {
     timerRef.current = setTimeout(async () => {
       console.log(`[SessionManager] ⏰ Таймаут неактивности (${user.role})`);
       try {
-        await logout(); // Очищаем куки на сервере
-        setSessionExpired(true); // Показываем модалку
+        await logout();
+        setSessionExpired(true);
       } catch (e) {
         console.error('Logout on timeout failed:', e);
-        setSessionExpired(true); // Все равно показываем модалку
+        setSessionExpired(true);
       }
     }, limit);
   }, [isAuthenticated, user, logout, setSessionExpired]);
@@ -3997,32 +3956,60 @@ export const useSessionManager = () => {
     return () => ACTIVITY_EVENTS.forEach(e => window.removeEventListener(e, handleActivity));
   }, [isAuthenticated, resetTimer]);
 
-  // --- ЛОГИКА СОКЕТОВ (Real-time events) ---
+  // --- ЛОГИКА СОКЕТОВ (Real-time events) — ИСПРАВЛЕНА ---
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return;
 
-    // 1. Входим в персональную комнату
+    // Получаем сокет, если он еще не инициализирован — выходим
+    const socket = getSocket();
+    if (!socket) {
+      console.warn('[useSessionManager] Socket not initialized, retrying in 1s...');
+      // Простая повторная попытка через секунду
+      const retryTimer = setTimeout(() => {
+        const retrySocket = getSocket();
+        if (retrySocket) {
+          console.log('[useSessionManager] Socket found on retry, registering handlers.');
+          retrySocket.emit('join_self_room', user.id);
+          // Здесь можно было бы заново вызвать эффект или применить логику,
+          // но проще всего — сработает следующий эффект или перезагрузка.
+        }
+      }, 1000);
+      return () => clearTimeout(retryTimer);
+    }
+
+    console.log('[useSessionManager] Registering socket listeners for user:', user.id);
+    // Входим в персональную комнату
     socket.emit('join_self_room', user.id);
 
-    // 2. Слушаем вытеснение сессии
+    // Слушаем вытеснение сессии
     const handleSuperseded = () => {
       console.warn('⚠️ [Socket] Сессия вытеснена другим устройством');
       setSessionSuperseded(true);
     };
 
-    // 3. Слушаем блокировку админом
+    // Слушаем блокировку админом
     const handleBlocked = async () => {
       console.warn('🛑 [Socket] Аккаунт заблокирован админом');
-      await logout(); // Мгновенная очистка
+      await logout();
       setUserBlocked(true);
+    };
+
+    // Также можно дополнительно слушать разблокировку, если нужно
+    const handleUnblocked = () => {
+      console.log('✅ [Socket] Аккаунт разблокирован администратором');
+      // Опционально: можно перезагрузить страницу или попытаться восстановить сессию
+      // setUserBlocked(false);
     };
 
     socket.on('session_superseded', handleSuperseded);
     socket.on('user_blocked', handleBlocked);
+    // Опционально: если сервер присылает 'user_unblocked'
+    socket.on('user_unblocked', handleUnblocked);
 
     return () => {
       socket.off('session_superseded', handleSuperseded);
       socket.off('user_blocked', handleBlocked);
+      socket.off('user_unblocked', handleUnblocked);
     };
   }, [isAuthenticated, user?.id, setSessionSuperseded, setUserBlocked, logout]);
 };
@@ -4031,19 +4018,23 @@ export const useSessionManager = () => {
 ### 📄 `src\hooks\useUserSockets.ts`
 ```typescript
 import { useEffect, useRef } from 'react';
-import { socket } from '../api/socket';
+import { getSocket } from '../api/socket';
 import { useUserStore } from '../store/useUserStore';
 import { useAuthStore } from '../store/useAuthStore';
 
 export const useUserSockets = () => {
   const { fetchUsers, updateUserStatus, updateUserBlockedStatus, setStats } = useUserStore();
-  // 🔥 Импортируем logout для немедленной очистки сессии
   const { setUserBlocked, setSessionSuperseded, logout, user, isAuthenticated } = useAuthStore();
-  
   const hasIdentified = useRef(false);
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return;
+
+    const socket = getSocket();
+    if (!socket) {
+      console.warn('[useUserSockets] Socket not initialized');
+      return;
+    }
 
     if (!hasIdentified.current) {
       socket.emit('identify_user', { userId: user.id, userRole: user.role });
@@ -4056,58 +4047,56 @@ export const useUserSockets = () => {
 
     socket.emit('join_self_room', user.id);
 
-    socket.on('stats_updated', (newStats) => {
+    const onStatsUpdated = (newStats: any) => {
       setStats(newStats);
-    });
+    };
 
-    socket.on('user:registered', () => {
+    const onUserRegistered = () => {
       if (user.role === 'ADMIN') fetchUsers();
-    });
+    };
 
-    socket.on('user:online', (userId: number) => {
+    const onUserOnline = (userId: number) => {
       updateUserStatus(userId, true);
-    });
+    };
 
-    socket.on('user:offline', (userId: number) => {
+    const onUserOffline = (userId: number) => {
       updateUserStatus(userId, false);
-    });
+    };
 
-    socket.on('user:blocked_status_changed', ({ userId, isBlocked }) => {
+    const onUserBlockedStatusChanged = ({ userId, isBlocked }: { userId: number; isBlocked: boolean }) => {
       updateUserBlockedStatus(userId, isBlocked);
-    });
+    };
 
-    // 🔥 БЛОКИРОВКА: МГНОВЕННАЯ ОЧИСТКА СЕССИИ
-    socket.on('user_blocked', async () => {
+    const onUserBlocked = async () => {
       console.warn('🛑 [Socket] ACCOUNT BLOCKED! Очищаем сессию...');
-      
-      // 1. Сразу чистим сессию (куки удалятся ответом сервера authAPI.logout)
-      await logout(); 
-      
-      // 2. Показываем модалку поверх "разлогиненного" состояния
-      setUserBlocked(true);
-    });
-
-    // 🔥 ВЫТЕСНЕНИЕ: МГНОВЕННАЯ ОЧИСТКА СЕССИИ
-    socket.on('session_superseded', async () => {
-      console.warn('⚠️ [Socket] Session Superseded! Очищаем сессию...');
-      
-      // 1. Сразу чистим сессию
       await logout();
-      
-      // 2. Показываем модалку
+      setUserBlocked(true);
+    };
+
+    const onSessionSuperseded = async () => {
+      console.warn('⚠️ [Socket] Session Superseded! Очищаем сессию...');
+      await logout();
       setSessionSuperseded(true);
-    });
+    };
+
+    socket.on('stats_updated', onStatsUpdated);
+    socket.on('user:registered', onUserRegistered);
+    socket.on('user:online', onUserOnline);
+    socket.on('user:offline', onUserOffline);
+    socket.on('user:blocked_status_changed', onUserBlockedStatusChanged);
+    socket.on('user_blocked', onUserBlocked);
+    socket.on('session_superseded', onSessionSuperseded);
 
     return () => {
-      socket.off('stats_updated');
-      socket.off('user:registered');
-      socket.off('user:online');
-      socket.off('user:offline');
-      socket.off('user:blocked_status_changed');
-      socket.off('user_blocked');
-      socket.off('session_superseded');
+      socket.off('stats_updated', onStatsUpdated);
+      socket.off('user:registered', onUserRegistered);
+      socket.off('user:online', onUserOnline);
+      socket.off('user:offline', onUserOffline);
+      socket.off('user:blocked_status_changed', onUserBlockedStatusChanged);
+      socket.off('user_blocked', onUserBlocked);
+      socket.off('session_superseded', onSessionSuperseded);
     };
-  }, [isAuthenticated, user?.id, setStats, fetchUsers, updateUserStatus, updateUserBlockedStatus, setUserBlocked, setSessionSuperseded, logout]);
+  }, [isAuthenticated, user?.id, user?.role, setStats, fetchUsers, updateUserStatus, updateUserBlockedStatus, setUserBlocked, setSessionSuperseded, logout]);
 };
 ```
 
@@ -4189,7 +4178,7 @@ const AdminDashboard = () => {
 export default AdminDashboard;
 ```
 
-### 📄 `src\pages\Loginpage.tsx`
+### 📄 `src\pages\LoginPage.tsx`
 ```typescript
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -4711,7 +4700,7 @@ import { ProjectsListView } from '../components/dashboard/shared/ProjectsListVie
 import { ChatDrawer } from '../components/dashboard/shared/ChatDrawer';
 
 // 🔥 ПЕРЕКЛЮЧАТЕЛЬ: поставь true, чтобы вернуть старый рабочий функционал
-const SHOW_WORKING_FEATURES = false;
+const SHOW_WORKING_FEATURES = true;
 
 const WorkInProgressBanner = ({ title }: { title: string }) => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in zoom-in-95 duration-500">
@@ -5028,7 +5017,7 @@ import { ProjectsListView } from '../components/dashboard/shared/ProjectsListVie
 import { ChatDrawer } from '../components/dashboard/shared/ChatDrawer';
 
 // 🔥 ПЕРЕКЛЮЧАТЕЛЬ: поставь true, чтобы вернуть старый рабочий функционал
-const SHOW_WORKING_FEATURES = false;
+const SHOW_WORKING_FEATURES = true;
 
 const WorkInProgressBanner = ({ title }: { title: string }) => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in zoom-in-95 duration-500">
@@ -5118,12 +5107,12 @@ const UserDashboard = () => {
   }, [setActiveTab]);
 
   const stats = useMemo(() => ({
-    total: totalCount,
-    active: projects.filter(p => p.status === 'IN_PROGRESS' || p.status === 'START').length,
-    completed: projects.filter(p => p.status === 'COMPLETED').length,
-    pending: projects.filter(p => p.status === 'PENDING' || p.status === 'REVISION').length,
-    approved: projects.filter(p => p.status === 'APPROVED').length
-  }), [projects, totalCount]);
+  total: totalCount,
+  active: projects.filter(p => p.status === 'IN_PROGRESS').length,
+  completed: projects.filter(p => p.status === 'CLOSED').length,
+  pending: projects.filter(p => p.status === 'PENDING' || p.status === 'REVISION').length,
+  approved: projects.filter(p => p.status === 'APPROVED').length
+}), [projects, totalCount]);
 
   // 🔥 ЕСЛИ РЕЖИМ ДЕМО (false) - ПОКАЗЫВАЕМ ЗАГЛУШКИ ДЛЯ ВСЕГО
   if (!SHOW_WORKING_FEATURES) {
@@ -5281,7 +5270,7 @@ export type UserFormData = z.infer<typeof userFormSchema>;
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import authAPI from '../api/auth';
-import { socket } from '../api/socket';
+import { initSocket, disconnectSocket, getSocket } from '../api/socket';
 import type { User } from '../types';
 
 interface AuthState {
@@ -5290,49 +5279,43 @@ interface AuthState {
   isAuthenticated: boolean;
   _hasHydrated: boolean;
   isInitialized: boolean;
-  
-  // Флаги модалок и состояний
+
   isSessionExpired: boolean;
   isSessionSuperseded: boolean;
   isUserBlocked: boolean;
-  
-  // 🔥 НОВЫЕ ПОЛЯ ДЛЯ 2FA
+
   is2FARequired: boolean;
   tempUserId: number | null;
 
-  // Actions
   setUser: (user: User | null) => void;
   setHasHydrated: (state: boolean) => void;
   setSessionExpired: (expired: boolean) => void;
   setSessionSuperseded: (superseded: boolean) => void;
   setUserBlocked: (blocked: boolean) => void;
-  
-  // 🔥 НОВЫЕ ACTIONS ДЛЯ 2FA
+
   setIs2FARequired: (val: boolean) => void;
   setTempUserId: (id: number | null) => void;
 
   checkAuth: () => Promise<void>;
-  
-  // 🔥 ИСПРАВЛЕНО: Добавлены timeLeft и attemptsLeft в тип возврата
-  login: (credentials: any) => Promise<{ 
-    success: boolean; 
-    user?: User; 
-    message?: string; 
-    requires2FA?: boolean; 
+
+  login: (credentials: any) => Promise<{
+    success: boolean;
+    user?: User;
+    message?: string;
+    requires2FA?: boolean;
     userId?: number;
-    timeLeft?: number;        // <-- ДОБАВЛЕНО
-    attemptsLeft?: number;    // <-- ДОБАВЛЕНО
+    timeLeft?: number;
+    attemptsLeft?: number;
   }>;
-  
-  // 🔥 МЕТОД ПРОВЕРКИ КОДА (тип уже верный)
-  verify2FA: (code: string) => Promise<{ 
-    success: boolean; 
-    user?: User; 
+
+  verify2FA: (code: string) => Promise<{
+    success: boolean;
+    user?: User;
     message?: string;
     timeLeft?: number;
     attemptsLeft?: number;
   }>;
-  
+
   logout: () => Promise<void>;
 }
 
@@ -5347,14 +5330,12 @@ export const useAuthStore = create<AuthState>()(
       isSessionExpired: false,
       isSessionSuperseded: false,
       isUserBlocked: false,
-      
-      // 🔥 Инициализация 2FA полей
+
       is2FARequired: false,
       tempUserId: null,
 
       setHasHydrated: (state) => set({ _hasHydrated: state }),
-      
-      // 🔥 Сеттеры для 2FA
+
       setIs2FARequired: (val) => set({ is2FARequired: val }),
       setTempUserId: (id) => set({ tempUserId: id }),
 
@@ -5373,28 +5354,30 @@ export const useAuthStore = create<AuthState>()(
       checkAuth: async () => {
         try {
           const response: any = await authAPI.profile();
-          const userData = response.data?.user || response.data || response.user || response; 
-          
+          const userData = response.data?.user || response.data || response.user || response;
+
           if (userData && userData.id) {
-            set({ 
-              user: userData, 
-              isAuthenticated: true, 
+            set({
+              user: userData,
+              isAuthenticated: true,
               isInitialized: true,
               is2FARequired: false,
-              tempUserId: null
+              tempUserId: null,
             });
+            initSocket(); // 👈 Сокет инициализируется только при наличии сессии
           } else {
             throw new Error('Данные пользователя не найдены');
           }
         } catch (error) {
-          console.error("Auth check failed:", error);
-          set({ 
-            user: null, 
-            isAuthenticated: false, 
+          console.error('Auth check failed:', error);
+          set({
+            user: null,
+            isAuthenticated: false,
             isInitialized: true,
             is2FARequired: false,
-            tempUserId: null
+            tempUserId: null,
           });
+          disconnectSocket();
         }
       },
 
@@ -5402,68 +5385,60 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           const response: any = await authAPI.login(credentials);
-          
-          // 🔥 ПРОВЕРКА: Требуется ли 2FA?
+
           if (response.status === '2FA_REQUIRED') {
             const userId = response.data?.userId;
             if (userId) {
-              set({ 
-                isLoading: false, 
-                is2FARequired: true, 
-                tempUserId: userId 
+              set({
+                isLoading: false,
+                is2FARequired: true,
+                tempUserId: userId,
               });
-              return { 
-                success: false, 
-                requires2FA: true, 
-                userId, 
-                message: 'Требуется код подтверждения' 
+              return {
+                success: false,
+                requires2FA: true,
+                userId,
+                message: 'Требуется код подтверждения',
               };
             }
           }
 
-          // Обычный успешный вход
           const userData = response.user || response.data?.user || response;
-          
+
           if (userData) {
-            set({ 
-              user: userData, 
-              isAuthenticated: true, 
-              isLoading: false, 
+            set({
+              user: userData,
+              isAuthenticated: true,
+              isLoading: false,
               isInitialized: true,
               is2FARequired: false,
-              tempUserId: null
+              tempUserId: null,
             });
+            initSocket(); // 👈 Сокет инициализируется после успешного логина
             return { success: true, user: userData };
           }
-          
+
           set({ isLoading: false });
           return { success: false, message: 'Данные пользователя не получены' };
         } catch (error: any) {
           set({ isLoading: false });
-          
+
           let errorMessage = 'Ошибка входа';
           let extraData: any = {};
-          
+
           try {
             const errorBody = await error.response?.json();
-            
-            // Поддержка разных ключей ошибки
             errorMessage = errorBody?.error || errorBody?.message || errorBody?.msg || errorMessage;
-            
-            // Извлекаем данные для блокировок и попыток
             if (errorBody.lockUntil) extraData.lockUntil = new Date(errorBody.lockUntil);
             if (errorBody.timeLeft) extraData.timeLeft = errorBody.timeLeft;
             if (errorBody.attemptsLeft !== undefined) extraData.attemptsLeft = errorBody.attemptsLeft;
-            
           } catch (e) {
             errorMessage = error.message || errorMessage;
           }
-          
           return { success: false, message: errorMessage, ...extraData };
         }
       },
 
-      // 🔥 НОВЫЙ МЕТОД: Проверка 2FA кода
       verify2FA: async (code: string) => {
         const userId = get().tempUserId;
         if (!userId) {
@@ -5473,35 +5448,31 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response: any = await authAPI.verify2FACode(userId, code);
           const userData = response.data?.user || response.user;
-          
+
           if (userData) {
-            // Успешная верификация: сохраняем пользователя и сбрасываем флаги 2FA
-            set({ 
-              user: userData, 
-              isAuthenticated: true, 
-              is2FARequired: false, 
+            set({
+              user: userData,
+              isAuthenticated: true,
+              is2FARequired: false,
               tempUserId: null,
               isInitialized: true,
-              isLoading: false
+              isLoading: false,
             });
+            initSocket(); // 👈 Сокет после успешной верификации
             return { success: true, user: userData };
           }
-          
           return { success: false, message: 'Ошибка проверки кода' };
         } catch (error: any) {
           let errorMessage = 'Неверный код';
           let extraData: any = {};
-          
           try {
             const errorBody = await error.response?.json();
             errorMessage = errorBody?.error || errorBody?.message || errorMessage;
-            
             if (errorBody.timeLeft) extraData.timeLeft = errorBody.timeLeft;
             if (errorBody.attemptsLeft !== undefined) extraData.attemptsLeft = errorBody.attemptsLeft;
           } catch (e) {
             errorMessage = error.message || errorMessage;
           }
-          
           return { success: false, message: errorMessage, ...extraData };
         }
       },
@@ -5509,22 +5480,20 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         const currentUser = get().user;
         try {
-          if (socket.connected) {
+          const socket = getSocket();
+          if (socket?.connected) {
             socket.emit('user_logging_out');
           }
           await authAPI.logout('manual', currentUser?.id?.toString());
         } finally {
-          socket.disconnect();
-          socket.connect(); // Переподключаем чистый сокет
-
+          disconnectSocket(); // 👈 Полное отключение сокета
           set({
             user: null,
             isAuthenticated: false,
             isInitialized: true,
             isSessionExpired: false,
-            is2FARequired: false, // Сброс 2FA при выходе
+            is2FARequired: false,
             tempUserId: null,
-            // ❌ ВАЖНО: НЕ сбрасываем флаги модалок здесь
           });
           localStorage.removeItem('auth-storage');
         }
@@ -5539,7 +5508,6 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
-        // Не сохраняем временные поля 2FA в localStorage
       }),
     }
   )
@@ -5915,7 +5883,14 @@ export interface User {
   email: string;
   role: UserRole;
   mustChangePassword: boolean;
+  companyName?: string;
+  unp?: string;
+  phone?: string;
+  isBlocked?: boolean;
+  lockUntil?: string | null;
+  twoFactorLockUntil?: string | null;
   createdAt?: string;
+  lastSeen?: string;
 }
 
 // Типы для проектов (регистраций)
@@ -5923,7 +5898,7 @@ export interface Project {
   id: number;
   name: string;
   unp: string;
-  status: 'PENDING' | 'IN_PROGRESS' | 'APPROVED' | 'REJECTED' | 'REVISION' | 'CLOSED' | 'START' | 'COMPLETED';
+  status: 'PENDING' | 'IN_PROGRESS' | 'APPROVED' | 'REJECTED' | 'REVISION' | 'CLOSED';
   managerId?: string;
   userId: string;
   createdAt: string;
@@ -5932,8 +5907,7 @@ export interface Project {
   dynamicData: any;
   customerName: string;
   customerInn: string;
-  // Добавляем эти поля, чтобы TS не ругался в сторах и сокетах
-  unreadCount?: number; 
+  unreadCount?: number;
   hasUnread?: boolean;
 }
 
@@ -5978,7 +5952,7 @@ export interface ProjectStats {
   active: number;
   completed: number;
   pending: number;
-  approved: number; // Добавлено, так как StatsView его требует
+  approved: number;
 }
 ```
 

@@ -12,12 +12,8 @@ interface UserData {
   unp?: string;
   isOnline?: boolean;
   isBlocked?: boolean;
-  
-  // Блокировка входа
   lockUntil?: string | null;
   failedLoginAttempts?: number;
-  
-  // 🔥 НОВОЕ: Блокировка 2FA
   twoFactorLockUntil?: string | null;
   twoFactorAttempts?: number;
 }
@@ -51,7 +47,12 @@ interface UserStore {
   toggleBlock: (id: number) => Promise<void>;
   updateUserStatus: (userId: number, isOnline: boolean) => void;
   updateUserBlockedStatus: (userId: number, isBlocked: boolean) => void;
-  updateUserLockStatus: (userId: number, lockUntil: string | null, attempts: number) => void;
+  updateUserLockStatus: (userId: number, updates: {
+    lockUntil?: string | null;
+    failedLoginAttempts?: number;
+    twoFactorLockUntil?: string | null;
+    twoFactorAttempts?: number;
+  }) => void;
 }
 
 export const useUserStore = create<UserStore>((set, get) => ({
@@ -70,7 +71,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
     get().fetchUsers();
   },
 
-  setStats: (stats: AdminStats) => set({ stats }),
+  setStats: (stats) => set({ stats }),
 
   fetchUsers: async () => {
     set({ loading: true });
@@ -162,10 +163,10 @@ export const useUserStore = create<UserStore>((set, get) => ({
     }));
   },
 
-  updateUserLockStatus: (userId, lockUntil, attempts) => {
+  updateUserLockStatus: (userId, updates) => {
     set((state) => ({
       users: state.users.map((u) => 
-        u.id === userId ? { ...u, lockUntil, failedLoginAttempts: attempts } : u
+        u.id === userId ? { ...u, ...updates } : u
       ),
     }));
   },

@@ -5,7 +5,7 @@ import { useAuthStore } from '../store/useAuthStore';
 
 export const useUserSockets = () => {
   const { fetchUsers, updateUserStatus, updateUserBlockedStatus, setStats } = useUserStore();
-  const { setUserBlocked, setSessionSuperseded, logout, user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const hasIdentified = useRef(false);
 
   useEffect(() => {
@@ -44,20 +44,18 @@ export const useUserSockets = () => {
       updateUserStatus(userId, false);
     };
 
-    const onUserBlockedStatusChanged = ({ userId, isBlocked }: { userId: number; isBlocked: boolean }) => {
-      updateUserBlockedStatus(userId, isBlocked);
-    };
-
-    const onUserBlocked = async () => {
-      console.warn('🛑 [Socket] ACCOUNT BLOCKED! Очищаем сессию...');
-      await logout();
-      setUserBlocked(true);
-    };
-
-    const onSessionSuperseded = async () => {
-      console.warn('⚠️ [Socket] Session Superseded! Очищаем сессию...');
-      await logout();
-      setSessionSuperseded(true);
+    const onUserBlockedStatusChanged = (data: {
+      userId: number;
+      isBlocked?: boolean;
+      lockUntil?: string | null;
+      failedLoginAttempts?: number;
+      twoFactorLockUntil?: string | null;
+      twoFactorAttempts?: number;
+      wasSystemLock?: boolean;
+    }) => {
+      if (data.isBlocked !== undefined) {
+        updateUserBlockedStatus(data.userId, data.isBlocked);
+      }
     };
 
     socket.on('stats_updated', onStatsUpdated);
@@ -65,8 +63,6 @@ export const useUserSockets = () => {
     socket.on('user:online', onUserOnline);
     socket.on('user:offline', onUserOffline);
     socket.on('user:blocked_status_changed', onUserBlockedStatusChanged);
-    socket.on('user_blocked', onUserBlocked);
-    socket.on('session_superseded', onSessionSuperseded);
 
     return () => {
       socket.off('stats_updated', onStatsUpdated);
@@ -74,8 +70,6 @@ export const useUserSockets = () => {
       socket.off('user:online', onUserOnline);
       socket.off('user:offline', onUserOffline);
       socket.off('user:blocked_status_changed', onUserBlockedStatusChanged);
-      socket.off('user_blocked', onUserBlocked);
-      socket.off('session_superseded', onSessionSuperseded);
     };
-  }, [isAuthenticated, user?.id, user?.role, setStats, fetchUsers, updateUserStatus, updateUserBlockedStatus, setUserBlocked, setSessionSuperseded, logout]);
+  }, [isAuthenticated, user?.id, user?.role, setStats, fetchUsers, updateUserStatus, updateUserBlockedStatus]);
 };

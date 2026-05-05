@@ -11,10 +11,7 @@ const UserBlockedModal = () => {
   if (!isBlocked) return null;
 
   const handleConfirm = () => {
-    // 1. Скрываем модалку
     setUserBlocked(false);
-    
-    // 2. Переходим на логин (сессия уже убита в useUserSockets)
     navigate('/login', { replace: true });
   };
 
@@ -29,19 +26,16 @@ const UserBlockedModal = () => {
             Аккаунт заблокирован
           </h2>
         </div>
-
         <div className="p-8 text-center space-y-6">
           <p className="text-slate-600 text-sm leading-relaxed">
             Ваш аккаунт был заблокирован администратором портала.
             Для выяснения причин обратитесь к администратору.
           </p>
-
           <div className="bg-red-50 border border-red-100 rounded-xl p-4">
             <p className="text-xs font-bold text-red-700 uppercase tracking-wider">
               Доступ к порталу ограничен
             </p>
           </div>
-
           <button
             onClick={handleConfirm}
             className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-lg transition-all active:scale-95"

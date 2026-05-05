@@ -37,6 +37,8 @@ interface AuthState {
     userId?: number;
     timeLeft?: number;
     attemptsLeft?: number;
+    lockType?: string;
+    userBlocked?: boolean;
   }>;
 
   verify2FA: (code: string) => Promise<{
@@ -95,7 +97,7 @@ export const useAuthStore = create<AuthState>()(
               is2FARequired: false,
               tempUserId: null,
             });
-            initSocket(); // 👈 Сокет инициализируется только при наличии сессии
+            initSocket();
           } else {
             throw new Error('Данные пользователя не найдены');
           }
@@ -145,7 +147,7 @@ export const useAuthStore = create<AuthState>()(
               is2FARequired: false,
               tempUserId: null,
             });
-            initSocket(); // 👈 Сокет инициализируется после успешного логина
+            initSocket();
             return { success: true, user: userData };
           }
 
@@ -163,6 +165,8 @@ export const useAuthStore = create<AuthState>()(
             if (errorBody.lockUntil) extraData.lockUntil = new Date(errorBody.lockUntil);
             if (errorBody.timeLeft) extraData.timeLeft = errorBody.timeLeft;
             if (errorBody.attemptsLeft !== undefined) extraData.attemptsLeft = errorBody.attemptsLeft;
+            if (errorBody.lockType) extraData.lockType = errorBody.lockType;
+            if (errorBody.code === 'USER_BLOCKED') extraData.userBlocked = true;
           } catch (e) {
             errorMessage = error.message || errorMessage;
           }
@@ -189,7 +193,7 @@ export const useAuthStore = create<AuthState>()(
               isInitialized: true,
               isLoading: false,
             });
-            initSocket(); // 👈 Сокет после успешной верификации
+            initSocket();
             return { success: true, user: userData };
           }
           return { success: false, message: 'Ошибка проверки кода' };
@@ -217,7 +221,7 @@ export const useAuthStore = create<AuthState>()(
           }
           await authAPI.logout('manual', currentUser?.id?.toString());
         } finally {
-          disconnectSocket(); // 👈 Полное отключение сокета
+          disconnectSocket();
           set({
             user: null,
             isAuthenticated: false,

@@ -1,12 +1,11 @@
-// src/hooks/useSessionManager.ts
 import { useEffect, useRef, useCallback } from 'react';
-import { getSocket } from '../api/socket'; // Импортируем наш новый метод
+import { getSocket } from '../api/socket';
 import { useAuthStore } from '../store/useAuthStore';
 
 const INACTIVITY_LIMITS = {
-  USER: 30 * 60 * 1000,      // 30 минут (поправил на 30 мин, как в серверной логике)
-  MANAGER: 120 * 60 * 1000,   // 2 часа
-  ADMIN: 120 * 60 * 1000,     // 2 часа
+  USER: 1 * 60 * 1000,      // 1 минута (демо)
+  MANAGER: 2 * 60 * 60 * 1000,
+  ADMIN: 2 * 60 * 60 * 1000,
 };
 
 const ACTIVITY_EVENTS = ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'];
@@ -14,8 +13,8 @@ const ACTIVITY_EVENTS = ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousem
 export const useSessionManager = () => {
   const { user, isAuthenticated, logout, setSessionExpired, setSessionSuperseded, setUserBlocked } = useAuthStore();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const subscribedRef = useRef(false);
 
-  // --- ЛОГИКА ТАЙМЕРА НЕАКТИВНОСТИ (остается без изменений) ---
   const resetTimer = useCallback(() => {
     if (!isAuthenticated || !user) return;
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -34,7 +33,6 @@ export const useSessionManager = () => {
     }, limit);
   }, [isAuthenticated, user, logout, setSessionExpired]);
 
-  // Запуск/остановка таймера
   useEffect(() => {
     if (isAuthenticated && user) {
       resetTimer();
@@ -44,7 +42,6 @@ export const useSessionManager = () => {
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [isAuthenticated, user?.id, resetTimer]);
 
-  // Слушатели активности
   useEffect(() => {
     if (!isAuthenticated) return;
     const handleActivity = () => resetTimer();
@@ -52,60 +49,41 @@ export const useSessionManager = () => {
     return () => ACTIVITY_EVENTS.forEach(e => window.removeEventListener(e, handleActivity));
   }, [isAuthenticated, resetTimer]);
 
-  // --- ЛОГИКА СОКЕТОВ (Real-time events) — ИСПРАВЛЕНА ---
+  // Подписка на сокет-события (session_superseded, user_blocked)
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return;
 
-    // Получаем сокет, если он еще не инициализирован — выходим
-    const socket = getSocket();
-    if (!socket) {
-      console.warn('[useSessionManager] Socket not initialized, retrying in 1s...');
-      // Простая повторная попытка через секунду
-      const retryTimer = setTimeout(() => {
-        const retrySocket = getSocket();
-        if (retrySocket) {
-          console.log('[useSessionManager] Socket found on retry, registering handlers.');
-          retrySocket.emit('join_self_room', user.id);
-          // Здесь можно было бы заново вызвать эффект или применить логику,
-          // но проще всего — сработает следующий эффект или перезагрузка.
-        }
-      }, 1000);
-      return () => clearTimeout(retryTimer);
-    }
-
-    console.log('[useSessionManager] Registering socket listeners for user:', user.id);
-    // Входим в персональную комнату
-    socket.emit('join_self_room', user.id);
-
-    // Слушаем вытеснение сессии
-    const handleSuperseded = () => {
-      console.warn('⚠️ [Socket] Сессия вытеснена другим устройством');
-      setSessionSuperseded(true);
+    let retryTimer: ReturnType<typeof setTimeout>;
+    const subscribe = () => {
+      const socket = getSocket();
+      if (!socket) {
+        retryTimer = setTimeout(subscribe, 1000);
+        return;
+      }
+      if (subscribedRef.current) return;
+      subscribedRef.current = true;
+      console.log('[SessionManager] Подписка на сокет-события');
+      socket.emit('join_self_room', user.id);
+      socket.on('session_superseded', () => {
+        console.warn('⚠️ Сессия вытеснена');
+        setSessionSuperseded(true);
+        logout();
+      });
+      socket.on('user_blocked', () => {
+        console.warn('🛑 Аккаунт заблокирован');
+        logout();
+        setUserBlocked(true);
+      });
     };
-
-    // Слушаем блокировку админом
-    const handleBlocked = async () => {
-      console.warn('🛑 [Socket] Аккаунт заблокирован админом');
-      await logout();
-      setUserBlocked(true);
-    };
-
-    // Также можно дополнительно слушать разблокировку, если нужно
-    const handleUnblocked = () => {
-      console.log('✅ [Socket] Аккаунт разблокирован администратором');
-      // Опционально: можно перезагрузить страницу или попытаться восстановить сессию
-      // setUserBlocked(false);
-    };
-
-    socket.on('session_superseded', handleSuperseded);
-    socket.on('user_blocked', handleBlocked);
-    // Опционально: если сервер присылает 'user_unblocked'
-    socket.on('user_unblocked', handleUnblocked);
-
+    subscribe();
     return () => {
-      socket.off('session_superseded', handleSuperseded);
-      socket.off('user_blocked', handleBlocked);
-      socket.off('user_unblocked', handleUnblocked);
+      if (retryTimer) clearTimeout(retryTimer);
+      const socket = getSocket();
+      if (socket && subscribedRef.current) {
+        socket.off('session_superseded');
+        socket.off('user_blocked');
+        subscribedRef.current = false;
+      }
     };
   }, [isAuthenticated, user?.id, setSessionSuperseded, setUserBlocked, logout]);
 };
