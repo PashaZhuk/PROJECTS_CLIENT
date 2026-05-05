@@ -8,10 +8,11 @@ import {
   ShieldCheck, 
   ShoppingCart, 
   ChevronDown, 
-  FolderOpen 
+  FolderOpen,
+  FileText // добавлена иконка для логов
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
-import type { ActiveTabType } from '../../types'
+import type { ActiveTabType } from '../../types';
 
 const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setActiveTab: (t: ActiveTabType) => void }) => {
   const user = useAuthStore((state) => state.user);
@@ -58,7 +59,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
         />
 
         {/* ------------------------------------------------------------------ */}
-        {/* БЛОК ДЛЯ АДМИНА: ТОЛЬКО ПОЛЬЗОВАТЕЛИ */}
+        {/* БЛОК ДЛЯ АДМИНА: ПОЛЬЗОВАТЕЛИ + ЛОГИ */}
         {/* ------------------------------------------------------------------ */}
         {role === 'ADMIN' && (
           <div className="pt-6 pb-2">
@@ -66,7 +67,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
               onClick={() => setIsUsersOpen(!isUsersOpen)}
               className="w-full flex items-center justify-between px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
             >
-              <span>Управление пользователями</span>
+              <span>Управление системой</span>
               <Users size={14} className={`transition-transform duration-300 ${isUsersOpen ? '' : '-rotate-90'}`} />
             </button>
             
@@ -84,6 +85,13 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
                   onClick={() => setActiveTab('users-create')} 
                   label="Создать аккаунт" 
                   icon={<PlusCircle size={16}/>} 
+                  theme={theme} 
+                />
+                <SubNavBtn 
+                  active={activeTab === 'logs'} 
+                  onClick={() => setActiveTab('logs')} 
+                  label="Логи системы" 
+                  icon={<FileText size={16}/>} 
                   theme={theme} 
                 />
               </div>
