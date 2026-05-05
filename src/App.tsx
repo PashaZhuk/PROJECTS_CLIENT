@@ -19,7 +19,7 @@ import DashboardDispatcher from './pages/dashboard/DashboardDispatcher';
 // Modals
 import SessionExpiredModal from './components/ui/SessionExpiredModal';
 import SessionSupersededModal from './components/ui/SessionSupersededModal';
-import UserBlockedModal from './components/ui/UserBlockedModal';
+import LockedModal from './components/ui/LockedModal';
 
 const AppContent = () => {
   const { 
@@ -28,7 +28,13 @@ const AppContent = () => {
     isInitialized, 
     _hasHydrated, 
     isLoading, 
-    checkAuth 
+    checkAuth,
+    isSessionExpired,
+    isSessionSuperseded,
+    isUserBlocked,
+    setSessionExpired,
+    setSessionSuperseded,
+    setUserBlocked
   } = useAuthStore();
 
   // Реф, чтобы не спамить проверкой авторизации
@@ -61,7 +67,13 @@ const AppContent = () => {
     <div className="flex flex-col min-h-screen bg-gray-50 relative">
       <SessionExpiredModal />
       <SessionSupersededModal />
-      <UserBlockedModal />
+      <LockedModal 
+        isOpen={isUserBlocked}
+        onClose={() => setUserBlocked(false)}
+        lockUntil={null}
+        message="Ваш аккаунт заблокирован администратором. Обратитесь в поддержку."
+        title="Аккаунт заблокирован"
+      />
 
       <Header />
       

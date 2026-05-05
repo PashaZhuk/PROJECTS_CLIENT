@@ -53,8 +53,10 @@
       📁 ui/
         📄 Footer.tsx
         📄 Header.tsx
+        📄 LockedModal.tsx
         📄 SessionExpiredModal.tsx
         📄 SessionSupersededModal.tsx
+        📄 TwoFALockedModal.tsx
         📄 UserBlockedModal.tsx
     📁 config/
       📄 projectFields.ts
@@ -399,7 +401,7 @@ import DashboardLayout from './components/layouts/DashboardLayout';
 import Header from './components/ui/Header';
 import Footer from './components/ui/Footer';
 import LoginPage from './pages/LoginPage';
-import ResetPasswordPage from './pages/ResetPasswordPage'; // 🔥 Импортируем новую страницу
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import ForcePasswordChange from './components/auth/ForcePasswordChange';
 import DashboardDispatcher from './pages/dashboard/DashboardDispatcher';
 
@@ -421,10 +423,10 @@ const AppContent = () => {
   // Реф, чтобы не спамить проверкой авторизации
   const authChecked = useRef(false);
 
-  // 🔥 1. Сначала запускаем менеджер сессий
+  // Запускаем менеджер сессий
   useSessionManager();
 
-  // 🔥 2. Проверка авторизации: строго после гидрации и только один раз
+  // Проверка авторизации: строго после гидрации и только один раз
   useEffect(() => {
     if (_hasHydrated && !authChecked.current) {
       checkAuth();
@@ -432,8 +434,7 @@ const AppContent = () => {
     }
   }, [_hasHydrated, checkAuth]);
 
-  // 🔥 3. Экраны загрузки: 
-  // Ждем _hasHydrated (чтение из диска) И isInitialized (ответ от сервера)
+  // Экраны загрузки
   if (!_hasHydrated || !isInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -454,41 +455,32 @@ const AppContent = () => {
       <Header />
       
       <main className="grow flex flex-col">
-        {/* Если авторизован, но должен сменить пароль — блокируем весь контент */}
         {isAuthenticated && user?.mustChangePassword ? (
           <ForcePasswordChange />
         ) : (
           <Routes>
-            {/* Публичные маршруты (доступны без авторизации) */}
             <Route 
               path="/login" 
               element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />} 
             />
-            
-            {/* 🔥 НОВЫЙ МАРШРУТ: Восстановление пароля */}
             <Route 
               path="/reset-password" 
               element={<ResetPasswordPage />} 
             />
-
             <Route 
               path="/" 
               element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />} 
             />
-
-            {/* Защищенные роуты */}
             <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'USER']} />}>
               <Route element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<DashboardDispatcher />} />
               </Route>
             </Route>
-
             <Route path="/unauthorized" element={
               <div className="grow flex items-center justify-center text-center p-10">
                 <h1 className="text-xl font-bold text-red-600 uppercase tracking-widest">Доступ запрещен</h1>
               </div>
             } />
-            
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         )}
@@ -1320,14 +1312,7 @@ const UsersList = () => {
                           <div className="text-[10px] text-slate-400 font-bold flex items-center gap-1 uppercase tracking-tighter">
                             <Mail size={10} /> {user.email}
                           </div>
-                          {lockInfo && (
-                            <div className={`text-[9px] font-bold mt-1 ${
-                              lockInfo.type === 'LOGIN' ? 'text-red-500' : 'text-purple-500'
-                            }`}>
-                              Попыток: {lockInfo.attempts}/5
-                            </div>
-                          )}
-                        </div>
+                          </div>
                       </div>
                     </td>
 
@@ -3093,6 +3078,129 @@ const Header = () => {
 export default Header;
 ```
 
+### 📄 `src\components\ui\LockedModal.tsx`
+```typescript
+import React, { useEffect, useState, useRef } from 'react';
+import { AlertCircle, Clock } from 'lucide-react';
+
+interface LockedModalProps {
+  isOpen: boolean;
+  /** Дата окончания блокировки (если есть) */
+  lockUntil?: Date | null;
+  /** Сообщение (если не указано, будет сгенерировано по умолчанию) */
+  message?: string;
+  /** Заголовок (по умолчанию "Доступ ограничен") */
+  title?: string;
+  onClose: () => void;
+}
+
+const LockedModal: React.FC<LockedModalProps> = ({ 
+  isOpen, 
+  lockUntil, 
+  message, 
+  title = "Доступ ограничен",
+  onClose 
+}) => {
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const intervalRef = useRef<number | null>(null);
+  const isClosingRef = useRef(false);
+
+  const stopInterval = () => {
+    if (intervalRef.current !== null) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
+  const updateTimer = () => {
+    if (!lockUntil) return;
+    const now = new Date();
+    const diff = Math.max(0, Math.ceil((lockUntil.getTime() - now.getTime()) / 1000));
+    setTimeLeft(diff);
+    if (diff <= 0 && !isClosingRef.current) {
+      isClosingRef.current = true;
+      stopInterval();
+      onClose();
+    }
+  };
+
+  useEffect(() => {
+    if (!isOpen) {
+      stopInterval();
+      setTimeLeft(0);
+      return;
+    }
+
+    isClosingRef.current = false;
+    if (lockUntil) {
+      updateTimer();
+      intervalRef.current = window.setInterval(updateTimer, 1000);
+    } else {
+      setTimeLeft(0);
+    }
+
+    return () => {
+      stopInterval();
+    };
+  }, [isOpen, lockUntil]);
+
+  if (!isOpen) return null;
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const defaultMessage = lockUntil 
+    ? "Вы превысили допустимое количество попыток входа. Попробуйте позже."
+    : "Ваш аккаунт заблокирован администратором. Обратитесь в поддержку.";
+
+  const displayMessage = message || defaultMessage;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border-2 border-red-100 animate-in zoom-in-95 duration-300">
+        <div className="bg-red-50 p-8 flex flex-col items-center justify-center border-b border-red-100">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <AlertCircle className="text-red-600" size={32} />
+          </div>
+          <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight text-center">
+            {title}
+          </h2>
+        </div>
+        <div className="p-8 text-center space-y-6">
+          <p className="text-slate-600 text-sm leading-relaxed">
+            {displayMessage}
+          </p>
+          {lockUntil && timeLeft > 0 && (
+            <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-center justify-center gap-2">
+              <Clock className="text-red-500" size={20} />
+              <span className="text-lg font-mono font-bold text-red-700">
+                {formatTime(timeLeft)}
+              </span>
+            </div>
+          )}
+          <button
+            onClick={() => {
+              if (isClosingRef.current) return;
+              isClosingRef.current = true;
+              stopInterval();
+              onClose();
+            }}
+            className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-lg transition-all active:scale-95"
+          >
+            Понятно
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default LockedModal;
+```
+
 ### 📄 `src\components\ui\SessionExpiredModal.tsx`
 ```typescript
 import React from 'react';
@@ -3214,6 +3322,112 @@ const SessionSupersededModal = () => {
 export default SessionSupersededModal;
 ```
 
+### 📄 `src\components\ui\TwoFALockedModal.tsx`
+```typescript
+import React, { useEffect, useState, useRef } from 'react';
+import { AlertCircle, Clock } from 'lucide-react';
+
+interface TwoFALockedModalProps {
+  isOpen: boolean;
+  lockUntil: Date | null;
+  onClose: () => void;
+}
+
+const TwoFALockedModal: React.FC<TwoFALockedModalProps> = ({ isOpen, lockUntil, onClose }) => {
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const intervalRef = useRef<number | null>(null);
+  const isClosingRef = useRef(false);
+
+  const stopInterval = () => {
+    if (intervalRef.current !== null) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
+  const updateTimer = () => {
+    if (!lockUntil) {
+      if (timeLeft !== 0) setTimeLeft(0);
+      return;
+    }
+    const now = new Date();
+    const diff = Math.max(0, Math.ceil((lockUntil.getTime() - now.getTime()) / 1000));
+    setTimeLeft(diff);
+    if (diff <= 0 && !isClosingRef.current) {
+      isClosingRef.current = true;
+      stopInterval();
+      onClose();
+    }
+  };
+
+  useEffect(() => {
+    if (!isOpen || !lockUntil) {
+      stopInterval();
+      setTimeLeft(0);
+      return;
+    }
+
+    isClosingRef.current = false;
+    updateTimer();
+    intervalRef.current = window.setInterval(updateTimer, 1000);
+
+    return () => {
+      stopInterval();
+    };
+  }, [isOpen, lockUntil]);
+
+  if (!isOpen) return null;
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border-2 border-red-100 animate-in zoom-in-95 duration-300">
+        <div className="bg-red-50 p-8 flex flex-col items-center justify-center border-b border-red-100">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <AlertCircle className="text-red-600" size={32} />
+          </div>
+          <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight text-center">
+            Блокировка входа
+          </h2>
+        </div>
+        <div className="p-8 text-center space-y-6">
+          <p className="text-slate-600 text-sm leading-relaxed">
+            Вы превысили допустимое количество попыток ввода SMS-кода.
+          </p>
+          <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-center justify-center gap-2">
+            <Clock className="text-red-500" size={20} />
+            <span className="text-lg font-mono font-bold text-red-700">
+              {formatTime(timeLeft)}
+            </span>
+          </div>
+          <p className="text-xs text-slate-500">
+            Попробуйте снова через указанное время.
+          </p>
+          <button
+            onClick={() => {
+              if (isClosingRef.current) return;
+              isClosingRef.current = true;
+              stopInterval();
+              onClose();
+            }}
+            className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-lg transition-all active:scale-95"
+          >
+            Понятно
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TwoFALockedModal;
+```
+
 ### 📄 `src\components\ui\UserBlockedModal.tsx`
 ```typescript
 import React from 'react';
@@ -3229,10 +3443,7 @@ const UserBlockedModal = () => {
   if (!isBlocked) return null;
 
   const handleConfirm = () => {
-    // 1. Скрываем модалку
     setUserBlocked(false);
-    
-    // 2. Переходим на логин (сессия уже убита в useUserSockets)
     navigate('/login', { replace: true });
   };
 
@@ -3247,19 +3458,16 @@ const UserBlockedModal = () => {
             Аккаунт заблокирован
           </h2>
         </div>
-
         <div className="p-8 text-center space-y-6">
           <p className="text-slate-600 text-sm leading-relaxed">
             Ваш аккаунт был заблокирован администратором портала.
             Для выяснения причин обратитесь к администратору.
           </p>
-
           <div className="bg-red-50 border border-red-100 rounded-xl p-4">
             <p className="text-xs font-bold text-red-700 uppercase tracking-wider">
               Доступ к порталу ограничен
             </p>
           </div>
-
           <button
             onClick={handleConfirm}
             className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-lg transition-all active:scale-95"
@@ -3902,15 +4110,14 @@ export const useProjectSockets = (userId: number | string | undefined) => {
 
 ### 📄 `src\hooks\useSessionManager.ts`
 ```typescript
-// src/hooks/useSessionManager.ts
 import { useEffect, useRef, useCallback } from 'react';
-import { getSocket } from '../api/socket'; // Импортируем наш новый метод
+import { getSocket } from '../api/socket';
 import { useAuthStore } from '../store/useAuthStore';
 
 const INACTIVITY_LIMITS = {
-  USER: 30 * 60 * 1000,      // 30 минут (поправил на 30 мин, как в серверной логике)
-  MANAGER: 120 * 60 * 1000,   // 2 часа
-  ADMIN: 120 * 60 * 1000,     // 2 часа
+  USER: 1 * 60 * 1000,      // 1 минута (демо)
+  MANAGER: 2 * 60 * 60 * 1000,
+  ADMIN: 2 * 60 * 60 * 1000,
 };
 
 const ACTIVITY_EVENTS = ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'];
@@ -3918,8 +4125,8 @@ const ACTIVITY_EVENTS = ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousem
 export const useSessionManager = () => {
   const { user, isAuthenticated, logout, setSessionExpired, setSessionSuperseded, setUserBlocked } = useAuthStore();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const subscribedRef = useRef(false);
 
-  // --- ЛОГИКА ТАЙМЕРА НЕАКТИВНОСТИ (остается без изменений) ---
   const resetTimer = useCallback(() => {
     if (!isAuthenticated || !user) return;
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -3938,7 +4145,6 @@ export const useSessionManager = () => {
     }, limit);
   }, [isAuthenticated, user, logout, setSessionExpired]);
 
-  // Запуск/остановка таймера
   useEffect(() => {
     if (isAuthenticated && user) {
       resetTimer();
@@ -3948,7 +4154,6 @@ export const useSessionManager = () => {
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [isAuthenticated, user?.id, resetTimer]);
 
-  // Слушатели активности
   useEffect(() => {
     if (!isAuthenticated) return;
     const handleActivity = () => resetTimer();
@@ -3956,60 +4161,41 @@ export const useSessionManager = () => {
     return () => ACTIVITY_EVENTS.forEach(e => window.removeEventListener(e, handleActivity));
   }, [isAuthenticated, resetTimer]);
 
-  // --- ЛОГИКА СОКЕТОВ (Real-time events) — ИСПРАВЛЕНА ---
+  // Подписка на сокет-события (session_superseded, user_blocked)
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return;
 
-    // Получаем сокет, если он еще не инициализирован — выходим
-    const socket = getSocket();
-    if (!socket) {
-      console.warn('[useSessionManager] Socket not initialized, retrying in 1s...');
-      // Простая повторная попытка через секунду
-      const retryTimer = setTimeout(() => {
-        const retrySocket = getSocket();
-        if (retrySocket) {
-          console.log('[useSessionManager] Socket found on retry, registering handlers.');
-          retrySocket.emit('join_self_room', user.id);
-          // Здесь можно было бы заново вызвать эффект или применить логику,
-          // но проще всего — сработает следующий эффект или перезагрузка.
-        }
-      }, 1000);
-      return () => clearTimeout(retryTimer);
-    }
-
-    console.log('[useSessionManager] Registering socket listeners for user:', user.id);
-    // Входим в персональную комнату
-    socket.emit('join_self_room', user.id);
-
-    // Слушаем вытеснение сессии
-    const handleSuperseded = () => {
-      console.warn('⚠️ [Socket] Сессия вытеснена другим устройством');
-      setSessionSuperseded(true);
+    let retryTimer: ReturnType<typeof setTimeout>;
+    const subscribe = () => {
+      const socket = getSocket();
+      if (!socket) {
+        retryTimer = setTimeout(subscribe, 1000);
+        return;
+      }
+      if (subscribedRef.current) return;
+      subscribedRef.current = true;
+      console.log('[SessionManager] Подписка на сокет-события');
+      socket.emit('join_self_room', user.id);
+      socket.on('session_superseded', () => {
+        console.warn('⚠️ Сессия вытеснена');
+        setSessionSuperseded(true);
+        logout();
+      });
+      socket.on('user_blocked', () => {
+        console.warn('🛑 Аккаунт заблокирован');
+        logout();
+        setUserBlocked(true);
+      });
     };
-
-    // Слушаем блокировку админом
-    const handleBlocked = async () => {
-      console.warn('🛑 [Socket] Аккаунт заблокирован админом');
-      await logout();
-      setUserBlocked(true);
-    };
-
-    // Также можно дополнительно слушать разблокировку, если нужно
-    const handleUnblocked = () => {
-      console.log('✅ [Socket] Аккаунт разблокирован администратором');
-      // Опционально: можно перезагрузить страницу или попытаться восстановить сессию
-      // setUserBlocked(false);
-    };
-
-    socket.on('session_superseded', handleSuperseded);
-    socket.on('user_blocked', handleBlocked);
-    // Опционально: если сервер присылает 'user_unblocked'
-    socket.on('user_unblocked', handleUnblocked);
-
+    subscribe();
     return () => {
-      socket.off('session_superseded', handleSuperseded);
-      socket.off('user_blocked', handleBlocked);
-      socket.off('user_unblocked', handleUnblocked);
+      if (retryTimer) clearTimeout(retryTimer);
+      const socket = getSocket();
+      if (socket && subscribedRef.current) {
+        socket.off('session_superseded');
+        socket.off('user_blocked');
+        subscribedRef.current = false;
+      }
     };
   }, [isAuthenticated, user?.id, setSessionSuperseded, setUserBlocked, logout]);
 };
@@ -4024,7 +4210,7 @@ import { useAuthStore } from '../store/useAuthStore';
 
 export const useUserSockets = () => {
   const { fetchUsers, updateUserStatus, updateUserBlockedStatus, setStats } = useUserStore();
-  const { setUserBlocked, setSessionSuperseded, logout, user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const hasIdentified = useRef(false);
 
   useEffect(() => {
@@ -4063,20 +4249,18 @@ export const useUserSockets = () => {
       updateUserStatus(userId, false);
     };
 
-    const onUserBlockedStatusChanged = ({ userId, isBlocked }: { userId: number; isBlocked: boolean }) => {
-      updateUserBlockedStatus(userId, isBlocked);
-    };
-
-    const onUserBlocked = async () => {
-      console.warn('🛑 [Socket] ACCOUNT BLOCKED! Очищаем сессию...');
-      await logout();
-      setUserBlocked(true);
-    };
-
-    const onSessionSuperseded = async () => {
-      console.warn('⚠️ [Socket] Session Superseded! Очищаем сессию...');
-      await logout();
-      setSessionSuperseded(true);
+    const onUserBlockedStatusChanged = (data: {
+      userId: number;
+      isBlocked?: boolean;
+      lockUntil?: string | null;
+      failedLoginAttempts?: number;
+      twoFactorLockUntil?: string | null;
+      twoFactorAttempts?: number;
+      wasSystemLock?: boolean;
+    }) => {
+      if (data.isBlocked !== undefined) {
+        updateUserBlockedStatus(data.userId, data.isBlocked);
+      }
     };
 
     socket.on('stats_updated', onStatsUpdated);
@@ -4084,8 +4268,6 @@ export const useUserSockets = () => {
     socket.on('user:online', onUserOnline);
     socket.on('user:offline', onUserOffline);
     socket.on('user:blocked_status_changed', onUserBlockedStatusChanged);
-    socket.on('user_blocked', onUserBlocked);
-    socket.on('session_superseded', onSessionSuperseded);
 
     return () => {
       socket.off('stats_updated', onStatsUpdated);
@@ -4093,10 +4275,8 @@ export const useUserSockets = () => {
       socket.off('user:online', onUserOnline);
       socket.off('user:offline', onUserOffline);
       socket.off('user:blocked_status_changed', onUserBlockedStatusChanged);
-      socket.off('user_blocked', onUserBlocked);
-      socket.off('session_superseded', onSessionSuperseded);
     };
-  }, [isAuthenticated, user?.id, user?.role, setStats, fetchUsers, updateUserStatus, updateUserBlockedStatus, setUserBlocked, setSessionSuperseded, logout]);
+  }, [isAuthenticated, user?.id, user?.role, setStats, fetchUsers, updateUserStatus, updateUserBlockedStatus]);
 };
 ```
 
@@ -4188,11 +4368,11 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import authApi from '../api/auth';
+import LockedModal from '../components/ui/LockedModal';
 
 const LoginPage = () => {
   const navigate = useNavigate();
   
-  // --- STORE ---
   const login = useAuthStore((state) => state.login);
   const verify2FA = useAuthStore((state) => state.verify2FA);
   const is2FARequired = useAuthStore((state) => state.is2FARequired);
@@ -4201,71 +4381,44 @@ const LoginPage = () => {
   const isInitialized = useAuthStore((state) => state.isInitialized);
   const user = useAuthStore((state) => state.user);
   
-  // --- STATES: LOGIN FORM ---
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({ email: '', password: '' });
   const [touched, setTouched] = useState({ email: false, password: false });
   const [showPassword, setShowPassword] = useState(false);
   
-  // --- STATES: ERRORS & LOCKS ---
   const [submitError, setSubmitError] = useState('');
-  const [lockUntil, setLockUntil] = useState<Date | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number>(0);
   const [attemptsLeft, setAttemptsLeft] = useState<number | null>(null);
-
-  // --- STATES: 2FA ---
+  
   const [is2FAView, setIs2FAView] = useState(false);
   const [code, setCode] = useState('');
   const [codeError, setCodeError] = useState('');
   const [codeLoading, setCodeLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
   
-  // 🔥 ИСПРАВЛЕНО: Имя переменной не может начинаться с цифры
-  const [isFALocked, setIsFALocked] = useState(false);
-  const [faLockTimeLeft, setFALockTimeLeft] = useState(0);
-
-  // --- STATES: RESET PASSWORD MODAL ---
+  // Единое состояние для модалки блокировки
+  const [lockedModal, setLockedModal] = useState<{
+    isOpen: boolean;
+    lockUntil?: Date | null;
+    message?: string;
+    title?: string;
+  }>({ isOpen: false });
+  
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
   const [resetError, setResetError] = useState('');
 
-  // --- EFFECTS ---
-
-  // Таймеры (Блокировка входа, Блокировка 2FA, Таймер отправки кода)
+  // --- Таймер для повторной отправки 2FA ---
   useEffect(() => {
-    let interval: number;
-
-    if (lockUntil && timeLeft > 0) {
-      interval = window.setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) { setLockUntil(null); setSubmitError(''); return 0; }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-
-    // 🔥 ИСПРАВЛЕНО: Используем новые имена переменных
-    if (isFALocked && faLockTimeLeft > 0) {
-      interval = window.setInterval(() => {
-        setFALockTimeLeft((prev) => {
-          if (prev <= 1) { setIsFALocked(false); setCodeError(''); return 0; }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-
-    if (resendTimer > 0) {
-      interval = window.setInterval(() => {
-        setResendTimer((prev) => prev - 1);
-      }, 1000);
-    }
-
+    if (resendTimer <= 0) return;
+    const interval = setInterval(() => {
+      setResendTimer((prev) => prev - 1);
+    }, 1000);
     return () => clearInterval(interval);
-  }, [lockUntil, timeLeft, isFALocked, faLockTimeLeft, resendTimer]);
+  }, [resendTimer]);
 
-  // Переключение на вид 2FA, если стейт изменился
+  // Переключение на 2FA, если требуется
   useEffect(() => {
     if (is2FARequired) {
       setIs2FAView(true);
@@ -4274,7 +4427,7 @@ const LoginPage = () => {
     }
   }, [is2FARequired]);
 
-  // Редирект при успешном входе
+  // Редирект после входа
   useEffect(() => {
     if (isInitialized && isAuthenticated && user) {
       const routes = { 
@@ -4287,15 +4440,12 @@ const LoginPage = () => {
     }
   }, [isAuthenticated, isInitialized, user, navigate]);
 
-  // --- HANDLERS: VALIDATION ---
-
+  // Валидация
   const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email) return 'Email обязателен';
-    if (!emailRegex.test(email)) return 'Некорректный email';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Некорректный email';
     return '';
   };
-
   const validatePassword = (password: string) => {
     if (!password) return 'Пароль обязателен';
     return '';
@@ -4323,18 +4473,14 @@ const LoginPage = () => {
 
   const isFormValid = () => !errors.email && !errors.password && formData.email && formData.password;
 
-  // --- HANDLERS: LOGIN ---
-
+  // Логин
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (lockUntil) return; 
-    
     setSubmitError('');
     setAttemptsLeft(null);
     
     const emailError = validateEmail(formData.email);
     const passwordError = validatePassword(formData.password);
-    
     if (emailError || passwordError) {
       setErrors({ email: emailError, password: passwordError });
       setTouched({ email: true, password: true });
@@ -4344,66 +4490,99 @@ const LoginPage = () => {
     const result = await login(formData);
     
     if (!result.success) {
-      if (result.requires2FA) {
+      // Ручная блокировка администратором
+      if (result.userBlocked) {
+        setLockedModal({
+          isOpen: true,
+          lockUntil: null,
+          message: "Ваш аккаунт заблокирован администратором. Обратитесь в поддержку.",
+          title: "Аккаунт заблокирован"
+        });
+        setFormData({ email: '', password: '' });
+        return;
+      }
+      if (result.requires2FA) return;
+      
+      // Блокировка 2FA (3 попытки)
+      if (result.lockType === '2FA' && result.timeLeft) {
+        const lockDate = new Date(Date.now() + result.timeLeft * 1000);
+        setLockedModal({
+          isOpen: true,
+          lockUntil: lockDate,
+          message: "Вы превысили количество попыток ввода SMS-кода. Доступ заблокирован.",
+          title: "Блокировка входа"
+        });
+        useAuthStore.getState().setIs2FARequired(false);
+        useAuthStore.getState().setTempUserId(null);
+        setFormData({ email: '', password: '' });
+        setCode('');
         return;
       }
       
+      // Блокировка пароля (5 попыток)
+      if (result.timeLeft && result.attemptsLeft === undefined) {
+        const lockDate = new Date(Date.now() + result.timeLeft * 1000);
+        setLockedModal({
+          isOpen: true,
+          lockUntil: lockDate,
+          message: "Превышено количество попыток входа. Попробуйте позже.",
+          title: "Доступ временно ограничен"
+        });
+        setFormData({ email: '', password: '' });
+        return;
+      }
+      
+      // Обычная ошибка логина (не блокировка)
       setSubmitError(result.message || 'Неверный email или пароль');
-      if (result.timeLeft) {
-        setTimeLeft(result.timeLeft);
-        setLockUntil(new Date());
-      }
       if (result.attemptsLeft !== undefined) {
         setAttemptsLeft(result.attemptsLeft);
       }
     }
   };
 
-  // --- HANDLERS: 2FA ---
-
-  const handleVerifyCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isFALocked) return;
-
-    setCodeLoading(true);
-    setCodeError('');
-
-    const result = await verify2FA(code);
-
-    setCodeLoading(false);
-
-    if (!result.success) {
-      setCodeError(result.message || 'Ошибка проверки кода');
-      if (result.timeLeft) {
-        setIsFALocked(true);
-        setFALockTimeLeft(result.timeLeft);
-      }
-      if (result.attemptsLeft !== undefined) {
-        setAttemptsLeft(result.attemptsLeft);
-      }
-    }
-  };
-
+  // 2FA отправка кода
   const handleResendCode = async () => {
-    if (resendTimer > 0 || isFALocked) return;
-    
-    const storeState = useAuthStore.getState();
-    const userId = storeState.tempUserId;
-    
+    if (resendTimer > 0) return;
+    const userId = useAuthStore.getState().tempUserId;
     if (!userId) return;
-
     try {
       const res: any = await authApi.send2FACode(userId);
       setResendTimer(60);
-      if (res.debugCode) {
-        console.log('🔐 YOUR 2FA CODE:', res.debugCode);
-      }
+      if (res.debugCode) console.log('🔐 2FA CODE:', res.debugCode);
     } catch (err: any) {
       const errData = await err.response?.json().catch(() => ({}));
-      if (errData.timeLeft) {
-        setResendTimer(errData.timeLeft);
+      setResendTimer(errData.timeLeft || 60);
+    }
+  };
+
+  // Проверка 2FA кода
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (codeLoading) return;
+    setCodeLoading(true);
+    setCodeError('');
+    
+    const result = await verify2FA(code);
+    setCodeLoading(false);
+    
+    if (!result.success) {
+      if (result.timeLeft && !result.attemptsLeft) {
+        // блокировка 2FA
+        const lockDate = new Date(Date.now() + result.timeLeft * 1000);
+        setLockedModal({
+          isOpen: true,
+          lockUntil: lockDate,
+          message: "Вы превысили количество попыток ввода SMS-кода. Доступ заблокирован.",
+          title: "Блокировка входа"
+        });
+        setIs2FAView(false);
+        useAuthStore.getState().setIs2FARequired(false);
+        useAuthStore.getState().setTempUserId(null);
+        setCode('');
+      } else if (result.attemptsLeft !== undefined) {
+        setCodeError(`Неверный код. Осталось попыток: ${result.attemptsLeft}`);
       } else {
-        setResendTimer(60);
+        setCodeError(result.message || 'Ошибка проверки кода');
       }
     }
   };
@@ -4414,25 +4593,32 @@ const LoginPage = () => {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // --- HANDLERS: RESET PASSWORD ---
-
+  // Сброс пароля
   const handleResetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setResetLoading(true);
     setResetError('');
-    
     try {
       await authApi.forgotPassword(resetEmail);
       setResetSuccess(true);
     } catch (err: any) {
-      console.error(err);
-      setResetError(err.response?.data?.error || 'Ошибка сети. Попробуйте позже.');
+      setResetError(err.response?.data?.error || 'Ошибка сети');
     } finally {
       setResetLoading(false);
     }
   };
 
-  // --- RENDER: 2FA VIEW ---
+  const closeLockedModal = () => {
+    setLockedModal({ isOpen: false });
+    // Очистить форму для нового входа
+    setFormData({ email: '', password: '' });
+    setCode('');
+    setSubmitError('');
+    setCodeError('');
+    navigate('/login', { replace: true });
+  };
+
+  // --- RENDER 2FA ---
   if (is2FAView) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
@@ -4446,15 +4632,9 @@ const LoginPage = () => {
           </div>
 
           {codeError && (
-            <div className={`mb-4 p-4 rounded-xl text-xs font-black uppercase tracking-widest border flex items-center gap-2
-              ${isFALocked ? 'bg-orange-50 text-orange-600 border-orange-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
+            <div className="mb-4 p-4 rounded-xl text-xs font-black uppercase tracking-widest border flex items-center gap-2 bg-red-50 text-red-600 border-red-200">
               <AlertCircle size={16} />
-              <div>
-                {isFALocked ? `Блокировка на ${formatTime(faLockTimeLeft)}` : codeError}
-                {!isFALocked && attemptsLeft !== null && (
-                  <div className="mt-1 font-bold">Осталось попыток: {attemptsLeft}</div>
-                )}
-              </div>
+              <div>{codeError}</div>
             </div>
           )}
 
@@ -4469,7 +4649,7 @@ const LoginPage = () => {
                   maxLength={6}
                   value={code} 
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                  disabled={isFALocked || codeLoading}
+                  disabled={codeLoading}
                   className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl text-center text-2xl font-mono tracking-[0.5em] font-bold focus:ring-2 focus:ring-blue-600 outline-none disabled:bg-gray-100"
                   placeholder="000000"
                   autoFocus
@@ -4479,7 +4659,7 @@ const LoginPage = () => {
             
             <button
               type="submit" 
-              disabled={!code || codeLoading || isFALocked}
+              disabled={!code || codeLoading}
               className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:bg-slate-800 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {codeLoading ? <RefreshCw className="animate-spin" size={16} /> : <CheckCircle size={16} />}
@@ -4490,7 +4670,7 @@ const LoginPage = () => {
           <div className="mt-6 text-center">
             <button
               onClick={handleResendCode} 
-              disabled={resendTimer > 0 || isFALocked}
+              disabled={resendTimer > 0}
               className="text-xs font-bold uppercase tracking-widest text-blue-600 hover:text-blue-800 disabled:text-gray-400 transition-colors"
             >
               {resendTimer > 0 ? `Отправить повторно (${formatTime(resendTimer)})` : 'Отправить код снова'}
@@ -4499,7 +4679,14 @@ const LoginPage = () => {
           
           <div className="mt-4 text-center">
              <button 
-               onClick={() => { setIs2FAView(false); setSubmitError(''); }}
+               onClick={() => { 
+                 setIs2FAView(false); 
+                 setSubmitError('');
+                 setCode('');
+                 setCodeError('');
+                 useAuthStore.getState().setIs2FARequired(false);
+                 useAuthStore.getState().setTempUserId(null);
+               }}
                className="text-[10px] text-slate-400 hover:text-slate-600 uppercase font-bold tracking-widest"
              >
                ← Назад ко входу
@@ -4510,113 +4697,107 @@ const LoginPage = () => {
     );
   }
 
-  // --- RENDER: LOGIN VIEW ---
+  // --- RENDER LOGIN (оригинальный дизайн) ---
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 to-blue-50 py-12 flex items-center">
-      <div className="container mx-auto px-3">
-        <div className="max-w-md mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-center">
-              <h1 className="text-3xl font-bold text-white mb-2">Вход в портал</h1>
-              <p className="text-blue-100">Используйте данные, выданные администратором</p>
-            </div>
+    <>
+      <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 to-blue-50 py-12 flex items-center">
+        <div className="container mx-auto px-3">
+          <div className="max-w-md mx-auto">
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-center">
+                <h1 className="text-3xl font-bold text-white mb-2">Вход в портал</h1>
+                <p className="text-blue-100">Используйте данные, выданные администратором</p>
+              </div>
 
-            <form onSubmit={handleSubmit} className="p-8 space-y-6">
-              {submitError && (
-                <div className={`p-4 rounded-xl border flex items-start gap-2
-                  ${lockUntil ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                  <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="font-bold">{lockUntil ? 'Доступ временно ограничен' : 'Ошибка входа'}</p>
-                    <p>{submitError}</p>
-                    {!lockUntil && attemptsLeft !== null && (
-                      <p className="mt-1 text-xs font-bold">Осталось попыток: {attemptsLeft}</p>
-                    )}
-                    {lockUntil && (
-                      <p className="mt-1 text-xs font-bold">Попробуйте через {formatTime(timeLeft)}</p>
+              <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                {submitError && (
+                  <div className="p-4 rounded-xl border flex items-start gap-2 bg-red-50 text-red-700 border-red-200">
+                    <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-bold">Ошибка входа</p>
+                      <p>{submitError}</p>
+                      {attemptsLeft !== null && (
+                        <p className="mt-1 text-xs font-bold">Осталось попыток: {attemptsLeft}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">Электронная почта</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <input
+                      type="email" id="email" name="email" disabled={authLoading}
+                      value={formData.email} onChange={handleChange} onBlur={handleBlur}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all disabled:bg-gray-100
+                        ${touched.email && errors.email ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
+                      placeholder="example@email.com"
+                    />
+                    {touched.email && !errors.email && formData.email && (
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      </div>
                     )}
                   </div>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">Электронная почта</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="email" id="email" name="email" disabled={!!lockUntil || authLoading}
-                    value={formData.email} onChange={handleChange} onBlur={handleBlur}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all disabled:bg-gray-100
-                      ${touched.email && errors.email ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
-                    placeholder="example@email.com"
-                  />
-                  {touched.email && !errors.email && formData.email && (
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                    </div>
+                  {touched.email && errors.email && (
+                    <p className="text-sm text-red-600 flex items-center"><AlertCircle className="h-4 w-4 mr-1"/>{errors.email}</p>
                   )}
                 </div>
-                {touched.email && errors.email && (
-                  <p className="text-sm text-red-600 flex items-center"><AlertCircle className="h-4 w-4 mr-1"/>{errors.email}</p>
-                )}
-              </div>
 
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">Пароль</label>
-                  <button 
-                    type="button"
-                    onClick={() => setShowResetModal(true)}
-                    className="text-xs text-blue-600 hover:underline font-medium"
-                  >
-                    Забыли пароль?
-                  </button>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">Пароль</label>
+                    <button 
+                      type="button"
+                      onClick={() => setShowResetModal(true)}
+                      className="text-xs font-medium text-blue-600 hover:underline"
+                    >
+                      Забыли пароль?
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <input
+                      type={showPassword ? 'text' : 'password'} id="password" name="password" disabled={authLoading}
+                      value={formData.password} onChange={handleChange} onBlur={handleBlur}
+                      className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all disabled:bg-gray-100
+                        ${touched.password && errors.password ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
+                      placeholder="Введите пароль"
+                    />
+                    <button
+                      type="button" onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+                  {touched.password && errors.password && (
+                    <p className="text-sm text-red-600 flex items-center"><AlertCircle className="h-4 w-4 mr-1"/>{errors.password}</p>
+                  )}
                 </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type={showPassword ? 'text' : 'password'} id="password" name="password" disabled={!!lockUntil || authLoading}
-                    value={formData.password} onChange={handleChange} onBlur={handleBlur}
-                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all disabled:bg-gray-100
-                      ${touched.password && errors.password ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
-                    placeholder="Введите пароль"
-                  />
-                  <button
-                    type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
-                </div>
-                {touched.password && errors.password && (
-                  <p className="text-sm text-red-600 flex items-center"><AlertCircle className="h-4 w-4 mr-1"/>{errors.password}</p>
-                )}
-              </div>
 
-              <button
-                type="submit"
-                disabled={!isFormValid() || authLoading || !!lockUntil}
-                className={`w-full py-4 px-4 rounded-xl font-bold text-white transition-all duration-300 shadow-lg flex items-center justify-center gap-2
-                  ${lockUntil 
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : isFormValid() && !authLoading
+                <button
+                  type="submit"
+                  disabled={!isFormValid() || authLoading}
+                  className={`w-full py-4 px-4 rounded-xl font-bold text-white transition-all duration-300 shadow-lg flex items-center justify-center gap-2
+                    ${isFormValid() && !authLoading
                       ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-[1.02] active:scale-95 shadow-blue-200'
                       : 'bg-gray-300 cursor-not-allowed'}`}
-              >
-                {lockUntil ? (
-                  <>🔒 Заблокировано ({formatTime(timeLeft)})</>
-                ) : authLoading ? (
-                  <><RefreshCw className="animate-spin" size={18} /> Вход...</>
-                ) : (
-                  'Войти в систему'
-                )}
-              </button>
-            </form>
+                >
+                  {authLoading ? (
+                    <><RefreshCw className="animate-spin" size={18} /> Вход...</>
+                  ) : (
+                    'Войти в систему'
+                  )}
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* MODAL: Reset Password */}
+      {/* Модалка сброса пароля */}
       {showResetModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden">
@@ -4635,13 +4816,13 @@ const LoginPage = () => {
                   </div>
                   <h4 className="font-bold text-gray-900 mb-2">Письмо отправлено!</h4>
                   <p className="text-gray-600 text-sm mb-6">
-                    Мы отправили ссылку для сброса пароля на <strong>{resetEmail}</strong>. Проверьте папку "Входящие" или "Спам".
+                    Мы отправили ссылку для сброса пароля на <strong>{resetEmail}</strong>.
                   </p>
                   <button 
                     onClick={() => {setShowResetModal(false); setResetSuccess(false); setResetEmail('');}}
-                    className="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors"
+                    className="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200"
                   >
-                    Вернуться ко входу
+                    Закрыть
                   </button>
                 </div>
               ) : (
@@ -4651,11 +4832,7 @@ const LoginPage = () => {
                       <AlertCircle size={14} /> {resetError}
                     </div>
                   )}
-                  
-                  <p className="text-sm text-gray-500 mb-2">
-                    Введите ваш email, и мы пришлем инструкцию по восстановлению доступа.
-                  </p>
-
+                  <p className="text-sm text-gray-500 mb-2">Введите ваш email для восстановления</p>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <input
@@ -4666,7 +4843,7 @@ const LoginPage = () => {
                   </div>
                   <button
                     type="submit" disabled={resetLoading || !resetEmail}
-                    className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 disabled:bg-gray-300"
                   >
                     {resetLoading ? 'Отправка...' : 'Прислать ссылку'}
                   </button>
@@ -4676,7 +4853,15 @@ const LoginPage = () => {
           </div>
         </div>
       )}
-    </div>
+
+      <LockedModal 
+        isOpen={lockedModal.isOpen}
+        lockUntil={lockedModal.lockUntil}
+        message={lockedModal.message}
+        title={lockedModal.title}
+        onClose={closeLockedModal}
+      />
+    </>
   );
 };
 
@@ -5306,6 +5491,8 @@ interface AuthState {
     userId?: number;
     timeLeft?: number;
     attemptsLeft?: number;
+    lockType?: string;
+    userBlocked?: boolean;
   }>;
 
   verify2FA: (code: string) => Promise<{
@@ -5364,7 +5551,7 @@ export const useAuthStore = create<AuthState>()(
               is2FARequired: false,
               tempUserId: null,
             });
-            initSocket(); // 👈 Сокет инициализируется только при наличии сессии
+            initSocket();
           } else {
             throw new Error('Данные пользователя не найдены');
           }
@@ -5414,7 +5601,7 @@ export const useAuthStore = create<AuthState>()(
               is2FARequired: false,
               tempUserId: null,
             });
-            initSocket(); // 👈 Сокет инициализируется после успешного логина
+            initSocket();
             return { success: true, user: userData };
           }
 
@@ -5432,6 +5619,8 @@ export const useAuthStore = create<AuthState>()(
             if (errorBody.lockUntil) extraData.lockUntil = new Date(errorBody.lockUntil);
             if (errorBody.timeLeft) extraData.timeLeft = errorBody.timeLeft;
             if (errorBody.attemptsLeft !== undefined) extraData.attemptsLeft = errorBody.attemptsLeft;
+            if (errorBody.lockType) extraData.lockType = errorBody.lockType;
+            if (errorBody.code === 'USER_BLOCKED') extraData.userBlocked = true;
           } catch (e) {
             errorMessage = error.message || errorMessage;
           }
@@ -5458,7 +5647,7 @@ export const useAuthStore = create<AuthState>()(
               isInitialized: true,
               isLoading: false,
             });
-            initSocket(); // 👈 Сокет после успешной верификации
+            initSocket();
             return { success: true, user: userData };
           }
           return { success: false, message: 'Ошибка проверки кода' };
@@ -5486,7 +5675,7 @@ export const useAuthStore = create<AuthState>()(
           }
           await authAPI.logout('manual', currentUser?.id?.toString());
         } finally {
-          disconnectSocket(); // 👈 Полное отключение сокета
+          disconnectSocket();
           set({
             user: null,
             isAuthenticated: false,
@@ -5712,12 +5901,8 @@ interface UserData {
   unp?: string;
   isOnline?: boolean;
   isBlocked?: boolean;
-  
-  // Блокировка входа
   lockUntil?: string | null;
   failedLoginAttempts?: number;
-  
-  // 🔥 НОВОЕ: Блокировка 2FA
   twoFactorLockUntil?: string | null;
   twoFactorAttempts?: number;
 }
@@ -5751,7 +5936,12 @@ interface UserStore {
   toggleBlock: (id: number) => Promise<void>;
   updateUserStatus: (userId: number, isOnline: boolean) => void;
   updateUserBlockedStatus: (userId: number, isBlocked: boolean) => void;
-  updateUserLockStatus: (userId: number, lockUntil: string | null, attempts: number) => void;
+  updateUserLockStatus: (userId: number, updates: {
+    lockUntil?: string | null;
+    failedLoginAttempts?: number;
+    twoFactorLockUntil?: string | null;
+    twoFactorAttempts?: number;
+  }) => void;
 }
 
 export const useUserStore = create<UserStore>((set, get) => ({
@@ -5770,7 +5960,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
     get().fetchUsers();
   },
 
-  setStats: (stats: AdminStats) => set({ stats }),
+  setStats: (stats) => set({ stats }),
 
   fetchUsers: async () => {
     set({ loading: true });
@@ -5862,10 +6052,10 @@ export const useUserStore = create<UserStore>((set, get) => ({
     }));
   },
 
-  updateUserLockStatus: (userId, lockUntil, attempts) => {
+  updateUserLockStatus: (userId, updates) => {
     set((state) => ({
       users: state.users.map((u) => 
-        u.id === userId ? { ...u, lockUntil, failedLoginAttempts: attempts } : u
+        u.id === userId ? { ...u, ...updates } : u
       ),
     }));
   },
