@@ -4,7 +4,7 @@ import { useUserStore } from '../store/useUserStore';
 import { useAuthStore } from '../store/useAuthStore';
 
 export const useUserSockets = () => {
-  const { fetchUsers, updateUserStatus, updateUserBlockedStatus, setStats } = useUserStore();
+  const { fetchUsers, updateUserStatus, updateUserBlockedStatus, updateUserLockStatus, setStats } = useUserStore();
   const { user, isAuthenticated } = useAuthStore();
   const hasIdentified = useRef(false);
 
@@ -37,10 +37,12 @@ export const useUserSockets = () => {
     };
 
     const onUserOnline = (userId: number) => {
+      console.log('[useUserSockets] user:online', userId);
       updateUserStatus(userId, true);
     };
 
     const onUserOffline = (userId: number) => {
+      console.log('[useUserSockets] user:offline', userId);
       updateUserStatus(userId, false);
     };
 
@@ -53,9 +55,16 @@ export const useUserSockets = () => {
       twoFactorAttempts?: number;
       wasSystemLock?: boolean;
     }) => {
+      console.log('[useUserSockets] user:blocked_status_changed', data);
       if (data.isBlocked !== undefined) {
         updateUserBlockedStatus(data.userId, data.isBlocked);
       }
+      updateUserLockStatus(data.userId, {
+        lockUntil: data.lockUntil,
+        failedLoginAttempts: data.failedLoginAttempts,
+        twoFactorLockUntil: data.twoFactorLockUntil,
+        twoFactorAttempts: data.twoFactorAttempts,
+      });
     };
 
     socket.on('stats_updated', onStatsUpdated);
@@ -71,5 +80,5 @@ export const useUserSockets = () => {
       socket.off('user:offline', onUserOffline);
       socket.off('user:blocked_status_changed', onUserBlockedStatusChanged);
     };
-  }, [isAuthenticated, user?.id, user?.role, setStats, fetchUsers, updateUserStatus, updateUserBlockedStatus]);
+  }, [isAuthenticated, user?.id, user?.role, setStats, fetchUsers, updateUserStatus, updateUserBlockedStatus, updateUserLockStatus]);
 };

@@ -11,8 +11,9 @@ import type { Project, ActiveTabType } from '../types';
 import { StatsView } from '../components/dashboard/shared/StatsView';
 import { ProjectsListView } from '../components/dashboard/shared/ProjectsListView';
 import { ChatDrawer } from '../components/dashboard/shared/ChatDrawer';
+import api from '../api/ky'; // <-- импортируем api
 
-// 🔥 ПЕРЕКЛЮЧАТЕЛЬ: поставь true, чтобы вернуть старый рабочий функционал
+// Переключатель (оставьте как есть)
 const SHOW_WORKING_FEATURES = true;
 
 const WorkInProgressBanner = ({ title }: { title: string }) => (
@@ -71,25 +72,20 @@ const ManagerDashboard = () => {
       setActiveChatId(projectId);
       markMessagesAsReadLocally(projectId, user.id);
       try {
-        await fetch(`/api/chat/${projectId}/read`, { method: 'POST', credentials: 'include' });
+        // Используем api.patch вместо fetch
+        await api.patch(`chat/${projectId}/read`, { json: {} });
       } catch (err) {
         console.error("Failed to mark messages as read on server", err);
       }
     }
   }, [projects, setActiveChatId, markMessagesAsReadLocally, user?.id]);
 
-  // 🔥 ЕСЛИ РЕЖИМ ДЕМО (false) - ПОКАЗЫВАЕМ ЗАГЛУШКИ
   if (!SHOW_WORKING_FEATURES) {
-    if (activeTab === 'orders-list') {
-      return <WorkInProgressBanner title="Все заказы" />;
-    }
-    if (activeTab === 'projects-list' || activeTab === 'stats') {
-      return <WorkInProgressBanner title="Управление проектами" />;
-    }
+    if (activeTab === 'orders-list') return <WorkInProgressBanner title="Все заказы" />;
+    if (activeTab === 'projects-list' || activeTab === 'stats') return <WorkInProgressBanner title="Управление проектами" />;
     return <WorkInProgressBanner title="Раздел в разработке" />;
   }
 
-  // 🔥 ЕСЛИ РЕЖИМ РАЗРАБОТКИ (true) - ПОКАЗЫВАЕМ РАБОЧИЙ ФУНКЦИОНАЛ
   return (
     <>
       {activeTab === 'stats' && (
@@ -112,7 +108,6 @@ const ManagerDashboard = () => {
           onPageChange={setCurrentPage}
         />
       )}
-      {/* Заглушка для заказов, если функционал еще не готов */}
       {activeTab === 'orders-list' && <WorkInProgressBanner title="Все заказы" />}
       
       <ChatDrawer isOpen={!!chatProject} project={chatProject} user={user} onClose={() => setChatProject(null)} variant="emerald" />

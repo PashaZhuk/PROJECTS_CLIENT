@@ -36,6 +36,7 @@
         📁 admin/
           📄 AdminCreateUser.tsx
           📄 AdminOverview.tsx
+          📄 LogsViewer.tsx
           📄 UsersList.tsx
         📁 forms/
           📄 DynamicProjectForm.tsx
@@ -56,8 +57,6 @@
         📄 LockedModal.tsx
         📄 SessionExpiredModal.tsx
         📄 SessionSupersededModal.tsx
-        📄 TwoFALockedModal.tsx
-        📄 UserBlockedModal.tsx
     📁 config/
       📄 projectFields.ts
     📁 hooks/
@@ -408,7 +407,7 @@ import DashboardDispatcher from './pages/dashboard/DashboardDispatcher';
 // Modals
 import SessionExpiredModal from './components/ui/SessionExpiredModal';
 import SessionSupersededModal from './components/ui/SessionSupersededModal';
-import UserBlockedModal from './components/ui/UserBlockedModal';
+import LockedModal from './components/ui/LockedModal';
 
 const AppContent = () => {
   const { 
@@ -417,7 +416,13 @@ const AppContent = () => {
     isInitialized, 
     _hasHydrated, 
     isLoading, 
-    checkAuth 
+    checkAuth,
+    isSessionExpired,
+    isSessionSuperseded,
+    isUserBlocked,
+    setSessionExpired,
+    setSessionSuperseded,
+    setUserBlocked
   } = useAuthStore();
 
   // Реф, чтобы не спамить проверкой авторизации
@@ -450,7 +455,13 @@ const AppContent = () => {
     <div className="flex flex-col min-h-screen bg-gray-50 relative">
       <SessionExpiredModal />
       <SessionSupersededModal />
-      <UserBlockedModal />
+      <LockedModal 
+        isOpen={isUserBlocked}
+        onClose={() => setUserBlocked(false)}
+        lockUntil={null}
+        message="Ваш аккаунт заблокирован администратором. Обратитесь в поддержку."
+        title="Аккаунт заблокирован"
+      />
 
       <Header />
       
@@ -1173,6 +1184,281 @@ const AdminOverview = ({ stats, loading, isOnline, onRefresh }: any) => {
 };
 
 export default AdminOverview;
+```
+
+### 📄 `src\components\dashboard\admin\LogsViewer.tsx`
+```typescript
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Search, AlertCircle, Info, AlertTriangle, RefreshCw, Calendar, X } from 'lucide-react';
+import api from '../../../api/ky';
+
+interface LogEntry {
+  level: 'info' | 'warn' | 'error';
+  message: string;
+  timestamp: string;
+  userId?: number;
+  email?: string;
+  name?: string;
+  ip?: string;
+  [key: string]: any;
+}
+
+const levelColors = {
+  info: 'bg-blue-100 text-blue-700 border-blue-200',
+  warn: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  error: 'bg-red-100 text-red-700 border-red-200',
+};
+
+const levelIcons = {
+  info: <Info size={16} />,
+  warn: <AlertTriangle size={16} />,
+  error: <AlertCircle size={16} />,
+};
+
+// Вспомогательные функции для работы с датами
+const toDisplayDate = (isoDate: string): string => {
+  if (!isoDate) return '';
+  const [year, month, day] = isoDate.split('-');
+  return `${day}.${month}.${year}`;
+};
+
+const toIsoDate = (displayDate: string): string => {
+  const match = displayDate.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (!match) return '';
+  const [, day, month, year] = match;
+  return `${year}-${month}-${day}`;
+};
+
+const LogsViewer = () => {
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [level, setLevel] = useState<string>('');
+  const [search, setSearch] = useState('');
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
+  const [displayDate, setDisplayDate] = useState<string>(toDisplayDate(selectedDate));
+  const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(0);
+  
+  const datePickerRef = useRef<HTMLInputElement>(null);
+
+  const fetchLogs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (level) params.append('level', level);
+      if (search) params.append('search', search);
+      if (selectedDate) params.append('date', selectedDate);
+      params.append('limit', '500');
+      const response: any = await api.get(`admin/logs?${params.toString()}`).json();
+      setLogs(response.logs || []);
+      setTotal(response.returned || 0);
+    } catch (error) {
+      console.error('Failed to fetch logs:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [level, search, selectedDate]);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
+
+  // Срабатывает при выборе даты в нативном календаре
+  const handleNativeDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newIso = e.target.value;
+    if (newIso) {
+      setSelectedDate(newIso);
+      setDisplayDate(toDisplayDate(newIso));
+    }
+  };
+
+  // Срабатывает при ручном вводе ДД.ММ.ГГГГ
+  const handleManualDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let raw = e.target.value.replace(/\D/g, '');
+    if (raw.length > 8) raw = raw.slice(0, 8);
+    
+    let formatted = '';
+    if (raw.length > 0) {
+      formatted = raw.slice(0, 2);
+      if (raw.length > 2) formatted += '.' + raw.slice(2, 4);
+      if (raw.length > 4) formatted += '.' + raw.slice(4, 8);
+    }
+    
+    setDisplayDate(formatted);
+
+    // Если введена полная дата, обновляем системное состояние
+    if (raw.length === 8) {
+      const iso = toIsoDate(formatted);
+      if (iso && !isNaN(new Date(iso).getTime())) {
+        setSelectedDate(iso);
+      }
+    }
+  };
+
+  const handleManualDateBlur = () => {
+    // Если формат неверный при выходе из поля, возвращаем текущую выбранную дату
+    if (!/^\d{2}\.\d{2}\.\d{4}$/.test(displayDate)) {
+      setDisplayDate(toDisplayDate(selectedDate));
+    }
+  };
+
+  const openCalendar = () => {
+    // Вызываем нативный пикер
+    if (datePickerRef.current) {
+      try {
+        // Современный метод для браузеров
+        if ('showPicker' in HTMLInputElement.prototype) {
+          datePickerRef.current.showPicker();
+        } else {
+          datePickerRef.current.click();
+        }
+      } catch (err) {
+        datePickerRef.current.click();
+      }
+    }
+  };
+
+  const formatTimestamp = (ts: string) => {
+    return new Date(ts).toLocaleString();
+  };
+
+  return (
+    <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+      <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Логи системы</h2>
+          <p className="text-sm text-slate-500 mt-1">Последние события и ошибки</p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={fetchLogs}
+            disabled={loading}
+            className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
+            title="Обновить"
+          >
+            <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
+          </button>
+        </div>
+      </div>
+
+      <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <input
+            type="text"
+            placeholder="Поиск по логам (по тексту)..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+
+        <div className="relative w-44">
+          {/* Скрытый нативный инпут, смещенный под иконку */}
+          <input
+            ref={datePickerRef}
+            type="date"
+            value={selectedDate}
+            onChange={handleNativeDateChange}
+            className="absolute opacity-0 pointer-events-none w-0 h-0"
+            style={{ top: '50%', left: '20px' }}
+          />
+          
+          <div className="relative flex items-center">
+            {/* Иконка теперь кликабельна */}
+            <button 
+              type="button"
+              onClick={openCalendar}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition-colors z-10"
+            >
+              <Calendar size={18} />
+            </button>
+            <input
+              type="text"
+              placeholder="ДД.ММ.ГГГГ"
+              value={displayDate}
+              onChange={handleManualDateChange}
+              onBlur={handleManualDateBlur}
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          {['', 'info', 'warn', 'error'].map((lvl) => (
+            <button
+              key={lvl}
+              onClick={() => setLevel(lvl)}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
+                level === lvl 
+                  ? (lvl === '' ? 'bg-slate-900 text-white' : 
+                     lvl === 'info' ? 'bg-blue-600 text-white' : 
+                     lvl === 'warn' ? 'bg-yellow-600 text-white' : 'bg-red-600 text-white')
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {lvl === '' ? 'Все' : lvl.charAt(0).toUpperCase() + lvl.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="overflow-x-auto p-4">
+        {loading && (
+          <div className="flex justify-center py-12">
+            <RefreshCw className="animate-spin text-slate-400" size={32} />
+          </div>
+        )}
+        {!loading && logs.length === 0 && (
+          <div className="text-center py-12 text-slate-400">
+            Логи не найдены
+          </div>
+        )}
+        {!loading && logs.length > 0 && (
+          <div className="space-y-3">
+            {logs.map((log, idx) => (
+              <div
+                key={idx}
+                className={`border rounded-xl p-4 ${levelColors[log.level]} bg-opacity-30`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5">{levelIcons[log.level]}</div>
+                  <div className="flex-1">
+                    <div className="flex flex-wrap gap-3 text-xs font-mono mb-2">
+                      <span className="text-slate-500">{formatTimestamp(log.timestamp)}</span>
+                      {log.userId && <span className="text-slate-500">User ID: {log.userId}</span>}
+                      {log.name && <span className="text-slate-500">Имя: {log.name}</span>}
+                      {log.email && <span className="text-slate-500">Email: {log.email}</span>}
+                      {log.ip && <span className="text-slate-500">IP: {log.ip}</span>}
+                    </div>
+                    <div className="text-sm font-medium break-words">
+                      {log.message}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div className="text-right text-xs text-slate-400 pt-4">
+              Показано {logs.length} из {total} (последних)
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default LogsViewer;
 ```
 
 ### 📄 `src\components\dashboard\admin\UsersList.tsx`
@@ -2719,10 +3005,11 @@ import {
   ShieldCheck, 
   ShoppingCart, 
   ChevronDown, 
-  FolderOpen 
+  FolderOpen,
+  FileText // добавлена иконка для логов
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
-import type { ActiveTabType } from '../../types'
+import type { ActiveTabType } from '../../types';
 
 const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setActiveTab: (t: ActiveTabType) => void }) => {
   const user = useAuthStore((state) => state.user);
@@ -2769,7 +3056,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
         />
 
         {/* ------------------------------------------------------------------ */}
-        {/* БЛОК ДЛЯ АДМИНА: ТОЛЬКО ПОЛЬЗОВАТЕЛИ */}
+        {/* БЛОК ДЛЯ АДМИНА: ПОЛЬЗОВАТЕЛИ + ЛОГИ */}
         {/* ------------------------------------------------------------------ */}
         {role === 'ADMIN' && (
           <div className="pt-6 pb-2">
@@ -2777,7 +3064,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
               onClick={() => setIsUsersOpen(!isUsersOpen)}
               className="w-full flex items-center justify-between px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
             >
-              <span>Управление пользователями</span>
+              <span>Управление системой</span>
               <Users size={14} className={`transition-transform duration-300 ${isUsersOpen ? '' : '-rotate-90'}`} />
             </button>
             
@@ -2795,6 +3082,13 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
                   onClick={() => setActiveTab('users-create')} 
                   label="Создать аккаунт" 
                   icon={<PlusCircle size={16}/>} 
+                  theme={theme} 
+                />
+                <SubNavBtn 
+                  active={activeTab === 'logs'} 
+                  onClick={() => setActiveTab('logs')} 
+                  label="Логи системы" 
+                  icon={<FileText size={16}/>} 
                   theme={theme} 
                 />
               </div>
@@ -3320,167 +3614,6 @@ const SessionSupersededModal = () => {
 };
 
 export default SessionSupersededModal;
-```
-
-### 📄 `src\components\ui\TwoFALockedModal.tsx`
-```typescript
-import React, { useEffect, useState, useRef } from 'react';
-import { AlertCircle, Clock } from 'lucide-react';
-
-interface TwoFALockedModalProps {
-  isOpen: boolean;
-  lockUntil: Date | null;
-  onClose: () => void;
-}
-
-const TwoFALockedModal: React.FC<TwoFALockedModalProps> = ({ isOpen, lockUntil, onClose }) => {
-  const [timeLeft, setTimeLeft] = useState<number>(0);
-  const intervalRef = useRef<number | null>(null);
-  const isClosingRef = useRef(false);
-
-  const stopInterval = () => {
-    if (intervalRef.current !== null) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  };
-
-  const updateTimer = () => {
-    if (!lockUntil) {
-      if (timeLeft !== 0) setTimeLeft(0);
-      return;
-    }
-    const now = new Date();
-    const diff = Math.max(0, Math.ceil((lockUntil.getTime() - now.getTime()) / 1000));
-    setTimeLeft(diff);
-    if (diff <= 0 && !isClosingRef.current) {
-      isClosingRef.current = true;
-      stopInterval();
-      onClose();
-    }
-  };
-
-  useEffect(() => {
-    if (!isOpen || !lockUntil) {
-      stopInterval();
-      setTimeLeft(0);
-      return;
-    }
-
-    isClosingRef.current = false;
-    updateTimer();
-    intervalRef.current = window.setInterval(updateTimer, 1000);
-
-    return () => {
-      stopInterval();
-    };
-  }, [isOpen, lockUntil]);
-
-  if (!isOpen) return null;
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border-2 border-red-100 animate-in zoom-in-95 duration-300">
-        <div className="bg-red-50 p-8 flex flex-col items-center justify-center border-b border-red-100">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-            <AlertCircle className="text-red-600" size={32} />
-          </div>
-          <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight text-center">
-            Блокировка входа
-          </h2>
-        </div>
-        <div className="p-8 text-center space-y-6">
-          <p className="text-slate-600 text-sm leading-relaxed">
-            Вы превысили допустимое количество попыток ввода SMS-кода.
-          </p>
-          <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-center justify-center gap-2">
-            <Clock className="text-red-500" size={20} />
-            <span className="text-lg font-mono font-bold text-red-700">
-              {formatTime(timeLeft)}
-            </span>
-          </div>
-          <p className="text-xs text-slate-500">
-            Попробуйте снова через указанное время.
-          </p>
-          <button
-            onClick={() => {
-              if (isClosingRef.current) return;
-              isClosingRef.current = true;
-              stopInterval();
-              onClose();
-            }}
-            className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-lg transition-all active:scale-95"
-          >
-            Понятно
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default TwoFALockedModal;
-```
-
-### 📄 `src\components\ui\UserBlockedModal.tsx`
-```typescript
-import React from 'react';
-import { Ban } from 'lucide-react';
-import { useAuthStore } from '../../store/useAuthStore';
-import { useNavigate } from 'react-router-dom';
-
-const UserBlockedModal = () => {
-  const isBlocked = useAuthStore((s) => s.isUserBlocked);
-  const setUserBlocked = useAuthStore((s) => s.setUserBlocked);
-  const navigate = useNavigate();
-
-  if (!isBlocked) return null;
-
-  const handleConfirm = () => {
-    setUserBlocked(false);
-    navigate('/login', { replace: true });
-  };
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border-2 border-red-100 animate-in zoom-in-95 duration-300">
-        <div className="bg-red-50 p-8 flex flex-col items-center justify-center border-b border-red-100">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-            <Ban className="text-red-600" size={32} />
-          </div>
-          <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight text-center">
-            Аккаунт заблокирован
-          </h2>
-        </div>
-        <div className="p-8 text-center space-y-6">
-          <p className="text-slate-600 text-sm leading-relaxed">
-            Ваш аккаунт был заблокирован администратором портала.
-            Для выяснения причин обратитесь к администратору.
-          </p>
-          <div className="bg-red-50 border border-red-100 rounded-xl p-4">
-            <p className="text-xs font-bold text-red-700 uppercase tracking-wider">
-              Доступ к порталу ограничен
-            </p>
-          </div>
-          <button
-            onClick={handleConfirm}
-            className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-lg transition-all active:scale-95"
-          >
-            Понятно
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default UserBlockedModal;
 ```
 
 ### 📄 `src\config\projectFields.ts`
@@ -4284,15 +4417,15 @@ export const useUserSockets = () => {
 ```typescript
 import { useEffect, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { useUserStore } from '../store/useUserStore'; // Достаем стор
+import { useUserStore } from '../store/useUserStore';
 import { useUserSockets } from '../hooks/useUserSockets';
 import type { ActiveTabType } from '../types';
 import AdminOverview from '../components/dashboard/admin/AdminOverview';
 import UsersList from '../components/dashboard/admin/UsersList';
 import AdminCreateUser from '../components/dashboard/admin/AdminCreateUser';
+import LogsViewer from '../components/dashboard/admin/LogsViewer';
 
 const AdminDashboard = () => {
-  // 1. Активируем сокеты (они обновляют useUserStore при событии stats_updated)
   useUserSockets();
 
   const { activeTab, setActiveTab } = useOutletContext<{
@@ -4300,13 +4433,10 @@ const AdminDashboard = () => {
     setActiveTab: (tab: ActiveTabType) => void;
   }>();
 
-  // 2. Берем данные и методы напрямую из стора
-  // Теперь статистика реактивна: как только сокет получит данные, компонент перерисуется
   const stats = useUserStore((state) => state.stats);
   const fetchStats = useUserStore((state) => state.fetchStats);
   const loading = useUserStore((state) => state.loading);
 
-  // Используем заглушку для онлайна системы (можно завязать на socket.connected)
   const isSystemOnline = true; 
 
   const fetchData = useCallback(async (quiet = false) => {
@@ -4317,7 +4447,6 @@ const AdminDashboard = () => {
     }
   }, [fetchStats]);
 
-  // 3. Первичная загрузка данных (только если данных в сторе еще нет)
   useEffect(() => {
     if (activeTab === 'stats' && !stats) {
       fetchData();
@@ -4326,7 +4455,6 @@ const AdminDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* СТАТИСТИКА */}
       {activeTab === 'stats' && (
         <AdminOverview 
           stats={stats} 
@@ -4336,16 +4464,14 @@ const AdminDashboard = () => {
         />
       )}
 
-      {/* СПИСОК ПОЛЬЗОВАТЕЛЕЙ */}
       {activeTab === 'users-list' && <UsersList />}
 
-      {/* СОЗДАНИЕ ПОЛЬЗОВАТЕЛЯ */}
-      {/* Добавляем onCancel, чтобы избежать ошибки TS */}
       {activeTab === 'users-create' && (
         <AdminCreateUser onCancel={() => setActiveTab('users-list')} />
       )}
 
-      {/* Заглушки для остальных вкладок, если они выбраны */}
+      {activeTab === 'logs' && <LogsViewer />}
+
       {(activeTab === 'projects-list' || activeTab === 'projects-create' || activeTab === 'orders-list') && (
         <div className="p-8 text-center bg-white rounded-xl shadow-sm border border-gray-100">
           <h2 className="text-xl font-semibold text-gray-400">Вкладка {activeTab} в разработке</h2>
@@ -6135,7 +6261,8 @@ export type ActiveTabType =
   | 'users-list' 
   | 'users-create' 
   | 'orders-list' 
-  | 'orders-create';
+  | 'orders-create'
+  | 'logs'; // добавлено
 
 export interface ProjectStats {
   total: number;

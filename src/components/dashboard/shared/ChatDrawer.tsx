@@ -25,7 +25,6 @@ export const ChatDrawer = ({
   const loading = useChatStore(state => state.loading);
   const messages = useChatStore(state => state.messages);
 
-  // ✅ useChatLogic принимает только 4 аргумента
   const { sendMessage } = useChatLogic(
     project?.id, 
     user, 
@@ -33,9 +32,10 @@ export const ChatDrawer = ({
     isMinimized
   );
 
-  // Мемоизируем сообщения конкретного проекта
+  // Мемоизируем сообщения конкретного проекта, гарантируя массив
   const projectMessages = useMemo(() => {
-    return project?.id ? messages[project.id] || [] : [];
+    const msgs = project?.id ? messages[project.id] : undefined;
+    return Array.isArray(msgs) ? msgs : [];
   }, [messages, project?.id]);
 
   // Автопрокрутка вниз при новых сообщениях или открытии
@@ -53,7 +53,6 @@ export const ChatDrawer = ({
     setNewMessage('');
   };
 
-  // Стилизация в зависимости от варианта (Менеджер/Пользователь)
   const btnClass = variant === 'emerald' 
     ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200' 
     : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200';

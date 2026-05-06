@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Search, AlertCircle, Info, AlertTriangle, RefreshCw, X, Calendar } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Search, AlertCircle, Info, AlertTriangle, RefreshCw, Calendar, X } from 'lucide-react';
 import api from '../../../api/ky';
 
 interface LogEntry {
@@ -8,7 +8,7 @@ interface LogEntry {
   timestamp: string;
   userId?: number;
   email?: string;
-  name?: string;        // 👈 добавлено
+  name?: string;
   ip?: string;
   [key: string]: any;
 }
@@ -25,20 +25,33 @@ const levelIcons = {
   error: <AlertCircle size={16} />,
 };
 
+// Вспомогательные функции для работы с датами
+const toDisplayDate = (isoDate: string): string => {
+  if (!isoDate) return '';
+  const [year, month, day] = isoDate.split('-');
+  return `${day}.${month}.${year}`;
+};
+
+const toIsoDate = (displayDate: string): string => {
+  const match = displayDate.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (!match) return '';
+  const [, day, month, year] = match;
+  return `${year}-${month}-${day}`;
+};
+
 const LogsViewer = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [level, setLevel] = useState<string>('');
   const [search, setSearch] = useState('');
   const [selectedDate, setSelectedDate] = useState<string>(() => {
-    // Устанавливаем текущую дату в формате YYYY-MM-DD
     const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
+    return today.toISOString().split('T')[0];
   });
+  const [displayDate, setDisplayDate] = useState<string>(toDisplayDate(selectedDate));
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
+  
+  const datePickerRef = useRef<HTMLInputElement>(null);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -62,17 +75,63 @@ const LogsViewer = () => {
     fetchLogs();
   }, [fetchLogs]);
 
-  const formatTimestamp = (ts: string) => {
-    return new Date(ts).toLocaleString();
+  // Срабатывает при выборе даты в нативном календаре
+  const handleNativeDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newIso = e.target.value;
+    if (newIso) {
+      setSelectedDate(newIso);
+      setDisplayDate(toDisplayDate(newIso));
+    }
   };
 
-  const clearDate = () => {
-    // Устанавливаем текущую дату вместо очистки
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    setSelectedDate(`${yyyy}-${mm}-${dd}`);
+  // Срабатывает при ручном вводе ДД.ММ.ГГГГ
+  const handleManualDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let raw = e.target.value.replace(/\D/g, '');
+    if (raw.length > 8) raw = raw.slice(0, 8);
+    
+    let formatted = '';
+    if (raw.length > 0) {
+      formatted = raw.slice(0, 2);
+      if (raw.length > 2) formatted += '.' + raw.slice(2, 4);
+      if (raw.length > 4) formatted += '.' + raw.slice(4, 8);
+    }
+    
+    setDisplayDate(formatted);
+
+    // Если введена полная дата, обновляем системное состояние
+    if (raw.length === 8) {
+      const iso = toIsoDate(formatted);
+      if (iso && !isNaN(new Date(iso).getTime())) {
+        setSelectedDate(iso);
+      }
+    }
+  };
+
+  const handleManualDateBlur = () => {
+    // Если формат неверный при выходе из поля, возвращаем текущую выбранную дату
+    if (!/^\d{2}\.\d{2}\.\d{4}$/.test(displayDate)) {
+      setDisplayDate(toDisplayDate(selectedDate));
+    }
+  };
+
+  const openCalendar = () => {
+    // Вызываем нативный пикер
+    if (datePickerRef.current) {
+      try {
+        // Современный метод для браузеров
+        if ('showPicker' in HTMLInputElement.prototype) {
+          datePickerRef.current.showPicker();
+        } else {
+          datePickerRef.current.click();
+        }
+      } catch (err) {
+        datePickerRef.current.click();
+      }
+    }
+  };
+
+  const formatTimestamp = (ts: string) => {
+    return new Date(ts).toLocaleString();
   };
 
   return (
@@ -114,59 +173,53 @@ const LogsViewer = () => {
           )}
         </div>
 
-        {/* Календарь выбора даты – всегда текущая дата */}
-        <div className="relative">
-          <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+        <div className="relative w-44">
+          {/* Скрытый нативный инпут, смещенный под иконку */}
           <input
+            ref={datePickerRef}
             type="date"
             value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+            onChange={handleNativeDateChange}
+            className="absolute opacity-0 pointer-events-none w-0 h-0"
+            style={{ top: '50%', left: '20px' }}
           />
-          {selectedDate && (
-            <button
-              onClick={clearDate}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-              title="Сбросить на сегодня"
+          
+          <div className="relative flex items-center">
+            {/* Иконка теперь кликабельна */}
+            <button 
+              type="button"
+              onClick={openCalendar}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition-colors z-10"
             >
-              <X size={16} />
+              <Calendar size={18} />
             </button>
-          )}
+            <input
+              type="text"
+              placeholder="ДД.ММ.ГГГГ"
+              value={displayDate}
+              onChange={handleManualDateChange}
+              onBlur={handleManualDateBlur}
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+          </div>
         </div>
 
         <div className="flex gap-2">
-          <button
-            onClick={() => setLevel('')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
-              !level ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Все
-          </button>
-          <button
-            onClick={() => setLevel('info')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
-              level === 'info' ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-            }`}
-          >
-            Info
-          </button>
-          <button
-            onClick={() => setLevel('warn')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
-              level === 'warn' ? 'bg-yellow-600 text-white' : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
-            }`}
-          >
-            Warn
-          </button>
-          <button
-            onClick={() => setLevel('error')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
-              level === 'error' ? 'bg-red-600 text-white' : 'bg-red-50 text-red-700 hover:bg-red-100'
-            }`}
-          >
-            Error
-          </button>
+          {['', 'info', 'warn', 'error'].map((lvl) => (
+            <button
+              key={lvl}
+              onClick={() => setLevel(lvl)}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
+                level === lvl 
+                  ? (lvl === '' ? 'bg-slate-900 text-white' : 
+                     lvl === 'info' ? 'bg-blue-600 text-white' : 
+                     lvl === 'warn' ? 'bg-yellow-600 text-white' : 'bg-red-600 text-white')
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {lvl === '' ? 'Все' : lvl.charAt(0).toUpperCase() + lvl.slice(1)}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -201,11 +254,6 @@ const LogsViewer = () => {
                     <div className="text-sm font-medium break-words">
                       {log.message}
                     </div>
-                    {log.projectId && (
-                      <div className="mt-2 text-xs text-slate-500">
-                        Project ID: {log.projectId}
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>

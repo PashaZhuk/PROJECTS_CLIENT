@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { getSocket, SOCKET_URL } from '../api/socket';
+import api from '../api/ky';
 import { useChatStore } from '../store/useChatStore';
 
 export const useChatLogic = (
@@ -8,7 +8,7 @@ export const useChatLogic = (
   isOpen: boolean,
   isMinimized: boolean
 ) => {
-  const { setMessages, addMessage, markMessagesAsReadLocally, setActiveChatId, markMyMessagesAsRead } = useChatStore();
+  const { setMessages, addMessage, markMessagesAsReadLocally, setActiveChatId, markMyMessagesAsRead, setLoading } = useChatStore();
   const isOpenRef = useRef(isOpen);
   const isMinimizedRef = useRef(isMinimized);
   const hasJoinedRoomRef = useRef(false);
@@ -22,30 +22,18 @@ export const useChatLogic = (
   const sendReadReceipt = useCallback(async () => {
     if (!projectId || !user?.id) return;
     try {
-      const response = await fetch(`${SOCKET_URL}/api/chat/${projectId}/read`, {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const data = await response.json();
-      console.log('[useChatLogic] ✅ Read receipt response:', { status: response.status, data });
+      await api.patch(`chat/${projectId}/read`, { json: {} });
+      console.log('[useChatLogic] ✅ Read receipt sent');
     } catch (err) {
       console.error('[ChatLogic] ❌ Send read receipt error:', err);
     }
   }, [projectId, user?.id]);
 
-  const joinProjectRoom = useCallback(() => {
-    const socket = getSocket();
-    if (!projectId || !user?.id || !socket) return;
-    if (!hasJoinedRoomRef.current) {
-      socket.emit('join_project', { projectId, userId: user.id, userName: user.name, userRole: user.role });
-      hasJoinedRoomRef.current = true;
-    }
-  }, [projectId, user?.id, user?.name, user?.role]);
+  // В реальном сокете join_project отправляется в useGlobalChatLoader, здесь не нужно дублировать
+  // Удаляем joinProjectRoom, так как это уже делается в глобальном хуке.
 
   useEffect(() => {
     if (isOpen && !isMinimized && projectId && user?.id) {
-      joinProjectRoom();
       setActiveChatId(projectId);
       markMessagesAsReadLocally(projectId, user.id);
       sendReadReceipt();
@@ -53,68 +41,46 @@ export const useChatLogic = (
       setActiveChatId(null);
       hasJoinedRoomRef.current = false;
     }
-  }, [isOpen, isMinimized, projectId, user?.id, setActiveChatId, markMessagesAsReadLocally, sendReadReceipt, joinProjectRoom]);
+  }, [isOpen, isMinimized, projectId, user?.id, setActiveChatId, markMessagesAsReadLocally, sendReadReceipt]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || !projectId || !user?.id) return;
     try {
-      const res = await fetch(`${SOCKET_URL}/api/chat/${projectId}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ text }),
-      });
-      const savedMsg = await res.json();
-      addMessage(projectId, { ...savedMsg, isRead: false });
+      const savedMsg = await api.post(`chat/${projectId}/messages`, { json: { text } }).json();
+      // Проверяем, что savedMsg - объект
+      if (savedMsg && typeof savedMsg === 'object') {
+        addMessage(projectId, { ...(savedMsg as any), isRead: false });
+      } else {
+        console.error('[ChatLogic] Invalid response format', savedMsg);
+      }
     } catch (err) {
       console.error('[ChatLogic] ❌ Send error:', err);
     }
   };
 
+  // Загрузка сообщений при открытии или изменении projectId
   useEffect(() => {
     if (!projectId) return;
-    fetch(`${SOCKET_URL}/api/chat/${projectId}/messages`, { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => {
-        setMessages(projectId, data);
+    setLoading(true);
+    api.get(`chat/${projectId}/messages`).json()
+      .then((data: any) => {
+        const messagesArray = Array.isArray(data) ? data : [];
+        setMessages(projectId, messagesArray);
         if (isOpenRef.current && !isMinimizedRef.current && user?.id) {
           markMessagesAsReadLocally(projectId, user.id);
           sendReadReceipt();
         }
       })
-      .catch(console.error);
-  }, [projectId, setMessages, user?.id, markMessagesAsReadLocally, sendReadReceipt]);
+      .catch(err => console.error('[ChatLogic] Failed to load messages:', err))
+      .finally(() => setLoading(false));
+  }, [projectId, setMessages, user?.id, markMessagesAsReadLocally, sendReadReceipt, setLoading]);
 
+  // Слушаем сокет-события (new_message, messages_read) – они уже в useGlobalChatLoader, поэтому здесь не нужны.
+  // Но оставим для уверенности обработку messages_read, если требуется.
   useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
-    const logAllEvents = (event: string, ...args: any[]) => {
-      console.log('[useChatLogic] 📡 RAW SOCKET EVENT:', event, args);
-    };
-    socket.onAny(logAllEvents);
-    return () => {
-      socket.offAny(logAllEvents);
-    };
+    // Можно добавить обработку сокетов, но полагаемся на глобальный хук.
+    // Для избежания дублирования оставим пустым.
   }, []);
-
-  useEffect(() => {
-    if (!projectId) return;
-    const socket = getSocket();
-    if (!socket) return;
-    const handleMessagesRead = ({ projectId: readProjectId, readerId, messageIds }: { 
-      projectId: number; 
-      readerId: number;
-      messageIds?: number[];
-    }) => {
-      if (readProjectId === projectId && user?.id && String(readerId) !== String(user.id)) {
-        markMyMessagesAsRead(projectId, readerId);
-      }
-    };
-    socket.on('messages_read', handleMessagesRead);
-    return () => {
-      socket.off('messages_read', handleMessagesRead);
-    };
-  }, [projectId, user?.id, markMyMessagesAsRead]);
 
   return { sendMessage };
 };

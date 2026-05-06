@@ -10,16 +10,10 @@ export const useGlobalChatLoader = (user: any, projects: any[]) => {
 
   useEffect(() => {
     if (!user?.id || projects.length === 0) return;
-
     const socket = getSocket();
-    if (!socket) {
-      console.warn('[GlobalChatLoader] Socket not initialized');
-      return;
-    }
+    if (!socket) return;
 
-    console.log('[GlobalChatLoader] 🚀 Initializing for user:', user.id);
     socket.emit('join_self_room', user.id);
-
     projects.forEach(p => {
       socket.emit('join_project', { 
         projectId: p.id, 

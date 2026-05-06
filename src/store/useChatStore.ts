@@ -13,19 +13,23 @@ interface Message {
 interface ChatStore {
   messages: Record<number, Message[]>;
   activeChatId: number | null;
+  loading: boolean; // добавлено
   setActiveChatId: (id: number | null) => void;
   setMessages: (projectId: number, messages: Message[]) => void;
   addMessage: (projectId: number, message: Message) => void;
   markMessagesAsReadLocally: (projectId: number, currentUserId: string | number) => void;
   markMyMessagesAsRead: (projectId: number, readerId: string | number) => void;
   getUnreadCount: (projectId: number, userId: string | number | undefined) => number;
+  setLoading: (loading: boolean) => void; // добавлено
 }
 
 export const useChatStore = create<ChatStore>((set, get) => ({
   messages: {},
   activeChatId: null,
+  loading: false,
 
   setActiveChatId: (id) => set({ activeChatId: id }),
+  setLoading: (loading) => set({ loading }),
 
   setMessages: (projectId, msgs) => {
     set((state) => ({
@@ -45,7 +49,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     if (!currentUserId) return;
     const pId = Number(projectId);
 
-    // Сбрасываем счетчик непрочитанных в списке проектов
     useProjectStore.getState().setProjects((prev) => 
       prev.map(p => Number(p.id) === pId ? { ...p, unreadCount: 0, hasUnread: false } : p)
     );
@@ -53,29 +56,22 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     set((state) => {
       const msgs = state.messages[pId];
       if (!msgs) return state;
-
       const updated = msgs.map(m => 
         String(m.senderId) !== String(currentUserId) && !m.isRead ? { ...m, isRead: true } : m
       );
-
       return { messages: { ...state.messages, [pId]: updated } };
     });
   },
 
-  // Вызывается когда СОБЕСЕДНИК прочитал сообщения. readerId = тот, кто открыл чат.
   markMyMessagesAsRead: (projectId, readerId) => {
     if (!readerId) return;
     const pId = Number(projectId);
-
     set((state) => {
       const msgs = state.messages[pId];
       if (!msgs) return state;
-
-      // Если отправитель НЕ тот, кто прочитал -> значит это моё сообщение
       const updated = msgs.map(m => 
         String(m.senderId) !== String(readerId) && !m.isRead ? { ...m, isRead: true } : m
       );
-
       return { messages: { ...state.messages, [pId]: updated } };
     });
   },

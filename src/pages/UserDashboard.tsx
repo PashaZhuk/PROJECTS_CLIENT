@@ -7,13 +7,13 @@ import { useChatStore } from '../store/useChatStore';
 import { useProjectSockets } from '../hooks/useProjectSockets';
 import { useGlobalChatLoader } from '../hooks/useGlobalChatLoader';
 import { useUserSockets } from '../hooks/useUserSockets';
-import { Rocket } from 'lucide-react'; // Иконка для заглушки
+import { Rocket } from 'lucide-react';
 import DynamicProjectForm from '../components/dashboard/forms/DynamicProjectForm';
 import { StatsView } from '../components/dashboard/shared/StatsView';
 import { ProjectsListView } from '../components/dashboard/shared/ProjectsListView';
 import { ChatDrawer } from '../components/dashboard/shared/ChatDrawer';
+import api from '../api/ky';
 
-// 🔥 ПЕРЕКЛЮЧАТЕЛЬ: поставь true, чтобы вернуть старый рабочий функционал
 const SHOW_WORKING_FEATURES = true;
 
 const WorkInProgressBanner = ({ title }: { title: string }) => (
@@ -78,7 +78,8 @@ const UserDashboard = () => {
       setActiveChatId(projectId);
       markMessagesAsReadLocally(projectId, user.id);
       try {
-        await fetch(`/api/chat/${projectId}/read`, { method: 'POST', credentials: 'include' });
+        await api.patch(`chat/${projectId}/read`, { json: {} });
+        console.log('[UserDashboard] Marked as read via API');
       } catch (err) {
         console.error("Failed to mark messages as read on server", err);
       }
@@ -104,28 +105,23 @@ const UserDashboard = () => {
   }, [setActiveTab]);
 
   const stats = useMemo(() => ({
-  total: totalCount,
-  active: projects.filter(p => p.status === 'IN_PROGRESS').length,
-  completed: projects.filter(p => p.status === 'CLOSED').length,
-  pending: projects.filter(p => p.status === 'PENDING' || p.status === 'REVISION').length,
-  approved: projects.filter(p => p.status === 'APPROVED').length
-}), [projects, totalCount]);
+    total: totalCount,
+    active: projects.filter(p => p.status === 'IN_PROGRESS').length,
+    completed: projects.filter(p => p.status === 'CLOSED').length,
+    pending: projects.filter(p => p.status === 'PENDING' || p.status === 'REVISION').length,
+    approved: projects.filter(p => p.status === 'APPROVED').length
+  }), [projects, totalCount]);
 
-  // 🔥 ЕСЛИ РЕЖИМ ДЕМО (false) - ПОКАЗЫВАЕМ ЗАГЛУШКИ ДЛЯ ВСЕГО
   if (!SHOW_WORKING_FEATURES) {
-    // Если открыты вкладки заказов - показываем заглушку
     if (activeTab === 'orders-list' || activeTab === 'orders-create') {
       return <WorkInProgressBanner title={activeTab === 'orders-list' ? 'Мои заказы' : 'Создать новый заказ'} />;
     }
-    // Если открыты вкладки проектов - тоже заглушка (так как флаг false)
     if (activeTab === 'projects-list' || activeTab === 'projects-create' || activeTab === 'stats') {
        return <WorkInProgressBanner title="Работа с проектами" />;
     }
-    // Для любых других случаев
     return <WorkInProgressBanner title="Раздел в разработке" />;
   }
 
-  // 🔥 ЕСЛИ РЕЖИМ РАЗРАБОТКИ (true) - ПОКАЗЫВАЕМ РАБОЧИЙ ФУНКЦИОНАЛ
   return (
     <>
       {activeTab === 'stats' && (
@@ -148,7 +144,6 @@ const UserDashboard = () => {
           onCreateNew={() => { setEditingProject(null); setSelectedCategory(null); setIsFormOpen(true); }}
         />
       )}
-      {/* Заглушки для заказов, если вдруг флаг true, а функционал заказов еще не готов */}
       {activeTab === 'orders-list' && <WorkInProgressBanner title="Мои заказы" />}
       {activeTab === 'orders-create' && <WorkInProgressBanner title="Работа с заказами" />}
       

@@ -1,9 +1,10 @@
+// src/hooks/useSessionManager.ts (клиент)
 import { useEffect, useRef, useCallback } from 'react';
 import { getSocket } from '../api/socket';
 import { useAuthStore } from '../store/useAuthStore';
 
 const INACTIVITY_LIMITS = {
-  USER: 1 * 60 * 1000,      // 1 минута (демо)
+  USER: 1 * 60 * 1000,
   MANAGER: 2 * 60 * 60 * 1000,
   ADMIN: 2 * 60 * 60 * 1000,
 };
