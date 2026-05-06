@@ -4,9 +4,19 @@ import {
   ChevronUp, 
   MessageSquare, 
   Calendar,
-  Pencil // Добавили иконку для редактирования
+  Pencil
 } from 'lucide-react';
 import type { Project, User } from '../../../types';
+
+// Словарь для отображения статусов на русском
+const statusLabels: Record<Project['status'], string> = {
+  PENDING: 'Ожидание',
+  IN_PROGRESS: 'В работе',
+  APPROVED: 'Одобрено',
+  REJECTED: 'Отклонено',
+  REVISION: 'На доработке',
+  CLOSED: 'Закрыто',
+};
 
 interface ProjectRowProps {
   project: Project & { dynamicData?: any; partner?: any; hasUnread?: boolean };
@@ -26,7 +36,7 @@ export const ProjectRow = ({
   isAdminView,
   onStatusUpdate,
   onOpenChat,
-  onEdit, // Не забываем деструктурировать onEdit
+  onEdit,
 }: ProjectRowProps) => {
 
   const handleStatusChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -35,7 +45,6 @@ export const ProjectRow = ({
     }
   };
 
-  // Маппинг цветов для статусов
   const statusColors: Record<Project['status'], string> = {
     PENDING: 'bg-amber-100 text-amber-700 border-amber-200',
     IN_PROGRESS: 'bg-indigo-100 text-indigo-700 border-indigo-200',
@@ -45,13 +54,11 @@ export const ProjectRow = ({
     CLOSED: 'bg-slate-100 text-slate-700 border-slate-200',
   };
 
-  // Условие: может ли пользователь редактировать проект
   const canUserEdit = !isAdminView && (project.status === 'PENDING' || project.status === 'REVISION');
 
   return (
     <>
       <tr className={`border-b border-slate-100 transition-all ${isExpanded ? 'bg-blue-50/30' : 'hover:bg-slate-50'}`}>
-        {/* ID и Номер */}
         <td className="p-6 text-center">
           <span className="text-xs font-black text-slate-400 block mb-1">ID: {project.id}</span>
           <span className="px-3 py-1 bg-slate-100 rounded-full text-[10px] font-bold text-slate-600 tracking-tighter">
@@ -59,7 +66,6 @@ export const ProjectRow = ({
           </span>
         </td>
 
-        {/* Партнер (только для менеджера) */}
         {isAdminView && (
           <td className="p-6 text-center">
             <div className="flex flex-col items-center">
@@ -69,7 +75,6 @@ export const ProjectRow = ({
           </td>
         )}
 
-        {/* Заказчик / Название проекта */}
         <td className="p-6 text-center">
           <div className="flex flex-col">
             <span className="text-sm font-bold text-slate-700">{(project as any).customerName || 'Заказчик не указан'}</span>
@@ -77,7 +82,6 @@ export const ProjectRow = ({
           </div>
         </td>
 
-        {/* СТАТУС */}
         <td className="p-6 text-center">
           {isAdminView ? (
             <select
@@ -85,21 +89,17 @@ export const ProjectRow = ({
               onChange={handleStatusChange}
               className={`text-[10px] font-black uppercase tracking-tight border rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer ${statusColors[project.status]}`}
             >
-              <option value="PENDING">Ожидание</option>
-              <option value="IN_PROGRESS">В работе</option>
-              <option value="APPROVED">Одобрено</option>
-              <option value="REVISION">На доработку</option> 
-              <option value="REJECTED">Отклонено</option>
-              <option value="CLOSED">Закрыто</option>
+              {Object.entries(statusLabels).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
             </select>
           ) : (
             <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${statusColors[project.status]}`}>
-              {project.status === 'REVISION' ? 'НА ДОРАБОТКЕ' : project.status}
+              {statusLabels[project.status]}
             </span>
           )}
         </td>
 
-        {/* Дата создания */}
         <td className="p-6 text-center">
           <div className="flex flex-col items-center gap-1 text-slate-400">
             <Calendar size={14} />
@@ -107,11 +107,8 @@ export const ProjectRow = ({
           </div>
         </td>
 
-        {/* Действия */}
         <td className="p-6">
           <div className="flex items-center justify-center gap-3">
-            
-            {/* КНОПКА РЕДАКТИРОВАНИЯ (Появляется только когда статус REVISION или PENDING) */}
             {canUserEdit && (
               <button
                 onClick={() => onEdit?.(project)}
@@ -148,7 +145,6 @@ export const ProjectRow = ({
         </td>
       </tr>
 
-      {/* РАСКРЫВАЮЩИЕСЯ ДЕТАЛИ */}
       {isExpanded && (
         <tr className="bg-slate-50/50">
           <td colSpan={isAdminView ? 6 : 5} className="p-0 border-b border-slate-100">

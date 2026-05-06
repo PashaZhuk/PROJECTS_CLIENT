@@ -1,135 +1,202 @@
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import userAPI from '../../api/user';
-import { useAuthStore } from '../../store/useAuthStore';
-import { KeyRound, RefreshCw, ShieldAlert, CheckCircle2 } from 'lucide-react';
-import { forceChangePasswordSchema, type ForceChangePasswordFormData } from '../../schemas/passwordSchema';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import authApi from '../../api/auth';
+import { Lock, Mail, ArrowLeft, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
-const ForcePasswordChange = () => {
-  const user = useAuthStore((state) => state.user);
-  const setUser = useAuthStore((state) => state.setUser);
+const ResetPasswordPage = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  
+  const token = searchParams.get('token');
+  
+  const [email, setEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-  const { 
-    register, 
-    handleSubmit, 
-    formState: { errors, isSubmitting }, 
-    setError, 
-    clearErrors 
-  } = useForm<ForceChangePasswordFormData>({
-    resolver: zodResolver(forceChangePasswordSchema),
-    mode: 'onChange', // Валидировать при изменении полей (чтобы убирать ошибку сразу)
-  });
+  // Если токен есть, но он невалидный, можно показать сообщение и предложить запросить новый
+  useEffect(() => {
+    if (token) {
+      // Можно сразу проверить токен через API, но пока просто лог
+      console.log('Token from URL:', token);
+    }
+  }, [token]);
 
-  const onSubmit = async (data: ForceChangePasswordFormData) => {
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setMessage(null);
     try {
-      // Отправляем только новый пароль, confirm уже проверен схемой и не нужен серверу
-      await userAPI.changePw({ newPassword: data.newPassword });
-
-      // Обновляем стейт пользователя: флаг mustChangePassword больше не нужен
-      if (user) {
-        setUser({ ...user, mustChangePassword: false });
-      }
+      await authApi.forgotPassword(email);
+      setMessage({ type: 'success', text: 'Письмо со ссылкой для сброса пароля отправлено на ваш email.' });
+      setEmail('');
     } catch (err: any) {
-      console.error('Change password error:', err);
-      
-      let errorMessage = 'Сетевая ошибка. Попробуйте позже.';
-      if (err.response) {
-        const errorData = await err.response.json().catch(() => ({}));
-        errorMessage = errorData.message || errorData.error || 'Ошибка при смене пароля';
-      }
-
-      // Устанавливаем общую ошибку формы (корневую)
-      setError('root', {
-        type: 'server',
-        message: errorMessage,
-      });
+      const errorMsg = err.response?.data?.error || 'Ошибка при отправке письма';
+      setMessage({ type: 'error', text: errorMsg });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl max-w-md w-full animate-in zoom-in duration-300 border border-slate-100">
-        <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 bg-blue-50 rounded-3xl flex items-center justify-center text-blue-600">
-            <ShieldAlert size={32} />
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) {
+      setMessage({ type: 'error', text: 'Отсутствует токен сброса. Запросите новую ссылку.' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setMessage({ type: 'error', text: 'Пароли не совпадают' });
+      return;
+    }
+    if (newPassword.length < 6) {
+      setMessage({ type: 'error', text: 'Пароль должен быть не менее 6 символов' });
+      return;
+    }
+
+    setIsLoading(true);
+    setMessage(null);
+    try {
+      // Убедимся, что токен передан в теле
+      await authApi.resetPassword(token, newPassword);
+      setMessage({ type: 'success', text: 'Пароль успешно изменен! Перенаправление на вход...' });
+      setTimeout(() => navigate('/login'), 2000);
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.error || 'Ошибка при смене пароля';
+      setMessage({ type: 'error', text: errorMsg });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!token) {
+    // Форма запроса сброса пароля
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+        <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 border border-slate-100">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock className="text-blue-600" size={32} />
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Забыли пароль?</h2>
+            <p className="text-slate-500 text-sm mt-2">Введите свой email, и мы пришлем ссылку для сброса.</p>
+          </div>
+
+          {message && (
+            <div className={`mb-6 p-4 rounded-xl flex items-start gap-3 text-sm ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
+              {message.type === 'success' ? <CheckCircle size={18} className="shrink-0 mt-0.5"/> : <AlertCircle size={18} className="shrink-0 mt-0.5"/>}
+              {message.text}
+            </div>
+          )}
+
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Email адрес</label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  placeholder="name@company.com"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-black uppercase tracking-[0.1em] text-xs shadow-lg transition-all active:scale-95 disabled:opacity-70"
+            >
+              {isLoading ? 'Отправка...' : 'Прислать ссылку'}
+            </button>
+          </form>
+
+          <div className="mt-8 text-center">
+            <button
+              onClick={() => navigate('/login')}
+              className="flex items-center justify-center gap-2 mx-auto text-slate-500 hover:text-slate-900 text-sm font-bold transition-colors"
+            >
+              <ArrowLeft size={16} /> Вернуться ко входу
+            </button>
           </div>
         </div>
+      </div>
+    );
+  }
 
-        <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-2 text-center">
-          Безопасность прежде всего
-        </h2>
-        <p className="text-slate-500 mb-8 text-sm font-medium text-center leading-relaxed">
-          Администратор создал для вас аккаунт с временным паролем. Пожалуйста, установите свой личный пароль.
-        </p>
+  // Форма установки нового пароля (токен есть)
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 border border-slate-100">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Lock className="text-emerald-600" size={32} />
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Новый пароль</h2>
+          <p className="text-slate-500 text-sm mt-2">Придумайте надежный пароль для вашего аккаунта.</p>
+        </div>
 
-        {/* ОШИБКА ФОРМЫ (SERVER ERROR) */}
-        {errors.root && (
-          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-red-100 flex items-center gap-2">
-            <ShieldAlert size={14} /> {errors.root.message}
+        {message && (
+          <div className={`mb-6 p-4 rounded-xl flex items-start gap-3 text-sm ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
+            {message.type === 'success' ? <CheckCircle size={18} className="shrink-0 mt-0.5"/> : <AlertCircle size={18} className="shrink-0 mt-0.5"/>}
+            {message.text}
           </div>
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
-          
-          {/* НОВЫЙ ПАРОЛЬ */}
-          <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
-              Новый пароль
-            </label>
+        <form onSubmit={handleResetPassword} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Новый пароль</label>
             <div className="relative">
-              <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
               <input
-                type="password"
-                {...register('newPassword')}
+                type={showNewPassword ? 'text' : 'password'}
+                required
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all pr-10"
                 placeholder="••••••••"
-                disabled={isSubmitting}
-                className={`w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 outline-none transition-all font-mono ${
-                  errors.newPassword ? 'ring-2 ring-red-500' : 'focus:ring-blue-600'
-                }`}
               />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+              >
+                {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
-            {errors.newPassword && (
-              <p className="text-red-500 text-[10px] font-bold ml-1 uppercase tracking-wide">{errors.newPassword.message}</p>
-            )}
           </div>
-
-          {/* ПОДТВЕРЖДЕНИЕ ПАРОЛЯ */}
-          <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
-              Подтвердите пароль
-            </label>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Подтвердите пароль</label>
             <div className="relative">
-              <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
               <input
-                type="password"
-                {...register('confirmPassword')}
+                type={showConfirmPassword ? 'text' : 'password'}
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all pr-10"
                 placeholder="••••••••"
-                disabled={isSubmitting}
-                className={`w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 outline-none transition-all font-mono ${
-                  errors.confirmPassword ? 'ring-2 ring-red-500' : 'focus:ring-blue-600'
-                }`}
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+              >
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
-            {errors.confirmPassword && (
-              <p className="text-red-500 text-[10px] font-bold ml-1 uppercase tracking-wide">{errors.confirmPassword.message}</p>
-            )}
           </div>
 
           <button
             type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-slate-900 hover:bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+            disabled={isLoading}
+            className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-black uppercase tracking-[0.1em] text-xs shadow-lg transition-all active:scale-95 disabled:opacity-70"
           >
-            {isSubmitting ? (
-              <>
-                <RefreshCw className="animate-spin" size={16} /> Обработка...
-              </>
-            ) : (
-              <>
-                <CheckCircle2 size={16} /> Обновить и войти
-              </>
-            )}
+            {isLoading ? 'Сохранение...' : 'Сменить пароль'}
           </button>
         </form>
       </div>
@@ -137,4 +204,4 @@ const ForcePasswordChange = () => {
   );
 };
 
-export default ForcePasswordChange;
+export default ResetPasswordPage;

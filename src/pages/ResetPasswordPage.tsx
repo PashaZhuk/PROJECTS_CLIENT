@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import authApi from '../api/auth';
-import { Lock, Mail, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import { Lock, Mail, ArrowLeft, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
@@ -9,15 +9,15 @@ const ResetPasswordPage = () => {
   
   const token = searchParams.get('token');
   
-  // Состояния
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-  // Обработка запроса на сброс (если нет токена)
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -34,9 +34,9 @@ const ResetPasswordPage = () => {
     }
   };
 
-  // Обработка установки нового пароля (если есть токен)
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    setMessage(null);
     if (newPassword !== confirmPassword) {
       setMessage({ type: 'error', text: 'Пароли не совпадают' });
       return;
@@ -47,12 +47,9 @@ const ResetPasswordPage = () => {
     }
 
     setIsLoading(true);
-    setMessage(null);
     try {
       await authApi.resetPassword(token!, newPassword);
       setMessage({ type: 'success', text: 'Пароль успешно изменен! Перенаправление на вход...' });
-      
-      // Редирект через 2 секунды
       setTimeout(() => {
         navigate('/login');
       }, 2000);
@@ -64,7 +61,6 @@ const ResetPasswordPage = () => {
     }
   };
 
-  // Рендер формы запроса ссылки (нет токена)
   if (!token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
@@ -124,7 +120,6 @@ const ResetPasswordPage = () => {
     );
   }
 
-  // Рендер формы установки нового пароля (есть токен)
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 border border-slate-100">
@@ -148,25 +143,43 @@ const ResetPasswordPage = () => {
         <form onSubmit={handleResetPassword} className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Новый пароль</label>
-            <input
-              type="password"
-              required
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                type={showNewPassword ? 'text' : 'password'}
+                required
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all pr-10"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Подтвердите пароль</label>
-            <input
-              type="password"
-              required
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all pr-10"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           <button
