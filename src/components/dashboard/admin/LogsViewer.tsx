@@ -9,6 +9,8 @@ interface LogEntry {
   userId?: number;
   email?: string;
   name?: string;
+  companyName?: string;
+  displayName?: string;
   ip?: string;
   [key: string]: any;
 }
@@ -25,7 +27,6 @@ const levelIcons = {
   error: <AlertCircle size={16} />,
 };
 
-// Вспомогательные функции для работы с датами
 const toDisplayDate = (isoDate: string): string => {
   if (!isoDate) return '';
   const [year, month, day] = isoDate.split('-');
@@ -50,7 +51,6 @@ const LogsViewer = () => {
   const [displayDate, setDisplayDate] = useState<string>(toDisplayDate(selectedDate));
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
-  
   const datePickerRef = useRef<HTMLInputElement>(null);
 
   const fetchLogs = useCallback(async () => {
@@ -75,7 +75,6 @@ const LogsViewer = () => {
     fetchLogs();
   }, [fetchLogs]);
 
-  // Срабатывает при выборе даты в нативном календаре
   const handleNativeDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newIso = e.target.value;
     if (newIso) {
@@ -84,21 +83,16 @@ const LogsViewer = () => {
     }
   };
 
-  // Срабатывает при ручном вводе ДД.ММ.ГГГГ
   const handleManualDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let raw = e.target.value.replace(/\D/g, '');
     if (raw.length > 8) raw = raw.slice(0, 8);
-    
     let formatted = '';
     if (raw.length > 0) {
       formatted = raw.slice(0, 2);
       if (raw.length > 2) formatted += '.' + raw.slice(2, 4);
       if (raw.length > 4) formatted += '.' + raw.slice(4, 8);
     }
-    
     setDisplayDate(formatted);
-
-    // Если введена полная дата, обновляем системное состояние
     if (raw.length === 8) {
       const iso = toIsoDate(formatted);
       if (iso && !isNaN(new Date(iso).getTime())) {
@@ -108,17 +102,14 @@ const LogsViewer = () => {
   };
 
   const handleManualDateBlur = () => {
-    // Если формат неверный при выходе из поля, возвращаем текущую выбранную дату
     if (!/^\d{2}\.\d{2}\.\d{4}$/.test(displayDate)) {
       setDisplayDate(toDisplayDate(selectedDate));
     }
   };
 
   const openCalendar = () => {
-    // Вызываем нативный пикер
     if (datePickerRef.current) {
       try {
-        // Современный метод для браузеров
         if ('showPicker' in HTMLInputElement.prototype) {
           datePickerRef.current.showPicker();
         } else {
@@ -130,12 +121,25 @@ const LogsViewer = () => {
     }
   };
 
+  const getUserDisplay = (log: LogEntry) => {
+    if (log.displayName) return log.displayName;
+    if (log.companyName) return log.companyName;
+    if (log.name) return log.name;
+    return `User ${log.userId || '?'}`;
+  };
+
   const formatTimestamp = (ts: string) => {
     return new Date(ts).toLocaleString();
   };
 
   return (
     <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+      <style>{`
+        input[type="date"]::-webkit-clear-button {
+          display: none;
+        }
+      `}</style>
+
       <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Логи системы</h2>
@@ -174,7 +178,6 @@ const LogsViewer = () => {
         </div>
 
         <div className="relative w-44">
-          {/* Скрытый нативный инпут, смещенный под иконку */}
           <input
             ref={datePickerRef}
             type="date"
@@ -183,10 +186,8 @@ const LogsViewer = () => {
             className="absolute opacity-0 pointer-events-none w-0 h-0"
             style={{ top: '50%', left: '20px' }}
           />
-          
           <div className="relative flex items-center">
-            {/* Иконка теперь кликабельна */}
-            <button 
+            <button
               type="button"
               onClick={openCalendar}
               className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition-colors z-10"
@@ -246,8 +247,8 @@ const LogsViewer = () => {
                   <div className="flex-1">
                     <div className="flex flex-wrap gap-3 text-xs font-mono mb-2">
                       <span className="text-slate-500">{formatTimestamp(log.timestamp)}</span>
-                      {log.userId && <span className="text-slate-500">User ID: {log.userId}</span>}
-                      {log.name && <span className="text-slate-500">Имя: {log.name}</span>}
+                      {log.userId && <span className="text-slate-500">ID: {log.userId}</span>}
+                      {getUserDisplay(log) && <span className="text-slate-500">Пользователь: {getUserDisplay(log)}</span>}
                       {log.email && <span className="text-slate-500">Email: {log.email}</span>}
                       {log.ip && <span className="text-slate-500">IP: {log.ip}</span>}
                     </div>

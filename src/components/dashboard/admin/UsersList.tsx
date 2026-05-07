@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Mail, Trash2, Search, ChevronLeft, ChevronRight, RefreshCw, UserCheck, Ban, CheckCircle, Lock, AlertTriangle, KeyRound } from 'lucide-react';
+import { Mail, Trash2, Search, ChevronLeft, ChevronRight, RefreshCw, UserCheck, Ban, CheckCircle, Lock, KeyRound } from 'lucide-react';
 import { useUserStore } from '../../../store/useUserStore';
 
 const UsersList = () => {
@@ -13,11 +13,8 @@ const UsersList = () => {
     return () => clearTimeout(timer);
   }, [fetchUsers, currentPage, searchQuery]);
 
-  // 🔥 УНИВЕРСАЛЬНЫЙ ХЕЛПЕР ДЛЯ ПРОВЕРКИ ВСЕХ ТИПОВ БЛОКИРОВОК
   const getLockInfo = (user: any) => {
     const now = new Date();
-    
-    // 1. Проверка блокировки входа (Пароль)
     if (user.lockUntil) {
       const lockTime = new Date(user.lockUntil);
       if (lockTime > now) {
@@ -25,8 +22,6 @@ const UsersList = () => {
         return { type: 'LOGIN', minutesLeft, attempts: user.failedLoginAttempts || 0 };
       }
     }
-    
-    // 2. Проверка блокировки 2FA (SMS)
     if (user.twoFactorLockUntil) {
       const lockTime = new Date(user.twoFactorLockUntil);
       if (lockTime > now) {
@@ -34,19 +29,17 @@ const UsersList = () => {
         return { type: '2FA', minutesLeft, attempts: user.twoFactorAttempts || 0 };
       }
     }
-    
     return null;
   };
 
   return (
     <div className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden animate-in fade-in duration-500">
-
       <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between gap-6 items-center">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
           <input
             type="text"
-            placeholder="Поиск по имени, email или компании..."
+            placeholder="Поиск по названию компании, email или имени менеджера..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-slate-900 transition-all text-sm font-medium"
@@ -56,13 +49,13 @@ const UsersList = () => {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left">
+        <table className="w-full text-left table-fixed">
           <thead className="bg-slate-50/50">
             <tr className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-              <th className="px-10 py-5 italic text-slate-500">Пользователь</th>
-              <th className="px-6 py-5">Роль</th>
-              <th className="px-6 py-5">Компания / УНП</th>
-              <th className="px-10 py-5 text-right">Действия</th>
+              <th className="px-10 py-5 w-2/5">Пользователь</th>
+              <th className="px-6 py-5 w-1/6">Роль</th>
+              <th className="px-6 py-5 w-1/6">УНП</th>
+              <th className="px-10 py-5 w-1/5 text-right">Действия</th>
             </tr>
           </thead>
           <tbody className={`divide-y divide-slate-100 transition-opacity duration-300 ${loading ? 'opacity-50' : 'opacity-100'}`}>
@@ -75,45 +68,18 @@ const UsersList = () => {
 
                 return (
                   <tr key={user.id} className={`border-b border-slate-100 transition-colors group ${isAnyBlocked ? 'bg-red-50/30' : 'hover:bg-slate-50/50'}`}>
-                    <td className="px-10 py-6">
-                      <div className="flex items-center gap-4">
-                        <div className="relative">
-                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg ${
-                            isAnyBlocked ? 'bg-red-100 text-red-400' :
-                            user.role === 'ADMIN' ? 'bg-slate-900 text-white' :
-                            'bg-slate-100 text-slate-600'
-                          }`}>
-                            {user.name[0].toUpperCase()}
+                    <td className="px-10 py-6 break-words">
+                      <div className="flex items-start gap-3">
+                        {/* Индикатор онлайн */}
+                        {user.isOnline && !isAnyBlocked && (
+                          <div className="flex-shrink-0 mt-1">
+                            <div className="w-3 h-3 bg-emerald-500 rounded-full shadow-md ring-2 ring-white animate-pulse" title="Онлайн" />
                           </div>
-                          
-                          {/* Индикатор онлайна */}
-                          {user.isOnline && !isAnyBlocked && (
-                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 border-4 border-white rounded-full animate-pulse" title="Онлайн" />
-                          )}
-
-                          {/* Индикатор блокировки с разными цветами для разных типов */}
-                          {isAnyBlocked && (
-                            <span className={`absolute -top-1 -right-1 w-4 h-4 border-4 border-white rounded-full flex items-center justify-center ${
-                              lockInfo?.type === 'LOGIN' ? 'bg-red-600' :
-                              lockInfo?.type === '2FA' ? 'bg-purple-600' : 'bg-slate-800'
-                            }`} title={
-                              lockInfo?.type === 'LOGIN' ? "Блокировка: Неверный пароль" :
-                              lockInfo?.type === '2FA' ? "Блокировка: Неверный SMS код" : 
-                              "Заблокирован админом"
-                            }>
-                              {lockInfo?.type === 'LOGIN' ? <AlertTriangle size={10} className="text-white" /> :
-                               lockInfo?.type === '2FA' ? <KeyRound size={10} className="text-white" /> :
-                               <Ban size={10} className="text-white" />}
-                            </span>
-                          )}
-                        </div>
-
-                        <div>
+                        )}
+                        <div className="flex flex-col">
                           <div className="font-black text-slate-900 text-sm uppercase italic tracking-tight flex items-center gap-2 flex-wrap">
-                            {user.name}
+                            {user.companyName || user.name || 'Без названия'}
                             {user.role === 'ADMIN' && <UserCheck size={14} className="text-blue-500" />}
-                            
-                            {/* Бейдж блокировки */}
                             {lockInfo?.type === 'LOGIN' && (
                               <span className="text-[9px] font-black text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-lg uppercase tracking-widest flex items-center gap-1">
                                 <Lock size={10} /> Пароль ({lockInfo.minutesLeft} мин)
@@ -130,10 +96,10 @@ const UsersList = () => {
                               </span>
                             )}
                           </div>
-                          <div className="text-[10px] text-slate-400 font-bold flex items-center gap-1 uppercase tracking-tighter">
+                          <div className="text-[10px] text-slate-400 font-bold flex items-center gap-1 uppercase tracking-tighter mt-1">
                             <Mail size={10} /> {user.email}
                           </div>
-                          </div>
+                        </div>
                       </div>
                     </td>
 
@@ -148,13 +114,11 @@ const UsersList = () => {
                     </td>
 
                     <td className="px-6 py-6">
-                      <div className="text-xs font-bold text-slate-600">{user.companyName || '—'}</div>
-                      {user.unp && <div className="text-[9px] text-slate-400 font-black tracking-widest mt-0.5">УНП: {user.unp}</div>}
+                      <div className="text-xs font-bold text-slate-600">{user.unp || '—'}</div>
                     </td>
 
                     <td className="px-10 py-6 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {/* КНОПКА БЛОКИРОВКИ / РАЗБЛОКИРОВКИ */}
                         <button
                           onClick={() => toggleBlock(user.id)}
                           disabled={user.role === 'ADMIN'}
@@ -172,7 +136,6 @@ const UsersList = () => {
                           {isAnyBlocked ? <CheckCircle size={18} /> : <Ban size={18} />}
                         </button>
 
-                        {/* КНОПКА УДАЛЕНИЯ */}
                         <button
                           onClick={() => deleteUser(user.id)}
                           disabled={user.role === 'ADMIN'}

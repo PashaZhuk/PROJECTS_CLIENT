@@ -33,7 +33,6 @@ const LoginPage = () => {
   const [codeLoading, setCodeLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
   
-  // Единое состояние для модалки блокировки
   const [lockedModal, setLockedModal] = useState<{
     isOpen: boolean;
     lockUntil?: Date | null;
@@ -47,7 +46,6 @@ const LoginPage = () => {
   const [resetSuccess, setResetSuccess] = useState(false);
   const [resetError, setResetError] = useState('');
 
-  // --- Таймер для повторной отправки 2FA ---
   useEffect(() => {
     if (resendTimer <= 0) return;
     const interval = setInterval(() => {
@@ -56,7 +54,6 @@ const LoginPage = () => {
     return () => clearInterval(interval);
   }, [resendTimer]);
 
-  // Переключение на 2FA, если требуется
   useEffect(() => {
     if (is2FARequired) {
       setIs2FAView(true);
@@ -65,7 +62,6 @@ const LoginPage = () => {
     }
   }, [is2FARequired]);
 
-  // Редирект после входа
   useEffect(() => {
     if (isInitialized && isAuthenticated && user) {
       const routes = { 
@@ -78,7 +74,6 @@ const LoginPage = () => {
     }
   }, [isAuthenticated, isInitialized, user, navigate]);
 
-  // Валидация
   const validateEmail = (email: string) => {
     if (!email) return 'Email обязателен';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Некорректный email';
@@ -111,7 +106,6 @@ const LoginPage = () => {
 
   const isFormValid = () => !errors.email && !errors.password && formData.email && formData.password;
 
-  // Логин
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError('');
@@ -128,7 +122,6 @@ const LoginPage = () => {
     const result = await login(formData);
     
     if (!result.success) {
-      // Ручная блокировка администратором
       if (result.userBlocked) {
         setLockedModal({
           isOpen: true,
@@ -141,7 +134,6 @@ const LoginPage = () => {
       }
       if (result.requires2FA) return;
       
-      // Блокировка 2FA (3 попытки)
       if (result.lockType === '2FA' && result.timeLeft) {
         const lockDate = new Date(Date.now() + result.timeLeft * 1000);
         setLockedModal({
@@ -157,7 +149,6 @@ const LoginPage = () => {
         return;
       }
       
-      // Блокировка пароля (5 попыток)
       if (result.timeLeft && result.attemptsLeft === undefined) {
         const lockDate = new Date(Date.now() + result.timeLeft * 1000);
         setLockedModal({
@@ -170,7 +161,6 @@ const LoginPage = () => {
         return;
       }
       
-      // Обычная ошибка логина (не блокировка)
       setSubmitError(result.message || 'Неверный email или пароль');
       if (result.attemptsLeft !== undefined) {
         setAttemptsLeft(result.attemptsLeft);
@@ -178,7 +168,6 @@ const LoginPage = () => {
     }
   };
 
-  // 2FA отправка кода
   const handleResendCode = async () => {
     if (resendTimer > 0) return;
     const userId = useAuthStore.getState().tempUserId;
@@ -193,7 +182,6 @@ const LoginPage = () => {
     }
   };
 
-  // Проверка 2FA кода
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (codeLoading) return;
@@ -205,7 +193,6 @@ const LoginPage = () => {
     
     if (!result.success) {
       if (result.timeLeft && !result.attemptsLeft) {
-        // блокировка 2FA
         const lockDate = new Date(Date.now() + result.timeLeft * 1000);
         setLockedModal({
           isOpen: true,
@@ -222,6 +209,14 @@ const LoginPage = () => {
       } else {
         setCodeError(result.message || 'Ошибка проверки кода');
       }
+    } else {
+      const currentUser = useAuthStore.getState().user;
+      console.log('2FA успешна, mustChangePassword =', currentUser?.mustChangePassword);
+      if (currentUser?.mustChangePassword) {
+        navigate('/force-change-password', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     }
   };
 
@@ -231,7 +226,6 @@ const LoginPage = () => {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Сброс пароля
   const handleResetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setResetLoading(true);
@@ -248,7 +242,6 @@ const LoginPage = () => {
 
   const closeLockedModal = () => {
     setLockedModal({ isOpen: false });
-    // Очистить форму для нового входа
     setFormData({ email: '', password: '' });
     setCode('');
     setSubmitError('');
@@ -256,7 +249,6 @@ const LoginPage = () => {
     navigate('/login', { replace: true });
   };
 
-  // --- RENDER 2FA ---
   if (is2FAView) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
@@ -335,7 +327,6 @@ const LoginPage = () => {
     );
   }
 
-  // --- RENDER LOGIN (оригинальный дизайн) ---
   return (
     <>
       <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 to-blue-50 py-12 flex items-center">
@@ -435,7 +426,6 @@ const LoginPage = () => {
         </div>
       </div>
 
-      {/* Модалка сброса пароля */}
       {showResetModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden">

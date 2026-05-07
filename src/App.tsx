@@ -2,11 +2,9 @@ import { useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 
-// Stores & Hooks
 import { useAuthStore } from './store/useAuthStore';
 import { useSessionManager } from './hooks/useSessionManager';
 
-// Layouts & Pages
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import DashboardLayout from './components/layouts/DashboardLayout';
 import Header from './components/ui/Header';
@@ -16,7 +14,6 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import ForcePasswordChange from './components/auth/ForcePasswordChange';
 import DashboardDispatcher from './pages/dashboard/DashboardDispatcher';
 
-// Modals
 import SessionExpiredModal from './components/ui/SessionExpiredModal';
 import SessionSupersededModal from './components/ui/SessionSupersededModal';
 import LockedModal from './components/ui/LockedModal';
@@ -27,23 +24,14 @@ const AppContent = () => {
     isAuthenticated, 
     isInitialized, 
     _hasHydrated, 
-    isLoading, 
     checkAuth,
-    isSessionExpired,
-    isSessionSuperseded,
     isUserBlocked,
-    setSessionExpired,
-    setSessionSuperseded,
     setUserBlocked
   } = useAuthStore();
 
-  // Реф, чтобы не спамить проверкой авторизации
   const authChecked = useRef(false);
-
-  // Запускаем менеджер сессий
   useSessionManager();
 
-  // Проверка авторизации: строго после гидрации и только один раз
   useEffect(() => {
     if (_hasHydrated && !authChecked.current) {
       checkAuth();
@@ -51,7 +39,6 @@ const AppContent = () => {
     }
   }, [_hasHydrated, checkAuth]);
 
-  // Экраны загрузки
   if (!_hasHydrated || !isInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -78,35 +65,39 @@ const AppContent = () => {
       <Header />
       
       <main className="grow flex flex-col">
-        {isAuthenticated && user?.mustChangePassword ? (
-          <ForcePasswordChange />
-        ) : (
-          <Routes>
-            <Route 
-              path="/login" 
-              element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />} 
-            />
-            <Route 
-              path="/reset-password" 
-              element={<ResetPasswordPage />} 
-            />
-            <Route 
-              path="/" 
-              element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />} 
-            />
-            <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'USER']} />}>
-              <Route element={<DashboardLayout />}>
-                <Route path="/dashboard" element={<DashboardDispatcher />} />
-              </Route>
+        <Routes>
+          <Route 
+            path="/login" 
+            element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />} 
+          />
+          <Route 
+            path="/reset-password" 
+            element={<ResetPasswordPage />} 
+          />
+          <Route 
+            path="/force-change-password" 
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'USER']}>
+                <ForcePasswordChange />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/" 
+            element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />} 
+          />
+          <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'USER']} />}>
+            <Route element={<DashboardLayout />}>
+              <Route path="/dashboard" element={<DashboardDispatcher />} />
             </Route>
-            <Route path="/unauthorized" element={
-              <div className="grow flex items-center justify-center text-center p-10">
-                <h1 className="text-xl font-bold text-red-600 uppercase tracking-widest">Доступ запрещен</h1>
-              </div>
-            } />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        )}
+          </Route>
+          <Route path="/unauthorized" element={
+            <div className="grow flex items-center justify-center text-center p-10">
+              <h1 className="text-xl font-bold text-red-600 uppercase tracking-widest">Доступ запрещен</h1>
+            </div>
+          } />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
       </main>
       
       <Footer />
