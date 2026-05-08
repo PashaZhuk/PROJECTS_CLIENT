@@ -77,7 +77,7 @@ const UsersList = () => {
                           </div>
                         )}
                         <div className="flex flex-col">
-                          <div className="font-black text-slate-900 text-sm uppercase italic tracking-tight flex items-center gap-2 flex-wrap">
+                          <div className="font-black text-slate-900 text-sm uppercase tracking-tight flex items-center gap-2 flex-wrap">
                             {user.companyName || user.name || 'Без названия'}
                             {user.role === 'ADMIN' && <UserCheck size={14} className="text-blue-500" />}
                             {lockInfo?.type === 'LOGIN' && (
