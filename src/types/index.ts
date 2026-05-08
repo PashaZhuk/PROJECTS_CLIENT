@@ -70,7 +70,8 @@ export type ActiveTabType =
   | 'users-create' 
   | 'orders-list' 
   | 'orders-create'
-  | 'logs'; // добавлено
+  | 'logs'
+  | 'broadcast'; // доведение информации
 
 export interface ProjectStats {
   total: number;

@@ -194,7 +194,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
               )}
             </div>
 
-            {/* 2. РАЗДЕЛ ЗАКАЗЫ */}
+                        {/* 2. РАЗДЕЛ ЗАКАЗЫ */}
             <div className="pt-2 pb-2">
               <button 
                 onClick={() => setIsOrdersOpen(!isOrdersOpen)}
@@ -215,6 +215,17 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
                   />
                 </div>
               )}
+            </div>
+
+            {/* 3. РАЗДЕЛ ДОВЕДЕНИЕ ИНФОРМАЦИИ */}
+            <div className="pt-2 pb-2">
+              <SubNavBtn 
+                active={activeTab === 'broadcast'} 
+                onClick={() => setActiveTab('broadcast')} 
+                label="Доведение информации" 
+                icon={<FileText size={16}/>} 
+                theme={theme} 
+              />
             </div>
           </>
         )}

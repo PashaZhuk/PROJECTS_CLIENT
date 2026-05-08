@@ -68,11 +68,11 @@ const UsersList = () => {
 
                 return (
                   <tr key={user.id} className={`border-b border-slate-100 transition-colors group ${isAnyBlocked ? 'bg-red-50/30' : 'hover:bg-slate-50/50'}`}>
-                    <td className="px-10 py-6 break-words">
+                    <td className="px-10 py-6 wrap-break-word">
                       <div className="flex items-start gap-3">
                         {/* Индикатор онлайн */}
                         {user.isOnline && !isAnyBlocked && (
-                          <div className="flex-shrink-0 mt-1">
+                          <div className="shrink-0 mt-1">
                             <div className="w-3 h-3 bg-emerald-500 rounded-full shadow-md ring-2 ring-white animate-pulse" title="Онлайн" />
                           </div>
                         )}

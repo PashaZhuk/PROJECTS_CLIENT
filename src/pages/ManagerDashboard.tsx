@@ -10,6 +10,7 @@ import { Rocket } from 'lucide-react';
 import type { Project, ActiveTabType } from '../types';
 import { StatsView } from '../components/dashboard/shared/StatsView';
 import { ProjectsListView } from '../components/dashboard/shared/ProjectsListView';
+import ManagerBroadcast from '../components/dashboard/manager/ManagerBroadcast';
 import { ChatDrawer } from '../components/dashboard/shared/ChatDrawer';
 import api from '../api/ky'; // <-- импортируем api
 
@@ -108,7 +109,8 @@ const ManagerDashboard = () => {
           onPageChange={setCurrentPage}
         />
       )}
-      {activeTab === 'orders-list' && <WorkInProgressBanner title="Все заказы" />}
+            {activeTab === 'orders-list' && <WorkInProgressBanner title="Все заказы" />}
+      {activeTab === 'broadcast' && <ManagerBroadcast />}
       
       <ChatDrawer isOpen={!!chatProject} project={chatProject} user={user} onClose={() => setChatProject(null)} variant="emerald" />
     </>
