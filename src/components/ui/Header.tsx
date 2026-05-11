@@ -49,7 +49,7 @@ const Header = () => {
               <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
                 <div className="hidden md:flex flex-col items-end">
                   <p className="text-sm font-bold text-slate-900 leading-none">
-                    {user.name || 'Пользователь'}
+                    {user.companyName || user.name || 'Пользователь'}
                   </p>
                   <p className="text-[9px] uppercase font-black text-slate-400 mt-1 tracking-tighter flex items-center gap-1">
                     {user.role === 'ADMIN' && <><ShieldCheck className="w-2.5 h-2.5" /> Администратор</>}

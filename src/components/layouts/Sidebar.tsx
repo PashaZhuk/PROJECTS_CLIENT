@@ -235,7 +235,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
       <div className="p-4 border-t border-slate-100">
         <div className="mb-4 px-4 py-3 bg-slate-50 rounded-2xl">
             <p className="text-[10px] font-bold text-slate-400 uppercase">Аккаунт</p>
-            <p className="text-sm font-bold text-slate-700 truncate">{user?.name || 'Гость'}</p>
+            <p className="text-sm font-bold text-slate-700 truncate">{user?.companyName || user?.name || 'Гость'}</p>
             <p className="text-[9px] font-bold text-slate-400 truncate">{user?.email}</p>
         </div>
         <button 
