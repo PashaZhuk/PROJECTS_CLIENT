@@ -108,7 +108,7 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
   return (
     <div className="max-w-3xl mx-auto bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
       <div className="p-10 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-        <h2 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter">Регистрация</h2>
+        <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Регистрация партнера</h2>
         <ShieldCheck className="text-slate-200" size={32} />
       </div>
 
