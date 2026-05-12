@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../../../store/useAuthStore';
 import api from '../../../api/ky';
-import { Send, Paperclip, X, Search, Mail, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Send, Paperclip, X, Search, Mail, CheckCircle, AlertCircle, Loader2, FileWarning, FileText } from 'lucide-react';
 
 interface Partner {
   id: number;
@@ -17,6 +17,24 @@ interface FileAttachment {
   encoding: string;
 }
 
+interface FileWithError {
+  file: File;
+  error?: string;
+}
+
+// --- Константы лимитов (синхронизированы с сервером) ---
+const MAX_SUBJECT_LENGTH = 255;
+const MAX_MESSAGE_LENGTH = 50000;
+const MAX_TOTAL_ATTACHMENT_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB (лимит Yandex SMTP)
+const ALLOWED_FILE_TYPES = '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt';
+const ALLOWED_EXTENSIONS_LABEL = 'PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, TXT';
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
 const ManagerBroadcast = () => {
   const user = useAuthStore((state) => state.user);
 
@@ -28,11 +46,37 @@ const ManagerBroadcast = () => {
 
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<FileWithError[]>([]);
 
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<{ sent: number; failed: number } | null>(null);
   const [error, setError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // --- Валидация полей для показа предупреждений ---
+  const subjectWarning = subject.length > MAX_SUBJECT_LENGTH
+    ? `Превышен лимит темы (${subject.length}/${MAX_SUBJECT_LENGTH})`
+    : '';
+
+  const messageWarning = message.length > MAX_MESSAGE_LENGTH
+    ? `Превышен лимит сообщения (${message.length.toLocaleString()}/${MAX_MESSAGE_LENGTH.toLocaleString()})`
+    : '';
+
+  // Суммарный размер вложений (объявлен до canSend)
+  const totalAttachmentSize = files.reduce((sum, fw) => sum + fw.file.size, 0);
+  const attachmentSizeWarning = totalAttachmentSize > MAX_TOTAL_ATTACHMENT_SIZE_BYTES;
+  const attachmentSizeInfo = files.length > 0
+    ? `Вложения: ${formatFileSize(totalAttachmentSize)} / 25 MB`
+    : '';
+
+  const canSend =
+    selectedIds.size > 0 &&
+    subject.trim().length > 0 &&
+    subject.length <= MAX_SUBJECT_LENGTH &&
+    message.trim().length > 0 &&
+    message.length <= MAX_MESSAGE_LENGTH &&
+    !sending &&
+    !attachmentSizeWarning;
 
   useEffect(() => {
     const fetchPartners = async () => {
@@ -75,14 +119,32 @@ const ManagerBroadcast = () => {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
+  const validateFile = (file: File): string | null => {
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!ALLOWED_FILE_TYPES.includes(ext)) {
+      return `Недопустимый тип файла. Разрешены: ${ALLOWED_EXTENSIONS_LABEL}`;
     }
+    return null;
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+
+    const newFiles: FileWithError[] = [];
+
+    Array.from(e.target.files).forEach((file) => {
+      const fileError = validateFile(file);
+      newFiles.push({ file, error: fileError || undefined });
+    });
+
+    setFiles((prev) => [...prev, ...newFiles]);
+    // Сброс input, чтобы можно было выбрать тот же файл повторно
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const removeFile = (index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
+    setError('');
   };
 
   const readFileAsBase64 = (file: File): Promise<string> => {
@@ -98,20 +160,31 @@ const ManagerBroadcast = () => {
   };
 
   const handleSend = async () => {
-    if (selectedIds.size === 0 || !subject || !message) {
-      setError('Заполните все поля');
+    setError('');
+
+    if (subject.length > MAX_SUBJECT_LENGTH) {
+      setError(`Тема слишком длинная (${subject.length}/${MAX_SUBJECT_LENGTH})`);
+      return;
+    }
+    if (message.length > MAX_MESSAGE_LENGTH) {
+      setError(`Сообщение слишком длинное (${message.length.toLocaleString()}/${MAX_MESSAGE_LENGTH.toLocaleString()})`);
+      return;
+    }
+
+    const invalidFiles = files.filter((f) => f.error);
+    if (invalidFiles.length > 0) {
+      setError('Удалите файлы с ошибками перед отправкой');
       return;
     }
 
     setSending(true);
-    setError('');
     setResult(null);
 
     try {
       const attachments: FileAttachment[] = await Promise.all(
-        files.map(async (file) => ({
-          filename: file.name,
-          content: await readFileAsBase64(file),
+        files.map(async (fw) => ({
+          filename: fw.file.name,
+          content: await readFileAsBase64(fw.file),
           encoding: 'base64',
         }))
       );
@@ -141,7 +214,20 @@ const ManagerBroadcast = () => {
         setFiles([]);
       }
     } catch (err: any) {
-      setError(err.message || 'Ошибка при отправке');
+      // Пробуем вытащить ошибку валидации с сервера
+      try {
+        const body = await err.response?.json();
+        if (body?.errors) {
+          const msgs = body.errors.map((e: any) => e.message).join('; ');
+          setError(msgs);
+        } else if (body?.message) {
+          setError(body.message);
+        } else {
+          setError(body?.error || 'Ошибка при отправке');
+        }
+      } catch {
+        setError(err.message || 'Ошибка при отправке');
+      }
     } finally {
       setSending(false);
     }
@@ -233,6 +319,7 @@ const ManagerBroadcast = () => {
           {/* правая колонка — форма письма */}
           <div className="p-8">
             <div className="space-y-4">
+              {/* Тема */}
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
                   Тема
@@ -242,10 +329,29 @@ const ManagerBroadcast = () => {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="Тема письма..."
-                  className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-500"
+                  maxLength={MAX_SUBJECT_LENGTH + 50} // небольшой запас, чтобы можно было допечатать до исправления
+                  className={`w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-500 ${
+                    subjectWarning ? 'ring-2 ring-red-300 bg-red-50' : ''
+                  }`}
                 />
+                {/* Счётчик символов темы */}
+                <div className={`flex justify-end mt-1 ${
+                  subject.length > MAX_SUBJECT_LENGTH ? 'text-red-500' : 'text-slate-400'
+                }`}>
+                  <span className="text-[11px] font-medium">
+                    {subject.length}/{MAX_SUBJECT_LENGTH}
+                  </span>
+                </div>
+                {/* Предупреждение темы */}
+                {subjectWarning && (
+                  <div className="flex items-center gap-1.5 mt-1 px-1">
+                    <FileWarning size={12} className="text-red-500 shrink-0" />
+                    <span className="text-[11px] font-bold text-red-500">{subjectWarning}</span>
+                  </div>
+                )}
               </div>
 
+              {/* Сообщение */}
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
                   Сообщение
@@ -255,34 +361,88 @@ const ManagerBroadcast = () => {
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Текст сообщения..."
                   rows={8}
-                  className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-500 resize-none"
+                  maxLength={MAX_MESSAGE_LENGTH + 500}
+                  className={`w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-500 resize-none ${
+                    messageWarning ? 'ring-2 ring-red-300 bg-red-50' : ''
+                  }`}
                 />
+                {/* Счётчик символов сообщения */}
+                <div className={`flex justify-end mt-1 ${
+                  message.length > MAX_MESSAGE_LENGTH ? 'text-red-500' : 'text-slate-400'
+                }`}>
+                  <span className="text-[11px] font-medium">
+                    {message.length.toLocaleString()}/{MAX_MESSAGE_LENGTH.toLocaleString()}
+                  </span>
+                </div>
+                {/* Предупреждение сообщения */}
+                {messageWarning && (
+                  <div className="flex items-center gap-1.5 mt-1 px-1">
+                    <FileWarning size={12} className="text-red-500 shrink-0" />
+                    <span className="text-[11px] font-bold text-red-500">{messageWarning}</span>
+                  </div>
+                )}
               </div>
 
+              {/* Вложения */}
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-                  Вложения
+                  Вложения {attachmentSizeInfo && `(${attachmentSizeInfo})`}
                 </label>
-                <label className="flex items-center gap-3 px-4 py-3 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:border-emerald-300 hover:bg-emerald-50/30 transition-all">
+                <label className="flex items-center gap-3 px-4 py-3 bg-slate-50 border-2 border-dashed rounded-xl cursor-pointer transition-all border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/30">
                   <Paperclip size={18} className="text-slate-400" />
-                  <span className="text-sm font-medium text-slate-500">Прикрепить файлы</span>
+                  <span className="text-sm font-medium text-slate-500">
+                    {`Прикрепить файлы (${ALLOWED_EXTENSIONS_LABEL})`}
+                  </span>
                   <input
+                    ref={fileInputRef}
                     type="file"
                     multiple
+                    accept={ALLOWED_FILE_TYPES}
                     onChange={handleFileChange}
                     className="hidden"
                   />
                 </label>
+                <p className="text-[10px] text-slate-400 mt-1 px-1">
+                  Максимальный общий размер вложений — 25 MB (лимит почтового сервера)
+                </p>
 
+                {/* Суммарный размер вложений / предупреждение */}
+                {attachmentSizeWarning && (
+                  <div className="flex items-center gap-1.5 mt-2 px-1">
+                    <FileWarning size={12} className="text-red-500 shrink-0" />
+                    <span className="text-[11px] font-bold text-red-500">
+                      Общий размер вложений ({formatFileSize(totalAttachmentSize)}) превышает лимит 25 MB
+                    </span>
+                  </div>
+                )}
+
+                {/* Список прикреплённых файлов */}
                 {files.length > 0 && (
                   <div className="mt-3 space-y-2">
-                    {files.map((file, idx) => (
+                    {files.map((fw, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-lg"
+                        className={`flex items-center justify-between px-3 py-2 rounded-lg ${
+                          fw.error ? 'bg-red-50 border border-red-200' : 'bg-slate-50'
+                        }`}
                       >
-                        <span className="text-xs font-medium text-slate-600 truncate">{file.name}</span>
-                        <button onClick={() => removeFile(idx)} className="text-red-400 hover:text-red-600">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          {fw.error ? (
+                            <FileWarning size={14} className="text-red-500 shrink-0" />
+                          ) : (
+                            <FileText size={14} className="text-emerald-500 shrink-0" />
+                          )}
+                          <div className="min-w-0">
+                            <span className={`text-xs font-medium truncate block ${fw.error ? 'text-red-600' : 'text-slate-600'}`}>
+                              {fw.file.name}
+                            </span>
+                            <span className={`text-[10px] ${fw.error ? 'text-red-400' : 'text-slate-400'}`}>
+                              {formatFileSize(fw.file.size)}
+                              {fw.error && ` — ${fw.error}`}
+                            </span>
+                          </div>
+                        </div>
+                        <button onClick={() => removeFile(idx)} className="text-slate-400 hover:text-red-500 ml-2 shrink-0">
                           <X size={14} />
                         </button>
                       </div>
@@ -291,13 +451,15 @@ const ManagerBroadcast = () => {
                 )}
               </div>
 
+              {/* Ошибка */}
               {error && (
-                <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl">
-                  <AlertCircle size={16} className="text-red-500 shrink-0" />
+                <div className="flex items-start gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl">
+                  <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
                   <span className="text-xs font-bold text-red-600">{error}</span>
                 </div>
               )}
 
+              {/* Результат */}
               {result && (
                 <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl">
                   <CheckCircle size={16} className="text-emerald-500 shrink-0" />
@@ -310,7 +472,7 @@ const ManagerBroadcast = () => {
 
               <button
                 onClick={handleSend}
-                disabled={sending || selectedIds.size === 0 || !subject || !message}
+                disabled={!canSend}
                 className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-emerald-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-emerald-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-emerald-200"
               >
                 {sending ? (
