@@ -34,6 +34,14 @@ const AdminSettings = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Авто-скрытие toast через 3 сек
+  useEffect(() => {
+    if (message?.type === 'success') {
+      const timer = setTimeout(() => setMessage(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
   useEffect(() => {
     fetch('/api/admin/settings/contacts')
       .then(r => r.json())
@@ -98,15 +106,21 @@ const AdminSettings = () => {
         </p>
       </div>
 
-      {/* Сообщение */}
+      {/* Toast-уведомление поверх всего */}
       {message && (
-        <div className={`flex items-center gap-3 p-4 rounded-2xl border ${
+        <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-6 py-4 rounded-2xl border shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300 ${
           message.type === 'success' 
-            ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
-            : 'bg-red-50 border-red-200 text-red-700'
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-700 shadow-emerald-200/50' 
+            : 'bg-red-50 border-red-200 text-red-700 shadow-red-200/50'
         }`}>
-          {message.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
-          <span className="text-sm font-medium">{message.text}</span>
+          {message.type === 'success' ? <CheckCircle2 size={22} className="shrink-0" /> : <AlertCircle size={22} className="shrink-0" />}
+          <span className="text-sm font-bold">{message.text}</span>
+          <button
+            onClick={() => setMessage(null)}
+            className="ml-2 p-1 rounded-lg hover:bg-black/5 transition-colors"
+          >
+            <span className="text-lg leading-none">&times;</span>
+          </button>
         </div>
       )}
 
