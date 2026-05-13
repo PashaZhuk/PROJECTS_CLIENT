@@ -80,3 +80,40 @@ export interface ProjectStats {
   pending: number;
   approved: number;
 }
+
+// --- API Input Types (вместо `any` в методах API-клиента) ---
+
+export interface LoginInput {
+  email: string;
+  password: string;
+}
+
+export interface RegisterInput {
+  email: string;
+  password: string;
+  name?: string;
+  role?: 'USER' | 'MANAGER';
+  companyName?: string;
+  unp?: string;
+  phone?: string;
+}
+
+export interface CreateProjectInput {
+  formType: string;
+  customerName: string;
+  customerInn: string;
+  purchaseMethod?: string;
+  executionDate?: string | Date | null;
+  [key: string]: unknown; // passthrough
+}
+
+export interface ChangePasswordInput {
+  newPassword: string;
+}
+
+export interface UsersQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  role?: string;
+}

@@ -49,7 +49,8 @@ export const useChatLogic = (
       const savedMsg = await api.post(`chat/${projectId}/messages`, { json: { text } }).json();
       // Проверяем, что savedMsg - объект
       if (savedMsg && typeof savedMsg === 'object') {
-        addMessage(projectId, { ...(savedMsg as any), isRead: false });
+        const msgData = (savedMsg as any)?.data || savedMsg;
+        addMessage(projectId, { ...(msgData as any), isRead: false });
       } else {
         console.error('[ChatLogic] Invalid response format', savedMsg);
       }
@@ -64,7 +65,7 @@ export const useChatLogic = (
     setLoading(true);
     api.get(`chat/${projectId}/messages`).json()
       .then((data: any) => {
-        const messagesArray = Array.isArray(data) ? data : [];
+        const messagesArray = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
         setMessages(projectId, messagesArray);
         if (isOpenRef.current && !isMinimizedRef.current && user?.id) {
           markMessagesAsReadLocally(projectId, user.id);

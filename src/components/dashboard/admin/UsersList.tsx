@@ -120,7 +120,13 @@ const UsersList = () => {
                     <td className="px-10 py-6 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
-                          onClick={() => toggleBlock(user.id)}
+                          onClick={async () => {
+                            try {
+                              await toggleBlock(user.id);
+                            } catch {
+                              alert('Ошибка при изменении статуса блокировки');
+                            }
+                          }}
                           disabled={user.role === 'ADMIN'}
                           title={
                             lockInfo?.type === 'LOGIN' ? "Снять блокировку входа" :
@@ -137,7 +143,14 @@ const UsersList = () => {
                         </button>
 
                         <button
-                          onClick={() => deleteUser(user.id)}
+                          onClick={async () => {
+                            if (!window.confirm('Вы уверены, что хотите удалить этого пользователя?')) return;
+                            try {
+                              await deleteUser(user.id);
+                            } catch {
+                              alert('Ошибка при удалении');
+                            }
+                          }}
                           disabled={user.role === 'ADMIN'}
                           className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all disabled:opacity-0 border border-transparent"
                         >

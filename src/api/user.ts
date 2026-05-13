@@ -1,23 +1,21 @@
 import api from './ky';
+import type { RegisterInput, ChangePasswordInput, UsersQueryParams } from '../types';
 
 const userApi = {
-  getAllUsers: (params?: any) =>
+  getAllUsers: (params?: UsersQueryParams) =>
     api.get('user/users', { searchParams: params }).json(),
 
-  register: (data: any) =>
+  register: (data: RegisterInput) =>
     api.post('auth/register', { json: data }).json(),
 
   deleteUser: (id: number) =>
     api.delete(`user/users/${id}`).json(),
 
-  changePw: (data: any) =>
+  changePw: (data: ChangePasswordInput) =>
     api.post('user/change-password', { json: data }).json(),
 
   getAdminStats: () =>
     api.get('user/admin/stats').json(),
-
-  updateUser: (id: number, data: any) =>
-    api.put(`user/users/${id}`, { json: data }).json(),
 
   toggleBlock: (id: number) =>
     api.patch(`user/users/${id}/block`).json<{ isBlocked: boolean }>(),

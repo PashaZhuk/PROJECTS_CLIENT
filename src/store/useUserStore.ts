@@ -79,12 +79,12 @@ export const useUserStore = create<UserStore>((set, get) => ({
       const response = await userApi.getAllUsers({
         page: get().currentPage,
         search: get().searchQuery,
-      }) as { users: UserData[]; totalPages: number; totalCount: number };
-      
+      }) as { data: { users: UserData[]; totalPages: number; totalCount: number } };
+
       set({
-        users: response.users,
-        totalPages: response.totalPages,
-        totalCount: response.totalCount,
+        users: response.data.users,
+        totalPages: response.data.totalPages,
+        totalCount: response.data.totalCount,
       });
     } catch (error) {
       console.error('Fetch users error:', error);
@@ -96,8 +96,8 @@ export const useUserStore = create<UserStore>((set, get) => ({
   fetchStats: async (silent = false) => {
     if (!silent) set({ loading: true });
     try {
-      const stats = await userApi.getAdminStats() as AdminStats;
-      set({ stats });
+      const response = await userApi.getAdminStats() as { data: AdminStats };
+      set({ stats: response.data });
     } catch (error) {
       console.error('Fetch stats error:', error);
     } finally {
@@ -123,7 +123,6 @@ export const useUserStore = create<UserStore>((set, get) => ({
   },
 
   deleteUser: async (id) => {
-    if (!window.confirm('Вы уверены, что хотите удалить этого пользователя?')) return;
     try {
       await userApi.deleteUser(id);
       set((state) => ({
@@ -133,7 +132,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
       get().fetchStats(true);
     } catch (error) {
       console.error('Delete error:', error);
-      alert('Ошибка при удалении');
+      throw error;
     }
   },
 
@@ -143,7 +142,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
       await get().fetchUsers(); // Полный перезапрос для актуализации всех статусов
     } catch (error) {
       console.error('Toggle block error:', error);
-      alert('Ошибка при изменении статуса блокировки');
+      throw error;
     }
   },
 

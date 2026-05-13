@@ -1,7 +1,8 @@
 import api from './ky';
+import type { LoginInput } from '../types';
 
 const authApi = {
-  login: (data: any) => api.post('auth/login', { json: data }).json(),
+  login: (data: LoginInput) => api.post('auth/login', { json: data }).json(),
   logout: (reason: 'manual' | 'inactivity' = 'manual', userId?: string) =>
     api.post('auth/logout', { json: { reason, userId } }).json(),
   profile: () => api.get('auth/profile').json(),

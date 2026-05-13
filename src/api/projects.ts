@@ -1,5 +1,5 @@
 import api from './ky';
-import type { Project } from '../types';
+import type { Project, CreateProjectInput } from '../types';
 
 interface ProjectsResponse {
   projects: Project[];
@@ -17,10 +17,10 @@ const projectApi = {
   getProjectById: (id: number) =>
     api.get(`projects/${id}`).json<Project>(),
 
-  createProject: (data: any) =>
+  createProject: (data: CreateProjectInput) =>
     api.post('projects', { json: data }).json<Project>(),
 
-  updateProject: (id: number, data: any) =>
+  updateProject: (id: number, data: Partial<CreateProjectInput>) =>
     api.put(`projects/${id}`, { json: data }).json<Project>(),
 
   deleteProject: (id: number) =>

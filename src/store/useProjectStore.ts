@@ -40,15 +40,15 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       const { currentPage, searchQuery } = get();
       
       // Вызываем API. Ky автоматически возвращает распарсенный JSON
-      const response = await projectApi.getProjects(currentPage, searchQuery);
-      
+      const response = await projectApi.getProjects(currentPage, searchQuery) as { data: { projects: Project[]; totalPages: number; totalCount: number; currentPage: number } };
+
       // Защита от некорректного ответа API
-      const projects = Array.isArray(response?.projects) ? response.projects : [];
-      
+      const projects = Array.isArray(response?.data?.projects) ? response.data.projects : [];
+
       set({ 
         projects: projects, 
-        totalPages: response?.totalPages ?? 1,
-        totalCount: response?.totalCount ?? 0
+        totalPages: response?.data?.totalPages ?? 1,
+        totalCount: response?.data?.totalCount ?? 0
       });
     } catch (error) {
       console.error('Ошибка стора при загрузке проектов:', error);
