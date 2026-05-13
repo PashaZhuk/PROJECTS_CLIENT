@@ -308,21 +308,26 @@ const AdminSettings = () => {
           <button
             type="submit"
             disabled={saving}
-            className="group relative flex items-center justify-center gap-3 px-10 py-4 min-w-[240px] bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:from-gray-300 disabled:to-gray-300 text-white font-bold text-sm tracking-wider uppercase rounded-2xl transition-all duration-300 active:scale-[0.97] disabled:active:scale-100 shadow-lg shadow-purple-200/60 hover:shadow-xl hover:shadow-purple-300/40 disabled:shadow-none overflow-hidden will-change-transform"
+            className="group relative flex items-center justify-center px-10 py-4 min-w-[240px] bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:from-gray-300 disabled:to-gray-300 text-white font-bold text-sm tracking-wider uppercase rounded-2xl transition-all duration-300 active:scale-[0.97] disabled:active:scale-100 shadow-lg shadow-purple-200/60 hover:shadow-xl hover:shadow-purple-300/40 disabled:shadow-none overflow-hidden will-change-transform"
           >
             {/* Default: видно когда не saving */}
-            <span className={`inline-flex items-center gap-3 transition-all duration-200 ${
-              saving ? 'opacity-0 scale-75 absolute' : 'opacity-100 scale-100'
+            <span className={`absolute inset-0 flex items-center justify-center gap-3 transition-all duration-200 ${
+              saving ? 'opacity-0 scale-75' : 'opacity-100 scale-100'
             }`}>
               <Save size={18} className="group-hover:scale-110 transition-transform duration-200" />
               <span>Сохранить контакты</span>
             </span>
             {/* Spinner: видно когда saving */}
-            <span className={`inline-flex items-center gap-3 transition-all duration-200 ${
-              saving ? 'opacity-100 scale-100' : 'opacity-0 scale-75 absolute'
+            <span className={`absolute inset-0 flex items-center justify-center gap-3 transition-all duration-200 ${
+              saving ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
             }`}>
               <Loader2 size={18} className="animate-spin" />
               <span>Сохранение...</span>
+            </span>
+            {/* Невидимый заполнитель — сохраняет размеры кнопки */}
+            <span className="invisible inline-flex items-center gap-3">
+              <Save size={18} />
+              <span>Сохранить контакты</span>
             </span>
           </button>
         </div>
