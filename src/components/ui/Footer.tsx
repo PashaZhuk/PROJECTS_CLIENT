@@ -20,7 +20,7 @@ const Footer = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isContactsOpen && !contacts) {
+    if (isContactsOpen) {
       setLoading(true);
       fetch('/api/settings/contacts')
         .then(r => r.json())
@@ -32,7 +32,7 @@ const Footer = () => {
         .catch(() => {})
         .finally(() => setLoading(false));
     }
-  }, [isContactsOpen, contacts]);
+  }, [isContactsOpen]);
 
   return (
     <>
