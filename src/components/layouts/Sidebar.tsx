@@ -9,7 +9,8 @@ import {
   ShoppingCart, 
   ChevronDown, 
   FolderOpen,
-  FileText // добавлена иконка для логов
+  FileText, // добавлена иконка для логов
+  Settings // иконка для настроек
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import type { ActiveTabType } from '../../types';
@@ -92,6 +93,13 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
                   onClick={() => setActiveTab('logs')} 
                   label="Логи системы" 
                   icon={<FileText size={16}/>} 
+                  theme={theme} 
+                />
+                <SubNavBtn 
+                  active={activeTab === 'settings'} 
+                  onClick={() => setActiveTab('settings')} 
+                  label="Настройки портала" 
+                  icon={<Settings size={16}/>} 
                   theme={theme} 
                 />
               </div>

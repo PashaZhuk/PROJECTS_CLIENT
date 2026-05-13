@@ -6,6 +6,7 @@ import AdminOverview from '../components/dashboard/admin/AdminOverview';
 import UsersList from '../components/dashboard/admin/UsersList';
 import AdminCreateUser from '../components/dashboard/admin/AdminCreateUser';
 import LogsViewer from '../components/dashboard/admin/LogsViewer';
+import AdminSettings from '../components/dashboard/admin/AdminSettings';
 
 const AdminDashboard = () => {
   useUserSockets();
@@ -37,6 +38,8 @@ const AdminDashboard = () => {
       )}
 
       {activeTab === 'logs' && <LogsViewer />}
+
+      {activeTab === 'settings' && <AdminSettings />}
 
       {(activeTab === 'projects-list' || activeTab === 'projects-create' || activeTab === 'orders-list') && (
         <div className="p-8 text-center bg-white rounded-xl shadow-sm border border-gray-100">

@@ -71,6 +71,7 @@ export type ActiveTabType =
   | 'orders-list' 
   | 'orders-create'
   | 'logs'
+  | 'settings'
   | 'broadcast'; // доведение информации
 
 export interface ProjectStats {
