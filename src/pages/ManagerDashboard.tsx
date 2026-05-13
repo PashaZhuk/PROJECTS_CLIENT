@@ -44,7 +44,7 @@ const ManagerDashboard = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
-  const { data: projectsData, isLoading, isFetching, refetch } = useProjects(currentPage, searchQuery);
+  const { data: projectsData, isFetching, refetch } = useProjects(currentPage, searchQuery);
   const updateStatusMutation = useUpdateProjectStatus();
 
   const projects = projectsData?.projects ?? [];

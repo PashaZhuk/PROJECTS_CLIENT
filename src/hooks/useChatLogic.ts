@@ -9,7 +9,7 @@ export const useChatLogic = (
   isOpen: boolean,
   isMinimized: boolean
 ) => {
-  const { setMessages, addMessage, markMessagesAsReadLocally, setActiveChatId, markMyMessagesAsRead, setLoading } = useChatStore();
+  const { setMessages, addMessage, markMessagesAsReadLocally, setActiveChatId, setLoading } = useChatStore();
   const isOpenRef = useRef(isOpen);
   const isMinimizedRef = useRef(isMinimized);
   const hasJoinedRoomRef = useRef(false);

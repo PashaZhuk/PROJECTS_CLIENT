@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import type { Project, ActiveTabType } from '../types';
 import { useAuthStore } from '../store/useAuthStore';

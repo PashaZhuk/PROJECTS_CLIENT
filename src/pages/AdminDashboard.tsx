@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useAdminStats } from '../hooks/useUsersQuery';
 import { useUserSockets } from '../hooks/useUserSockets';
@@ -19,12 +18,6 @@ const AdminDashboard = () => {
   const { data: stats, isLoading: loading, refetch } = useAdminStats();
 
   const isSystemOnline = true; 
-
-  useEffect(() => {
-    if (activeTab === 'stats' && !stats) {
-      refetch();
-    }
-  }, [activeTab, stats, refetch]);
 
   return (
     <div className="space-y-6">

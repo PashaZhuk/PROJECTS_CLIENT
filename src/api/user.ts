@@ -1,8 +1,8 @@
 import api from './ky';
-import type { RegisterInput, ChangePasswordInput, UsersQueryParams } from '../types';
+import type { RegisterInput, ChangePasswordInput } from '../types';
 
 const userApi = {
-  getAllUsers: (params?: UsersQueryParams) =>
+  getAllUsers: (params?: Record<string, string | number | boolean | undefined>) =>
     api.get('user/users', { searchParams: params }).json(),
 
   register: (data: RegisterInput) =>
