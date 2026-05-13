@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, MapPin, Phone, Mail, Clock, Headphones, Building2, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Save, MapPin, Phone, Mail, Clock, Headphones, Building2, Loader2, AlertCircle, CheckCircle2, Info } from 'lucide-react';
 import YandexMap from '../../ui/YandexMap';
 
 interface ContactsForm {
@@ -154,12 +154,40 @@ const AdminSettings = () => {
           <Field label="Режим работы">
             <textarea value={form.workingHours} onChange={handleChange('workingHours')} rows={2} placeholder="понедельник-четверг — 9:00-18:00, пятница — 9:00-17:00" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all resize-none" />
           </Field>
-          <Field label="ID Яндекс.Карты (из ссылки конструктора)">
-            <input value={form.yandexMapId} onChange={handleChange('yandexMapId')} placeholder="85112499592fc9fcb766262465c1b80ca62edb09cd1f5b1caa6045fc3a6fc2e0" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 font-mono focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all" />
-            <p className="text-xs text-gray-400 mt-1">
-              ID из ссылки конструктора: <code className="bg-gray-100 px-1 rounded">constructor%3a<span className="text-blue-600">ID</span>&amp;width</code>
-            </p>
-          </Field>
+          <div className="relative">
+            <Field label="ID Яндекс.Карты">
+              <div className="flex gap-2 items-start">
+                <div className="flex-1 relative">
+                  <input value={form.yandexMapId} onChange={handleChange('yandexMapId')} placeholder="85112499592fc9fcb766262465c1b80ca62edb09cd1f5b1caa6045fc3a6fc2e0" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 font-mono focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all" />
+                  <p className="text-xs text-gray-400 mt-1">
+                    ID из ссылки конструктора: <code className="bg-gray-100 px-1 rounded">constructor%3a<span className="text-blue-600">ID</span>&amp;width</code>
+                  </p>
+                </div>
+                {/* Подсказка */}
+                <div className="group relative shrink-0 mt-2">
+                  <Info size={18} className="text-gray-400 hover:text-purple-600 cursor-help transition-colors" />
+                  <div className="absolute right-0 top-full mt-2 w-80 p-4 bg-gray-900 text-white text-xs rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                    <div className="font-bold text-purple-300 mb-2 text-sm">Как сменить карту</div>
+                    <ol className="space-y-1.5 list-decimal list-inside leading-relaxed">
+                      <li>Зайдите на <a href="https://constructor.maps.yandex.ru" target="_blank" rel="noopener" className="text-blue-300 hover:underline">constructor.maps.yandex.ru</a></li>
+                      <li>Найдите новый адрес в поиске</li>
+                      <li>Поставьте метку на нужном месте</li>
+                      <li>Настройте внешний вид карты</li>
+                      <li>Нажмите «Сохранить и продолжить»</li>
+                      <li>Скопируйте ID из ссылки:</li>
+                    </ol>
+                    <code className="block mt-2 p-2 bg-gray-800 rounded-lg text-[10px] break-all text-gray-300 leading-relaxed">
+                      ...constructor%3a<span className="text-yellow-300 font-bold">ID</span>&amp;width...
+                    </code>
+                    <div className="mt-2 text-gray-400 text-[10px]">
+                      Вставьте скопированный ID в поле выше и сохраните
+                    </div>
+                    <div className="absolute -top-1.5 right-4 w-3 h-3 bg-gray-900 rotate-45" />
+                  </div>
+                </div>
+              </div>
+            </Field>
+          </div>
           {hasmapId && (
             <div className="mt-2 rounded-2xl overflow-hidden border border-gray-200">
               <YandexMap mapId={form.yandexMapId} height={250} />
