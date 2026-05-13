@@ -313,14 +313,19 @@ const AdminSettings = () => {
           <button
             type="submit"
             disabled={saving}
-            className="flex items-center gap-2 px-8 py-3.5 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 text-white font-bold rounded-2xl transition-all active:scale-95 shadow-lg shadow-purple-200"
+            className="group flex items-center gap-3 px-10 py-4 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:from-gray-300 disabled:to-gray-300 text-white font-bold text-sm tracking-wider uppercase rounded-2xl transition-all duration-300 active:scale-[0.97] disabled:active:scale-100 shadow-lg shadow-purple-200/60 hover:shadow-xl hover:shadow-purple-300/40 disabled:shadow-none"
           >
             {saving ? (
-              <Loader2 size={18} className="animate-spin" />
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                <span>Сохранение...</span>
+              </>
             ) : (
-              <Save size={18} />
+              <>
+                <Save size={18} className="group-hover:scale-110 transition-transform duration-200" />
+                <span>Сохранить контакты</span>
+              </>
             )}
-            {saving ? 'Сохранение...' : 'Сохранить контакты'}
           </button>
         </div>
       </form>
