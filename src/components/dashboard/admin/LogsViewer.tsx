@@ -62,8 +62,8 @@ const LogsViewer = () => {
       if (selectedDate) params.append('date', selectedDate);
       params.append('limit', '500');
       const response: any = await api.get(`admin/logs?${params.toString()}`).json();
-      setLogs(response.logs || []);
-      setTotal(response.returned || 0);
+      setLogs(response.data?.logs || []);
+      setTotal(response.data?.returned || 0);
     } catch (error) {
       console.error('Failed to fetch logs:', error);
     } finally {
