@@ -17,15 +17,15 @@ interface ContactsForm {
 
 const defaultForm: ContactsForm = {
   companyName: 'ООО "АйПиМатика Бел"',
-  address: '',
+  address: '220081, Минская обл., Минский р-н, Боровлянский с/с, д. Копище, ул. Лопатина, д. 6, пом. 3',
   city: 'г. Минск',
-  phone: '',
-  mobile: '',
-  email: '',
-  supportEmail: '',
-  supportPhone: '',
-  workingHours: '',
-  yandexMapId: '',
+  phone: '+375(17) 361-96-96',
+  mobile: '+375(29) 361-96-96',
+  email: 'info@ipmatika.by',
+  supportEmail: 'support@ipmatika.by',
+  supportPhone: '+375(29) 378-96-96',
+  workingHours: 'понедельник-четверг — 9:00-18:00, пятница — 9:00-17:00',
+  yandexMapId: '85112499592fc9fcb766262465c1b80ca62edb09cd1f5b1caa6045fc3a6fc2e0',
 };
 
 const AdminSettings = () => {
