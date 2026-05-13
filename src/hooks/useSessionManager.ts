@@ -2,6 +2,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { getSocket } from '../api/socket';
 import { useAuthStore } from '../store/useAuthStore';
+import { devLog, devError } from '../utils/devLog';
 
 const INACTIVITY_LIMITS = {
   USER: 30 * 60 * 1000,
@@ -23,12 +24,12 @@ export const useSessionManager = () => {
     const limit = user.role === 'USER' ? INACTIVITY_LIMITS.USER : INACTIVITY_LIMITS.MANAGER;
 
     timerRef.current = setTimeout(async () => {
-      console.log(`[SessionManager] ⏰ Таймаут неактивности (${user.role})`);
+      devLog(`[SessionManager] ⏰ Таймаут неактивности (${user.role})`);
       try {
         await logout();
         setSessionExpired(true);
       } catch (e) {
-        console.error('Logout on timeout failed:', e);
+        devError('Logout on timeout failed:', e);
         setSessionExpired(true);
       }
     }, limit);
@@ -63,7 +64,7 @@ export const useSessionManager = () => {
       }
       if (subscribedRef.current) return;
       subscribedRef.current = true;
-      console.log('[SessionManager] Подписка на сокет-события');
+      devLog('[SessionManager] Подписка на сокет-события');
       socket.emit('join_self_room', user.id);
       socket.on('session_superseded', () => {
         console.warn('⚠️ Сессия вытеснена');

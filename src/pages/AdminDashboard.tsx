@@ -1,6 +1,6 @@
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { useUserStore } from '../store/useUserStore';
+import { useAdminStats } from '../hooks/useUsersQuery';
 import { useUserSockets } from '../hooks/useUserSockets';
 import type { ActiveTabType } from '../types';
 import AdminOverview from '../components/dashboard/admin/AdminOverview';
@@ -16,25 +16,15 @@ const AdminDashboard = () => {
     setActiveTab: (tab: ActiveTabType) => void;
   }>();
 
-  const stats = useUserStore((state) => state.stats);
-  const fetchStats = useUserStore((state) => state.fetchStats);
-  const loading = useUserStore((state) => state.loading);
+  const { data: stats, isLoading: loading, refetch } = useAdminStats();
 
   const isSystemOnline = true; 
 
-  const fetchData = useCallback(async (quiet = false) => {
-    try {
-      await fetchStats(quiet);
-    } catch (err: any) {
-      console.error("Dashboard statistics fetch error:", err);
-    }
-  }, [fetchStats]);
-
   useEffect(() => {
     if (activeTab === 'stats' && !stats) {
-      fetchData();
+      refetch();
     }
-  }, [activeTab, stats, fetchData]);
+  }, [activeTab, stats, refetch]);
 
   return (
     <div className="space-y-6">
@@ -43,7 +33,7 @@ const AdminDashboard = () => {
           stats={stats} 
           loading={loading} 
           isOnline={isSystemOnline} 
-          onRefresh={() => fetchData(false)} 
+          onRefresh={() => refetch()} 
         />
       )}
 

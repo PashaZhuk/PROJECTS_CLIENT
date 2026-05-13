@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import api from '../api/ky';
 import { useChatStore } from '../store/useChatStore';
+import { devLog, devError } from '../utils/devLog';
 
 export const useChatLogic = (
   projectId: number | undefined,
@@ -14,7 +15,7 @@ export const useChatLogic = (
   const hasJoinedRoomRef = useRef(false);
 
   useEffect(() => {
-    console.log('[useChatLogic] 🔄 State changed:', { isOpen, isMinimized, projectId, userId: user?.id });
+    devLog('[useChatLogic] 🔄 State changed:', { isOpen, isMinimized, projectId, userId: user?.id });
     isOpenRef.current = isOpen;
     isMinimizedRef.current = isMinimized;
   }, [isOpen, isMinimized, projectId, user?.id]);
@@ -23,9 +24,9 @@ export const useChatLogic = (
     if (!projectId || !user?.id) return;
     try {
       await api.patch(`chat/${projectId}/read`, { json: {} });
-      console.log('[useChatLogic] ✅ Read receipt sent');
+      devLog('[useChatLogic] ✅ Read receipt sent');
     } catch (err) {
-      console.error('[ChatLogic] ❌ Send read receipt error:', err);
+      devError('[ChatLogic] ❌ Send read receipt error:', err);
     }
   }, [projectId, user?.id]);
 
@@ -52,10 +53,10 @@ export const useChatLogic = (
         const msgData = (savedMsg as any)?.data || savedMsg;
         addMessage(projectId, { ...(msgData as any), isRead: false });
       } else {
-        console.error('[ChatLogic] Invalid response format', savedMsg);
+        devError('[ChatLogic] Invalid response format', savedMsg);
       }
     } catch (err) {
-      console.error('[ChatLogic] ❌ Send error:', err);
+      devError('[ChatLogic] ❌ Send error:', err);
     }
   };
 
@@ -72,7 +73,7 @@ export const useChatLogic = (
           sendReadReceipt();
         }
       })
-      .catch(err => console.error('[ChatLogic] Failed to load messages:', err))
+      .catch(err => devError('[ChatLogic] Failed to load messages:', err))
       .finally(() => setLoading(false));
   }, [projectId, setMessages, user?.id, markMessagesAsReadLocally, sendReadReceipt, setLoading]);
 

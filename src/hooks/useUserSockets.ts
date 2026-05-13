@@ -1,10 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { getSocket } from '../api/socket';
-import { useUserStore } from '../store/useUserStore';
 import { useAuthStore } from '../store/useAuthStore';
+import { queryClient } from '../lib/queryClient';
 
 export const useUserSockets = () => {
-  const { fetchUsers, updateUserStatus, updateUserBlockedStatus, updateUserLockStatus, setStats } = useUserStore();
   const { user, isAuthenticated } = useAuthStore();
   const hasIdentified = useRef(false);
 
@@ -13,7 +12,6 @@ export const useUserSockets = () => {
 
     const socket = getSocket();
     if (!socket) {
-      console.warn('[useUserSockets] Socket not initialized');
       return;
     }
 
@@ -29,21 +27,21 @@ export const useUserSockets = () => {
     socket.emit('join_self_room', user.id);
 
     const onStatsUpdated = (newStats: any) => {
-      setStats(newStats);
+      queryClient.setQueryData(['admin-stats'], newStats);
     };
 
     const onUserRegistered = () => {
-      if (user.role === 'ADMIN') fetchUsers();
+      if (user.role === 'ADMIN') {
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+      }
     };
 
     const onUserOnline = (userId: number) => {
-      console.log('[useUserSockets] user:online', userId);
-      updateUserStatus(userId, true);
+      updateUserInCache(userId, { isOnline: true });
     };
 
     const onUserOffline = (userId: number) => {
-      console.log('[useUserSockets] user:offline', userId);
-      updateUserStatus(userId, false);
+      updateUserInCache(userId, { isOnline: false });
     };
 
     const onUserBlockedStatusChanged = (data: {
@@ -53,17 +51,25 @@ export const useUserSockets = () => {
       failedLoginAttempts?: number;
       twoFactorLockUntil?: string | null;
       twoFactorAttempts?: number;
-      wasSystemLock?: boolean;
     }) => {
-      console.log('[useUserSockets] user:blocked_status_changed', data);
-      if (data.isBlocked !== undefined) {
-        updateUserBlockedStatus(data.userId, data.isBlocked);
-      }
-      updateUserLockStatus(data.userId, {
-        lockUntil: data.lockUntil,
-        failedLoginAttempts: data.failedLoginAttempts,
-        twoFactorLockUntil: data.twoFactorLockUntil,
-        twoFactorAttempts: data.twoFactorAttempts,
+      const updates: Record<string, any> = {};
+      if (data.isBlocked !== undefined) updates.isBlocked = data.isBlocked;
+      if (data.lockUntil !== undefined) updates.lockUntil = data.lockUntil;
+      if (data.failedLoginAttempts !== undefined) updates.failedLoginAttempts = data.failedLoginAttempts;
+      if (data.twoFactorLockUntil !== undefined) updates.twoFactorLockUntil = data.twoFactorLockUntil;
+      if (data.twoFactorAttempts !== undefined) updates.twoFactorAttempts = data.twoFactorAttempts;
+      updateUserInCache(data.userId, updates);
+    };
+
+    const updateUserInCache = (targetUserId: number, updates: Record<string, any>) => {
+      queryClient.setQueriesData({ queryKey: ['users'] }, (old: any) => {
+        if (!old?.users) return old;
+        return {
+          ...old,
+          users: old.users.map((u: any) =>
+            u.id === targetUserId ? { ...u, ...updates } : u
+          ),
+        };
       });
     };
 
@@ -80,5 +86,5 @@ export const useUserSockets = () => {
       socket.off('user:offline', onUserOffline);
       socket.off('user:blocked_status_changed', onUserBlockedStatusChanged);
     };
-  }, [isAuthenticated, user?.id, user?.role, setStats, fetchUsers, updateUserStatus, updateUserBlockedStatus, updateUserLockStatus]);
+  }, [isAuthenticated, user?.id, user?.role]);
 };

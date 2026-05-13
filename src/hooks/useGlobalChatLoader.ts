@@ -2,11 +2,10 @@ import { useEffect } from 'react';
 import { getSocket } from '../api/socket';
 import api from '../api/ky';
 import { useChatStore } from '../store/useChatStore';
-import { useProjectStore } from '../store/useProjectStore';
+import { queryClient } from '../lib/queryClient';
 
 export const useGlobalChatLoader = (user: any, projects: any[]) => {
   const { addMessage, markMyMessagesAsRead, activeChatId } = useChatStore();
-  const setProjects = useProjectStore((state) => state.setProjects);
 
   useEffect(() => {
     if (!user?.id || projects.length === 0) return;
@@ -23,6 +22,24 @@ export const useGlobalChatLoader = (user: any, projects: any[]) => {
       });
     });
 
+    const updateUnreadInCache = (projectId: number, increment: boolean) => {
+      queryClient.setQueriesData({ queryKey: ['projects'] }, (old: any) => {
+        if (!old?.projects) return old;
+        return {
+          ...old,
+          projects: old.projects.map((p: any) => {
+            if (Number(p.id) !== projectId) return p;
+            const currentUnread = p.unreadCount || 0;
+            return {
+              ...p,
+              hasUnread: true,
+              unreadCount: increment ? currentUnread + 1 : currentUnread,
+            };
+          }),
+        };
+      });
+    };
+
     const handleNewMessage = async (msg: any) => {
       const pId = Number(msg.projectId);
       const chatStore = useChatStore.getState();
@@ -34,7 +51,6 @@ export const useGlobalChatLoader = (user: any, projects: any[]) => {
         isRead = true;
         try {
           await api.patch(`chat/${pId}/read`, { json: {} });
-          console.log(`[GlobalChatLoader] Marked messages as read for project ${pId}`);
         } catch (err) {
           console.error('[GlobalChatLoader] Failed to mark as read:', err);
         }
@@ -43,30 +59,23 @@ export const useGlobalChatLoader = (user: any, projects: any[]) => {
       addMessage(pId, { ...msg, isRead });
 
       if (!isMyOwnMessage && !isChatOpen) {
-        setProjects((prev: any[]) => {
-          const idx = prev.findIndex(p => Number(p.id) === pId);
-          if (idx === -1) return prev;
-          const updated = [...prev];
-          const currentUnreadCount = updated[idx].unreadCount || 0;
-          updated[idx] = { 
-            ...updated[idx], 
-            hasUnread: true, 
-            unreadCount: currentUnreadCount + 1 
-          };
-          return updated;
-        });
+        updateUnreadInCache(pId, true);
       }
     };
 
     const handleMessagesRead = ({ projectId, readerId }: { projectId: number; readerId: number }) => {
       if (String(readerId) !== String(user.id)) {
         markMyMessagesAsRead(projectId, readerId);
-        setProjects((prev: any[]) => {
-          const idx = prev.findIndex(p => Number(p.id) === projectId);
-          if (idx === -1) return prev;
-          const updated = [...prev];
-          updated[idx] = { ...updated[idx], hasUnread: false, unreadCount: 0 };
-          return updated;
+        queryClient.setQueriesData({ queryKey: ['projects'] }, (old: any) => {
+          if (!old?.projects) return old;
+          return {
+            ...old,
+            projects: old.projects.map((p: any) =>
+              Number(p.id) === projectId
+                ? { ...p, hasUnread: false, unreadCount: 0 }
+                : p
+            ),
+          };
         });
       }
     };
@@ -78,5 +87,5 @@ export const useGlobalChatLoader = (user: any, projects: any[]) => {
       socket.off('new_message', handleNewMessage);
       socket.off('messages_read', handleMessagesRead);
     };
-  }, [user?.id, projects.length, setProjects, addMessage, markMyMessagesAsRead, activeChatId]);
+  }, [user?.id, projects.length, addMessage, markMyMessagesAsRead, activeChatId]);
 };

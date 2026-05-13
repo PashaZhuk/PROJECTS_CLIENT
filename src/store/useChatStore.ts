@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { useProjectStore } from './useProjectStore';
+import { queryClient } from '../lib/queryClient';
 
 interface Message {
   id: number;
@@ -49,9 +49,15 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     if (!currentUserId) return;
     const pId = Number(projectId);
 
-    useProjectStore.getState().setProjects((prev) => 
-      prev.map(p => Number(p.id) === pId ? { ...p, unreadCount: 0, hasUnread: false } : p)
-    );
+    queryClient.setQueriesData({ queryKey: ['projects'] }, (old: any) => {
+      if (!old?.projects) return old;
+      return {
+        ...old,
+        projects: old.projects.map(p =>
+          Number(p.id) === pId ? { ...p, unreadCount: 0, hasUnread: false } : p
+        ),
+      };
+    });
 
     set((state) => {
       const msgs = state.messages[pId];

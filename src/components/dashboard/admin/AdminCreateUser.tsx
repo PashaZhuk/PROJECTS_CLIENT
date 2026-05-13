@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail, Key, RefreshCw, Check, Briefcase, ShieldCheck, Phone, AlertCircle } from 'lucide-react';
 import Select from 'react-select';
-import { useUserStore } from '../../../store/useUserStore';
+import { useCreateUser } from '../../../hooks/useUsersQuery';
 import { userFormSchema, type UserFormData } from '../../../schemas/userSchema';
 import api from '../../../api/ky';
 
@@ -19,7 +19,8 @@ interface CreateUserProps {
 }
 
 const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
-  const { createUser, loading } = useUserStore();
+  const createMutation = useCreateUser();
+  const loading = createMutation.isPending;
   const [serverError, setServerError] = useState('');
   const [companies, setCompanies] = useState<CompanyOption[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(null);
@@ -98,7 +99,7 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
       delete payload.phone;
     }
     try {
-      await createUser(payload);
+      await createMutation.mutateAsync(payload);
       onCancel();
     } catch (err: any) {
       setServerError(err.message);

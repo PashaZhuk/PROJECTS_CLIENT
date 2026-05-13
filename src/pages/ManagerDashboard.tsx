@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
-import { useProjectStore } from '../store/useProjectStore';
+import { useProjects, useUpdateProjectStatus } from '../hooks/useProjectsQuery';
 import { useChatStore } from '../store/useChatStore';
 import { useProjectSockets } from '../hooks/useProjectSockets';
 import { useGlobalChatLoader } from '../hooks/useGlobalChatLoader';
@@ -42,10 +42,19 @@ const ManagerDashboard = () => {
   
   useUserSockets(); 
 
-  const {
-    projects, loading, totalCount, totalPages, currentPage, searchQuery,
-    fetchProjects, updateProjectStatus, setSearchQuery, setCurrentPage
-  } = useProjectStore();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const { data: projectsData, isLoading, isFetching, refetch } = useProjects(currentPage, searchQuery);
+  const updateStatusMutation = useUpdateProjectStatus();
+
+  const projects = projectsData?.projects ?? [];
+  const totalCount = projectsData?.totalCount ?? 0;
+  const totalPages = projectsData?.totalPages ?? 1;
+  const loading = isFetching;
+
+  const handleUpdateStatus = useCallback(async (id: number, status: string) => {
+    await updateStatusMutation.mutateAsync({ id, status });
+  }, [updateStatusMutation]);
 
   const setActiveChatId = useChatStore((state) => state.setActiveChatId);
   const markMessagesAsReadLocally = useChatStore((state) => state.markMessagesAsReadLocally);
@@ -57,8 +66,6 @@ const ManagerDashboard = () => {
 
   const userIdForSockets = useMemo(() => user?.id ? (typeof user.id === 'string' ? parseInt(user.id, 10) : user.id) : undefined, [user?.id]);
   useProjectSockets(userIdForSockets);
-
-  useEffect(() => { fetchProjects(); }, [fetchProjects, currentPage, searchQuery]);
 
   const stats = useMemo(() => ({
     total: totalCount,
@@ -90,7 +97,7 @@ const ManagerDashboard = () => {
   return (
     <>
       {activeTab === 'stats' && (
-        <StatsView stats={stats} onRefresh={() => fetchProjects(true)} isLoading={loading} title="Панель Менеджера" variant="emerald" />
+        <StatsView stats={stats} onRefresh={() => refetch()} isLoading={loading} title="Панель Менеджера" variant="emerald" />
       )}
       {activeTab === 'projects-list' && (
         <ProjectsListView
@@ -101,7 +108,7 @@ const ManagerDashboard = () => {
           expandedId={expandedProjectId}
           setExpandedId={setExpandedProjectId}
           isAdminView={true}
-          onStatusUpdate={updateProjectStatus}
+          onStatusUpdate={handleUpdateStatus}
           onOpenChat={handleOpenChat}
           user={user}
           currentPage={currentPage}

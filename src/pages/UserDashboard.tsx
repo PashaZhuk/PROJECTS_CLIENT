@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import type { Project, ActiveTabType } from '../types';
 import { useAuthStore } from '../store/useAuthStore';
-import { useProjectStore } from '../store/useProjectStore';
+import { useProjects } from '../hooks/useProjectsQuery';
 import { useChatStore } from '../store/useChatStore';
 import { useProjectSockets } from '../hooks/useProjectSockets';
 import { useGlobalChatLoader } from '../hooks/useGlobalChatLoader';
@@ -44,10 +44,14 @@ const UserDashboard = () => {
 
   useUserSockets();
 
-  const {
-    projects, loading, totalCount, totalPages, currentPage, searchQuery,
-    fetchProjects, setSearchQuery, setCurrentPage
-  } = useProjectStore();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const { data: projectsData, isLoading, refetch } = useProjects(currentPage, searchQuery);
+
+  const projects = projectsData?.projects ?? [];
+  const totalCount = projectsData?.totalCount ?? 0;
+  const totalPages = projectsData?.totalPages ?? 1;
+  const loading = isLoading;
 
   const setActiveChatId = useChatStore((state) => state.setActiveChatId);
   const markMessagesAsReadLocally = useChatStore((state) => state.markMessagesAsReadLocally);
@@ -68,8 +72,6 @@ const UserDashboard = () => {
       setIsFormOpen(true);
     }
   }, [activeTab]);
-
-  useEffect(() => { fetchProjects(); }, [currentPage, searchQuery, fetchProjects]);
 
   const handleOpenChat = useCallback(async (projectId: number) => {
     const project = projects.find(p => p.id === projectId);
@@ -125,7 +127,7 @@ const UserDashboard = () => {
   return (
     <>
       {activeTab === 'stats' && (
-        <StatsView stats={stats} onRefresh={() => fetchProjects()} isLoading={loading} title="Мои Проекты" variant="blue" />
+        <StatsView stats={stats} onRefresh={() => refetch()} isLoading={loading} title="Мои Проекты" variant="blue" />
       )}
       {activeTab === 'projects-list' && (
         <ProjectsListView
@@ -151,7 +153,7 @@ const UserDashboard = () => {
       {isFormOpen && (
         <DynamicProjectForm
           onClose={handleCloseForm}
-          onSuccess={async () => { handleCloseForm(); await fetchProjects(); }}
+          onSuccess={async () => { handleCloseForm(); await refetch(); }}
           initialData={editingProject}
         />
       )}

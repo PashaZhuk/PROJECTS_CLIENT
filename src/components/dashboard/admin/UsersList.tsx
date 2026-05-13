@@ -1,17 +1,27 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Mail, Trash2, Search, ChevronLeft, ChevronRight, RefreshCw, UserCheck, Ban, CheckCircle, Lock, KeyRound } from 'lucide-react';
-import { useUserStore } from '../../../store/useUserStore';
+import { useUsers, useDeleteUser, useToggleBlock } from '../../../hooks/useUsersQuery';
 
 const UsersList = () => {
-  const {
-    users, loading, searchQuery, setSearchQuery,
-    currentPage, totalPages, fetchUsers, deleteUser, setCurrentPage, toggleBlock
-  } = useUserStore();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   useEffect(() => {
-    const timer = setTimeout(() => { fetchUsers(); }, 400);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1);
+    }, 400);
     return () => clearTimeout(timer);
-  }, [fetchUsers, currentPage, searchQuery]);
+  }, [searchQuery]);
+
+  const { data, isLoading } = useUsers(currentPage, debouncedSearch);
+  const deleteMutation = useDeleteUser();
+  const toggleMutation = useToggleBlock();
+
+  const users = data?.users ?? [];
+  const totalPages = data?.totalPages ?? 1;
+  const loading = isLoading;
 
   const getLockInfo = (user: any) => {
     const now = new Date();
@@ -122,7 +132,7 @@ const UsersList = () => {
                         <button
                           onClick={async () => {
                             try {
-                              await toggleBlock(user.id);
+                              await toggleMutation.mutateAsync(user.id);
                             } catch {
                               alert('Ошибка при изменении статуса блокировки');
                             }
@@ -146,7 +156,7 @@ const UsersList = () => {
                           onClick={async () => {
                             if (!window.confirm('Вы уверены, что хотите удалить этого пользователя?')) return;
                             try {
-                              await deleteUser(user.id);
+                              await deleteMutation.mutateAsync(user.id);
                             } catch {
                               alert('Ошибка при удалении');
                             }
