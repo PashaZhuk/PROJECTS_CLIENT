@@ -162,19 +162,14 @@ const AdminSettings = () => {
     setSaving(true);
 
     try {
-      // Обрезаем лишние пробелы перед отправкой
-      const trimmed = Object.fromEntries(
-        Object.entries(form).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v])
-      );
       const res = await fetch('/api/admin/settings/contacts', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ value: trimmed }),
+        body: JSON.stringify({ value: form }),
       });
       const data = await res.json();
       if (data?.success) {
-        setForm(prev => ({ ...prev, ...trimmed }));
         setMessage({ type: 'success', text: 'Контакты сохранены' });
       } else {
         setMessage({ type: 'error', text: data?.error || 'Ошибка сохранения' });
@@ -313,7 +308,7 @@ const AdminSettings = () => {
           <button
             type="submit"
             disabled={saving}
-            className="group flex items-center gap-3 px-10 py-4 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:from-gray-300 disabled:to-gray-300 text-white font-bold text-sm tracking-wider uppercase rounded-2xl transition-all duration-300 active:scale-[0.97] disabled:active:scale-100 shadow-lg shadow-purple-200/60 hover:shadow-xl hover:shadow-purple-300/40 disabled:shadow-none"
+            className="group flex items-center justify-center gap-3 px-10 py-4 min-w-[240px] bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:from-gray-300 disabled:to-gray-300 text-white font-bold text-sm tracking-wider uppercase rounded-2xl transition-all duration-300 active:scale-[0.97] disabled:active:scale-100 shadow-lg shadow-purple-200/60 hover:shadow-xl hover:shadow-purple-300/40 disabled:shadow-none"
           >
             {saving ? (
               <>
