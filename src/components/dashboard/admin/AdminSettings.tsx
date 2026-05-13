@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Save, MapPin, Phone, Mail, Clock, Headphones, Building2, Loader2, AlertCircle, CheckCircle2, Info } from 'lucide-react';
 import YandexMap from '../../ui/YandexMap';
 
@@ -15,6 +15,8 @@ interface ContactsForm {
   yandexMapId: string;
 }
 
+type FormErrors = Partial<Record<keyof ContactsForm, string>>;
+
 const defaultForm: ContactsForm = {
   companyName: 'ООО "АйПиМатика Бел"',
   address: '220081, Минская обл., Минский р-н, Боровлянский с/с, д. Копище, ул. Лопатина, д. 6, пом. 3',
@@ -28,11 +30,92 @@ const defaultForm: ContactsForm = {
   yandexMapId: '85112499592fc9fcb766262465c1b80ca62edb09cd1f5b1caa6045fc3a6fc2e0',
 };
 
+const PHONE_REGEX = /^\+375\(\d{2}\)\s?\d{3}-?\d{2}-?\d{2}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validate(form: ContactsForm): FormErrors {
+  const errors: FormErrors = {};
+
+  if (!form.companyName.trim()) errors.companyName = 'Обязательное поле';
+  else if (form.companyName.length > 200) errors.companyName = 'Максимум 200 символов';
+
+  if (!form.city.trim()) errors.city = 'Обязательное поле';
+  else if (form.city.length > 100) errors.city = 'Максимум 100 символов';
+
+  if (!form.address.trim()) errors.address = 'Обязательное поле';
+  else if (form.address.length > 500) errors.address = 'Максимум 500 символов';
+
+  if (!form.phone.trim()) errors.phone = 'Обязательное поле';
+  else if (!PHONE_REGEX.test(form.phone.trim())) errors.phone = 'Формат: +375(17) 361-96-96';
+
+  if (!form.mobile.trim()) errors.mobile = 'Обязательное поле';
+  else if (!PHONE_REGEX.test(form.mobile.trim())) errors.mobile = 'Формат: +375(29) 361-96-96';
+
+  if (!form.email.trim()) errors.email = 'Обязательное поле';
+  else if (!EMAIL_REGEX.test(form.email.trim())) errors.email = 'Неверный формат email';
+
+  if (!form.supportEmail.trim()) errors.supportEmail = 'Обязательное поле';
+  else if (!EMAIL_REGEX.test(form.supportEmail.trim())) errors.supportEmail = 'Неверный формат email';
+
+  if (!form.supportPhone.trim()) errors.supportPhone = 'Обязательное поле';
+  else if (!PHONE_REGEX.test(form.supportPhone.trim())) errors.supportPhone = 'Формат: +375(29) 378-96-96';
+
+  if (!form.workingHours.trim()) errors.workingHours = 'Обязательное поле';
+  else if (form.workingHours.length > 500) errors.workingHours = 'Максимум 500 символов';
+
+  if (form.yandexMapId.trim() && form.yandexMapId.trim().length < 10) {
+    errors.yandexMapId = 'ID выглядит слишком коротким';
+  }
+
+  return errors;
+}
+
+// Обёртка input с валидацией
+const ValidatedInput = ({
+  value, onChange, placeholder, error, type, mono, rows, maxLength,
+}: {
+  value: string; onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  placeholder?: string; error?: string; type?: string; mono?: boolean; rows?: number; maxLength?: number;
+}) => {
+  const Tag = rows ? 'textarea' : 'input';
+  return (
+    <div>
+      <Tag
+        {...(rows ? { rows } : { type: type || 'text' })}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        maxLength={maxLength}
+        className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:border-transparent transition-all resize-none ${
+          error
+            ? 'border-red-300 focus:ring-red-400 bg-red-50'
+            : 'border-gray-200 focus:ring-purple-400'
+        } ${mono ? 'font-mono' : ''}`}
+      />
+      <div className="flex justify-between items-start mt-0.5 min-h-[18px]">
+        {error ? (
+          <span className="text-[11px] text-red-500 font-medium">{error}</span>
+        ) : (
+          <span />
+        )}
+        {maxLength && (
+          <span className={`text-[10px] font-medium ${
+            value.length > maxLength * 0.9 ? 'text-red-400' : 'text-gray-400'
+          }`}>
+            {value.length}/{maxLength}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const AdminSettings = () => {
   const [form, setForm] = useState<ContactsForm>(defaultForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [errors, setErrors] = useState<FormErrors>({});
 
   // Авто-скрытие toast через 3 сек
   useEffect(() => {
@@ -54,25 +137,44 @@ const AdminSettings = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleChange = (field: keyof ContactsForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm(prev => ({ ...prev, [field]: e.target.value }));
+  const handleChange = useCallback((field: keyof ContactsForm) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const value = e.target.value;
+    setForm(prev => ({ ...prev, [field]: value }));
+    // Сбрасываем ошибку конкретного поля при вводе
+    setErrors(prev => ({ ...prev, [field]: undefined }));
     setMessage(null);
-  };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
     setMessage(null);
 
+    // Валидация перед отправкой
+    const validationErrors = validate(form);
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) {
+      setMessage({ type: 'error', text: 'Исправьте ошибки в форме' });
+      return;
+    }
+
+    setSaving(true);
+
     try {
+      // Обрезаем лишние пробелы перед отправкой
+      const trimmed = Object.fromEntries(
+        Object.entries(form).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v])
+      );
       const res = await fetch('/api/admin/settings/contacts', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ value: form }),
+        body: JSON.stringify({ value: trimmed }),
       });
       const data = await res.json();
       if (data?.success) {
+        setForm(prev => ({ ...prev, ...trimmed }));
         setMessage({ type: 'success', text: 'Контакты сохранены' });
       } else {
         setMessage({ type: 'error', text: data?.error || 'Ошибка сохранения' });
@@ -128,13 +230,13 @@ const AdminSettings = () => {
         {/* Основная информация */}
         <Section title="Основная информация" icon={<Building2 size={18} className="text-purple-600" />}>
           <Field label="Название компании">
-            <input value={form.companyName} onChange={handleChange('companyName')} placeholder="ООО &quot;АйПиМатика Бел&quot;" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all" />
+            <ValidatedInput value={form.companyName} onChange={handleChange('companyName')} placeholder='ООО "АйПиМатика Бел"' error={errors.companyName} maxLength={200} />
           </Field>
           <Field label="Город">
-            <input value={form.city} onChange={handleChange('city')} placeholder="г. Минск" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all" />
+            <ValidatedInput value={form.city} onChange={handleChange('city')} placeholder="г. Минск" error={errors.city} maxLength={100} />
           </Field>
           <Field label="Адрес">
-            <textarea value={form.address} onChange={handleChange('address')} rows={2} placeholder="Полный адрес" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all resize-none" />
+            <ValidatedInput value={form.address} onChange={handleChange('address')} placeholder="Полный адрес" error={errors.address} rows={2} maxLength={500} />
           </Field>
         </Section>
 
@@ -142,37 +244,37 @@ const AdminSettings = () => {
         <Section title="Отдел продаж" icon={<Phone size={18} className="text-green-600" />}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="Телефон / Факс">
-              <input value={form.phone} onChange={handleChange('phone')} placeholder="+375(17) 361-96-96" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all" />
+              <ValidatedInput value={form.phone} onChange={handleChange('phone')} placeholder="+375(17) 361-96-96" error={errors.phone} />
             </Field>
             <Field label="Мобильный">
-              <input value={form.mobile} onChange={handleChange('mobile')} placeholder="+375(29) 361-96-96" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all" />
+              <ValidatedInput value={form.mobile} onChange={handleChange('mobile')} placeholder="+375(29) 361-96-96" error={errors.mobile} />
             </Field>
           </div>
           <Field label="Email">
-            <input type="email" value={form.email} onChange={handleChange('email')} placeholder="info@ipmatika.by" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all" />
+            <ValidatedInput type="email" value={form.email} onChange={handleChange('email')} placeholder="info@ipmatika.by" error={errors.email} />
           </Field>
         </Section>
 
         {/* Сервисный центр */}
         <Section title="Сервисный центр" icon={<Headphones size={18} className="text-purple-600" />}>
           <Field label="Телефон">
-            <input value={form.supportPhone} onChange={handleChange('supportPhone')} placeholder="+375(29) 378-96-96" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all" />
+            <ValidatedInput value={form.supportPhone} onChange={handleChange('supportPhone')} placeholder="+375(29) 378-96-96" error={errors.supportPhone} />
           </Field>
           <Field label="Email">
-            <input type="email" value={form.supportEmail} onChange={handleChange('supportEmail')} placeholder="support@ipmatika.by" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all" />
+            <ValidatedInput type="email" value={form.supportEmail} onChange={handleChange('supportEmail')} placeholder="support@ipmatika.by" error={errors.supportEmail} />
           </Field>
         </Section>
 
         {/* Режим работы и карта */}
         <Section title="Режим работы и карта" icon={<Clock size={18} className="text-amber-600" />}>
           <Field label="Режим работы">
-            <textarea value={form.workingHours} onChange={handleChange('workingHours')} rows={2} placeholder="понедельник-четверг — 9:00-18:00, пятница — 9:00-17:00" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all resize-none" />
+            <ValidatedInput value={form.workingHours} onChange={handleChange('workingHours')} placeholder="понедельник-четверг — 9:00-18:00, пятница — 9:00-17:00" error={errors.workingHours} rows={2} maxLength={500} />
           </Field>
           <div className="relative">
             <Field label="ID Яндекс.Карты">
               <div className="flex gap-2 items-start">
                 <div className="flex-1 relative">
-                  <input value={form.yandexMapId} onChange={handleChange('yandexMapId')} placeholder="85112499592fc9fcb766262465c1b80ca62edb09cd1f5b1caa6045fc3a6fc2e0" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 font-mono focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all" />
+                  <ValidatedInput value={form.yandexMapId} onChange={handleChange('yandexMapId')} placeholder="85112499592fc9fcb766262465c1b80ca62edb09cd1f5b1caa6045fc3a6fc2e0" error={errors.yandexMapId} mono />
                 </div>
                 {/* Подсказка */}
                 <div className="group relative shrink-0 mt-2">
