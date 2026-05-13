@@ -76,7 +76,7 @@ const AdminSettings = () => {
   };
 
   const mapPreviewUrl = form.yandexMapId
-    ? `https://api-maps.yandex.ru/frame/v1/-/${form.yandexMapId}`
+    ? `https://yandex.ru/maps/constructor/1.0/?um=constructor%3A${form.yandexMapId}&width=100%25&height=300&lang=ru_RU&scroll=true`
     : null;
 
   if (loading) {

@@ -64,7 +64,7 @@ const ContactsModal = ({ isOpen, onClose, contacts, loading }: ContactsModalProp
             {/* Карта */}
             <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
               <iframe
-                src={`https://api-maps.yandex.ru/frame/v1/-/${contacts.yandexMapId}`}
+                src={`https://yandex.ru/maps/constructor/1.0/?um=constructor%3A${contacts.yandexMapId}&width=100%25&height=400&lang=ru_RU&scroll=true`}
                 width="100%"
                 height="320"
                 className="border-0"
