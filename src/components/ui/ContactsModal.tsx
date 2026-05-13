@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Phone, Mail, MapPin, Clock, Headphones, Building2 } from 'lucide-react';
+import YandexMap from './YandexMap';
 
 interface ContactsData {
   address: string;
@@ -63,15 +64,7 @@ const ContactsModal = ({ isOpen, onClose, contacts, loading }: ContactsModalProp
           <div className="p-6 space-y-6">
             {/* Карта */}
             <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
-              <iframe
-                src={`https://yandex.ru/maps/constructor/1.0/?um=constructor%3A${contacts.yandexMapId}&width=100%25&height=400&lang=ru_RU&scroll=true`}
-                width="100%"
-                height="320"
-                className="border-0"
-                allowFullScreen
-                loading="lazy"
-                title="Яндекс.Карта — офис АйПиМатика Бел"
-              />
+              <YandexMap mapId={contacts.yandexMapId} height={320} />
             </div>
 
             {/* Контактная информация */}

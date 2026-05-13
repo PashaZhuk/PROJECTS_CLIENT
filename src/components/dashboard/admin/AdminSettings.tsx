@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, MapPin, Phone, Mail, Clock, Headphones, Building2, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import YandexMap from '../../ui/YandexMap';
 
 interface ContactsForm {
   companyName: string;
@@ -75,9 +76,7 @@ const AdminSettings = () => {
     }
   };
 
-  const mapPreviewUrl = form.yandexMapId
-    ? `https://yandex.ru/maps/constructor/1.0/?um=constructor%3A${form.yandexMapId}&width=100%25&height=300&lang=ru_RU&scroll=true`
-    : null;
+  const hasmapId = Boolean(form.yandexMapId);
 
   if (loading) {
     return (
@@ -161,9 +160,9 @@ const AdminSettings = () => {
               ID из ссылки конструктора: <code className="bg-gray-100 px-1 rounded">constructor%3a<span className="text-blue-600">ID</span>&amp;width</code>
             </p>
           </Field>
-          {mapPreviewUrl && (
+          {hasmapId && (
             <div className="mt-2 rounded-2xl overflow-hidden border border-gray-200">
-              <iframe src={mapPreviewUrl} width="100%" height="250" className="border-0" loading="lazy" title="Предпросмотр карты" />
+              <YandexMap mapId={form.yandexMapId} height={250} />
             </div>
           )}
         </Section>
