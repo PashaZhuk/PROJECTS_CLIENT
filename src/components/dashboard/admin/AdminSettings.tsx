@@ -173,9 +173,6 @@ const AdminSettings = () => {
               <div className="flex gap-2 items-start">
                 <div className="flex-1 relative">
                   <input value={form.yandexMapId} onChange={handleChange('yandexMapId')} placeholder="85112499592fc9fcb766262465c1b80ca62edb09cd1f5b1caa6045fc3a6fc2e0" className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 font-mono focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all" />
-                  <p className="text-xs text-gray-400 mt-1">
-                    ID из ссылки конструктора: <code className="bg-gray-100 px-1 rounded">constructor%3a<span className="text-blue-600">ID</span>&amp;width</code>
-                  </p>
                 </div>
                 {/* Подсказка */}
                 <div className="group relative shrink-0 mt-2">
