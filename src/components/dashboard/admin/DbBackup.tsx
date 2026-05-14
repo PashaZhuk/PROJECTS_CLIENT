@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Database, Download, Trash2, Plus, Clock, Loader2, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Database, Download, Trash2, Plus, Clock, Loader2, AlertCircle, CheckCircle2, RefreshCw, AlertTriangle, RotateCcw } from 'lucide-react';
 
 // ─── Types ───
 
@@ -28,6 +28,10 @@ const DbBackup = () => {
 
   // Messages
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Restore
+  const [confirmRestoreFilename, setConfirmRestoreFilename] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(false);
 
   // ─── Load ───
 
@@ -123,6 +127,33 @@ const DbBackup = () => {
     a.download = filename;
     a.click();
   }, []);
+
+  // ─── Restore backup ───
+
+  const handleRestore = useCallback(async () => {
+    if (!confirmRestoreFilename) return;
+
+    setRestoring(true);
+    setMessage(null);
+    setConfirmRestoreFilename(null);
+
+    try {
+      const res = await fetch(`/api/admin/backup/restore/${encodeURIComponent(confirmRestoreFilename)}`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data?.success) {
+        setMessage({ type: 'success', text: 'База данных восстановлена из бэкапа' });
+      } else {
+        setMessage({ type: 'error', text: data?.error || 'Ошибка восстановления' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Ошибка сети' });
+    } finally {
+      setRestoring(false);
+    }
+  }, [confirmRestoreFilename]);
 
   // ─── Save schedule ───
 
@@ -334,6 +365,13 @@ const DbBackup = () => {
                         <Download size={16} />
                       </a>
                       <button
+                        onClick={() => setConfirmRestoreFilename(b.filename)}
+                        className="p-2.5 rounded-xl hover:bg-amber-50 text-gray-400 hover:text-amber-600 transition-all"
+                        title="Восстановить БД из этого бэкапа"
+                      >
+                        <RotateCcw size={16} />
+                      </button>
+                      <button
                         onClick={() => handleDelete(b.filename)}
                         className="p-2.5 rounded-xl hover:bg-red-50 text-gray-400 hover:text-red-500 transition-all"
                         title="Удалить"
@@ -348,6 +386,52 @@ const DbBackup = () => {
           </div>
         </div>
       </div>
+
+      {/* ─── Confirm restore modal ─── */}
+      {confirmRestoreFilename && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setConfirmRestoreFilename(null)} />
+          <div className="relative bg-white rounded-3xl shadow-2xl border border-red-200 w-full max-w-md p-8 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mb-5">
+                <AlertTriangle size={32} className="text-red-500" />
+              </div>
+              <h2 className="text-lg font-black text-slate-800 mb-2">Восстановление базы данных</h2>
+              <p className="text-sm text-slate-500 leading-relaxed mb-4">
+                Вы уверены, что хотите восстановить базу данных из бэкапа
+                <br />
+                <span className="font-bold text-slate-700">{confirmRestoreFilename}</span>?
+              </p>
+              <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6 w-full">
+                <p className="text-xs font-bold text-red-700 leading-relaxed">
+                  ⚠️ Все текущие данные будут заменены данными из бэкапа.
+                  Это действие необратимо.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 w-full">
+                <button
+                  onClick={() => setConfirmRestoreFilename(null)}
+                  disabled={restoring}
+                  className="flex-1 px-6 py-3 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-all disabled:opacity-50"
+                >
+                  Отмена
+                </button>
+                <button
+                  onClick={handleRestore}
+                  disabled={restoring}
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 disabled:from-gray-300 disabled:to-gray-300 text-white font-bold text-sm rounded-xl transition-all shadow-lg disabled:shadow-none"
+                >
+                  {restoring ? (
+                    <><Loader2 size={16} className="animate-spin" /> Восстановление...</>
+                  ) : (
+                    <><RotateCcw size={16} /> Восстановить</>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

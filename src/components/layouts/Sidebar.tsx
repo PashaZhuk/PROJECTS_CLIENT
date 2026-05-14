@@ -134,7 +134,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
                 <SubNavBtn 
                   active={activeTab === 'db-backup'} 
                   onClick={() => setActiveTab('db-backup')} 
-                  label="Сделать бэкап БД" 
+                  label="Восстановление и бэкап БД" 
                   icon={<Database size={16}/>} 
                   theme={theme} 
                 />
