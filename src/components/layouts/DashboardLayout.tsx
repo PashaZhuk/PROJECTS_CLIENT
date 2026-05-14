@@ -10,8 +10,8 @@ const DashboardLayout = () => {
     <div className="flex h-screen bg-[#F8FAFC] overflow-hidden font-sans text-slate-900">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       
-      <main className="flex-1 overflow-y-auto p-8 lg:p-12">
-        <div className="max-w-7xl mx-auto">
+      <main className="flex-1 overflow-y-auto p-6 lg:p-8">
+        <div className="max-w-[1600px] mx-auto">
           <Outlet context={{ activeTab, setActiveTab }} />
         </div>
       </main>
