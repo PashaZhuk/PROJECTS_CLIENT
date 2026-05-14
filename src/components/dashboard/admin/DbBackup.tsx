@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Database, Download, Trash2, Plus, Clock, Loader2, AlertCircle, CheckCircle2, RefreshCw, AlertTriangle, RotateCcw } from 'lucide-react';
+import { Database, Download, Trash2, Plus, Clock, Loader2, AlertCircle, CheckCircle2, RefreshCw, AlertTriangle, RotateCcw, Upload } from 'lucide-react';
 
 // ─── Types ───
 
@@ -32,6 +32,9 @@ const DbBackup = () => {
   // Restore
   const [confirmRestoreFilename, setConfirmRestoreFilename] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
+
+  // Upload
+  const [uploading, setUploading] = useState(false);
 
   // ─── Load ───
 
@@ -155,6 +158,40 @@ const DbBackup = () => {
     }
   }, [confirmRestoreFilename]);
 
+  // ─── Upload backup ───
+
+  const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setMessage(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('backup', file);
+
+      const res = await fetch('/api/admin/backup/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data?.success) {
+        setMessage({ type: 'success', text: `Файл загружен: ${data.data?.filename || ''}` });
+        loadData();
+      } else {
+        setMessage({ type: 'error', text: data?.error || 'Ошибка загрузки' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Ошибка сети' });
+    } finally {
+      setUploading(false);
+      // Сбрасываем input, чтобы можно было загрузить тот же файл снова
+      e.target.value = '';
+    }
+  }, [loadData]);
+
   // ─── Save schedule ───
 
   const handleSaveSchedule = useCallback(async () => {
@@ -239,6 +276,29 @@ const DbBackup = () => {
             </button>
           </div>
 
+          {/* Upload backup card */}
+          <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
+            <h2 className="text-sm font-black uppercase tracking-wider text-gray-600 mb-4 flex items-center gap-2">
+              <Upload size={16} className="text-purple-600" />
+              Загрузить бэкап
+            </h2>
+            <p className="text-xs text-gray-400 mb-5 leading-relaxed">
+              Если портал развёрнут заново — загрузите <code className="text-purple-600 bg-purple-50 px-1 rounded">.sql</code> файл
+              с локального компьютера, затем восстановите из него базу данных.
+            </p>
+            <label className="flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold text-sm rounded-2xl transition-all shadow-lg shadow-orange-200/50 cursor-pointer">
+              <Upload size={18} />
+              <span>Выбрать .sql файл</span>
+              <input
+                type="file"
+                accept=".sql"
+                className="hidden"
+                disabled={uploading}
+                onChange={handleUpload}
+              />
+            </label>
+          </div>
+
           {/* Schedule card */}
           <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
             <h2 className="text-sm font-black uppercase tracking-wider text-gray-600 mb-4 flex items-center gap-2">
@@ -318,6 +378,15 @@ const DbBackup = () => {
             </div>
 
             {/* Body */}
+            {/* Информация для аварийного восстановления */}
+            {!loading && backups.length > 0 && (
+              <div className="px-6 py-3 bg-amber-50/50 border-b border-amber-100">
+                <p className="text-[10px] text-amber-700 leading-relaxed">
+                  📁 Файлы бэкапов хранятся на сервере в папке <code className="font-mono text-[9px] bg-amber-100 px-1 rounded">server/backups/</code>.
+                  Если сервер недоступен — восстановите вручную через <code className="font-mono text-[9px] bg-amber-100 px-1 rounded">./restore.sh</code> в папке сервера.
+                </p>
+              </div>
+            )}
             {loading && backups.length === 0 ? (
               <div className="flex items-center justify-center p-16">
                 <Loader2 size={28} className="animate-spin text-purple-600" />
