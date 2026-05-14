@@ -72,7 +72,9 @@ export type ActiveTabType =
   | 'orders-create'
   | 'logs'
   | 'settings'
-  | 'broadcast'; // доведение информации
+  | 'broadcast' // доведение информации
+  | 'db-viewer' // просмотр и редактирование БД
+  | 'db-backup'; // бэкап БД
 
 export interface ProjectStats {
   total: number;

@@ -10,7 +10,8 @@ import {
   ChevronDown, 
   FolderOpen,
   FileText, // добавлена иконка для логов
-  Settings // иконка для настроек
+  Settings, // иконка для настроек
+  Database, // иконка для БД
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import type { ActiveTabType } from '../../types';
@@ -23,6 +24,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
   const [isProjectsOpen, setIsProjectsOpen] = useState(true);
   const [isUsersOpen, setIsUsersOpen] = useState(true);
   const [isOrdersOpen, setIsOrdersOpen] = useState(true);
+  const [isDbOpen, setIsDbOpen] = useState(true);
 
   const role = user?.role || 'USER'; 
 
@@ -100,6 +102,40 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
                   onClick={() => setActiveTab('settings')} 
                   label="Настройки портала" 
                   icon={<Settings size={16}/>} 
+                  theme={theme} 
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------------ */}
+        {/* БЛОК ДЛЯ АДМИНА: РАБОТА С БД */}
+        {/* ------------------------------------------------------------------ */}
+        {role === 'ADMIN' && (
+          <div className="pt-2 pb-2">
+            <button 
+              onClick={() => setIsDbOpen(!isDbOpen)}
+              className="w-full flex items-center justify-between px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <span>Работа с БД</span>
+              <Database size={14} className={`transition-transform duration-300 ${isDbOpen ? '' : '-rotate-90'}`} />
+            </button>
+            
+            {isDbOpen && (
+              <div className="mt-2 space-y-1 px-2">
+                <SubNavBtn 
+                  active={activeTab === 'db-viewer'} 
+                  onClick={() => setActiveTab('db-viewer')} 
+                  label="Просмотр и редактирование БД" 
+                  icon={<Database size={16}/>} 
+                  theme={theme} 
+                />
+                <SubNavBtn 
+                  active={activeTab === 'db-backup'} 
+                  onClick={() => setActiveTab('db-backup')} 
+                  label="Сделать бэкап БД" 
+                  icon={<Database size={16}/>} 
                   theme={theme} 
                 />
               </div>

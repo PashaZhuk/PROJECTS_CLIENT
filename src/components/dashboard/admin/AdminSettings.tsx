@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Save, MapPin, Phone, Mail, Clock, Headphones, Building2, Loader2, AlertCircle, CheckCircle2, Info } from 'lucide-react';
+import { Save, MapPin, Phone, Mail, Clock, Headphones, Building2, Loader2, AlertCircle, CheckCircle2, Info, ChevronLeft, Settings, ArrowRight } from 'lucide-react';
 import YandexMap from '../../ui/YandexMap';
+
+// ─── Типы ────────────────────────────────────────────
 
 interface ContactsForm {
   companyName: string;
@@ -16,6 +18,36 @@ interface ContactsForm {
 }
 
 type FormErrors = Partial<Record<keyof ContactsForm, string>>;
+
+interface SettingsTool {
+  id: string;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+}
+
+interface SettingsSection {
+  title: string;
+  description?: string;
+  tools: SettingsTool[];
+}
+
+// ─── Конфигурация инструментов ────────────────────────
+
+const STATIC_SECTION: SettingsSection = {
+  title: 'Корректировка статических элементов портала',
+  description: 'Редактирование контактных данных, реквизитов и прочей публичной информации',
+  tools: [
+    {
+      id: 'contacts',
+      label: 'Контакты',
+      description: 'Адрес, телефоны, email, Яндекс.Карта',
+      icon: <MapPin size={20} />,
+    },
+  ],
+};
+
+// ─── Default / Validation ─────────────────────────────
 
 const defaultForm: ContactsForm = {
   companyName: 'ООО "АйПиМатика Бел"',
@@ -70,7 +102,8 @@ function validate(form: ContactsForm): FormErrors {
   return errors;
 }
 
-// Обёртка input с валидацией
+// ─── Вспомогательные компоненты ────────────────────────
+
 const ValidatedInput = ({
   value, onChange, placeholder, error, type, mono, rows, maxLength,
 }: {
@@ -110,7 +143,92 @@ const ValidatedInput = ({
   );
 };
 
-const AdminSettings = () => {
+const Section = ({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) => (
+  <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
+    <div className="flex items-center gap-2 mb-5 pb-4 border-b border-gray-100">
+      {icon}
+      <h3 className="text-sm font-black uppercase tracking-wider text-gray-600">{title}</h3>
+    </div>
+    <div className="space-y-4">
+      {children}
+    </div>
+  </div>
+);
+
+const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <div>
+    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">{label}</label>
+    {children}
+  </div>
+);
+
+// ─── ToolSelector ──────────────────────────────────────
+
+const ToolSelector = ({ onSelect }: { onSelect: (toolId: string) => void }) => {
+  const sections: SettingsSection[] = [STATIC_SECTION];
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+          Настройки <span className="text-purple-600">портала</span>
+        </h1>
+        <p className="text-slate-500 text-sm mt-1">
+          Выберите раздел для редактирования
+        </p>
+      </div>
+
+      {/* Sections */}
+      {sections.map((section) => (
+        <div key={section.title} className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+          {/* Section header */}
+          <div className="px-6 pt-6 pb-4 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <Settings size={18} className="text-purple-600 shrink-0" />
+              <h2 className="text-sm font-black uppercase tracking-wider text-gray-700">
+                {section.title}
+              </h2>
+            </div>
+            {section.description && (
+              <p className="text-xs text-gray-400 mt-1 ml-[26px]">
+                {section.description}
+              </p>
+            )}
+          </div>
+
+          {/* Tools list */}
+          <div className="divide-y divide-gray-50">
+            {section.tools.map((tool) => (
+              <button
+                key={tool.id}
+                onClick={() => onSelect(tool.id)}
+                className="w-full flex items-center gap-4 px-6 py-4 hover:bg-purple-50/50 transition-colors text-left group"
+              >
+                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-purple-50 text-purple-600 group-hover:bg-purple-100 transition-colors shrink-0">
+                  {tool.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-bold text-slate-800 group-hover:text-purple-700 transition-colors">
+                    {tool.label}
+                  </div>
+                  <div className="text-xs text-slate-400 mt-0.5">
+                    {tool.description}
+                  </div>
+                </div>
+                <ArrowRight size={18} className="text-slate-300 group-hover:text-purple-400 group-hover:translate-x-1 transition-all shrink-0" />
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ─── ContactsEditor ────────────────────────────────────
+
+const ContactsEditor = ({ onBack }: { onBack: () => void }) => {
   const [form, setForm] = useState<ContactsForm>(defaultForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -181,7 +299,7 @@ const AdminSettings = () => {
     }
   };
 
-  const hasmapId = Boolean(form.yandexMapId);
+  const hasMapId = Boolean(form.yandexMapId);
 
   if (loading) {
     return (
@@ -193,14 +311,22 @@ const AdminSettings = () => {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-          Настройки <span className="text-purple-600">портала</span>
-        </h1>
-        <p className="text-slate-500 text-sm mt-1">
-          Редактирование контактной информации и карты
-        </p>
+      {/* Header with back button */}
+      <div className="flex items-start gap-4">
+        <button
+          onClick={onBack}
+          className="flex items-center justify-center w-10 h-10 mt-1 rounded-xl border border-gray-200 text-gray-400 hover:text-purple-600 hover:border-purple-200 hover:bg-purple-50 transition-all shrink-0"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+            Контакты <span className="text-purple-600">портала</span>
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">
+            Редактирование контактной информации и карты
+          </p>
+        </div>
       </div>
 
       {/* Toast-уведомление поверх всего */}
@@ -296,7 +422,7 @@ const AdminSettings = () => {
               </div>
             </Field>
           </div>
-          {hasmapId && (
+          {hasMapId && (
             <div className="mt-2 rounded-2xl overflow-hidden border border-gray-200">
               <YandexMap mapId={form.yandexMapId} height={250} />
             </div>
@@ -336,24 +462,16 @@ const AdminSettings = () => {
   );
 };
 
-// Вспомогательные компоненты
-const Section = ({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) => (
-  <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
-    <div className="flex items-center gap-2 mb-5 pb-4 border-b border-gray-100">
-      {icon}
-      <h3 className="text-sm font-black uppercase tracking-wider text-gray-600">{title}</h3>
-    </div>
-    <div className="space-y-4">
-      {children}
-    </div>
-  </div>
-);
+// ─── AdminSettings (роутер) ────────────────────────────
 
-const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <div>
-    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">{label}</label>
-    {children}
-  </div>
-);
+const AdminSettings = () => {
+  const [selectedTool, setSelectedTool] = useState<string | null>(null);
+
+  if (selectedTool === 'contacts') {
+    return <ContactsEditor onBack={() => setSelectedTool(null)} />;
+  }
+
+  return <ToolSelector onSelect={setSelectedTool} />;
+};
 
 export default AdminSettings;
