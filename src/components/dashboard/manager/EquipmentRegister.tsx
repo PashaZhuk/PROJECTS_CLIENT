@@ -522,20 +522,20 @@ const CategorySection = ({
               </span>
             </div>
           ) : (
-            <table className="w-full text-left">
+            <table className="w-full text-left table-fixed">
               <thead className="bg-slate-50/80">
                 <tr className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  <th className="px-6 py-4 text-left">Наименование</th>
-                  <th className="px-4 py-4 text-left">Учёт</th>
-                  <th className="px-4 py-4 text-left">Предназн.</th>
-                  <th className="px-4 py-4 text-left">Серийный №</th>
-                  <th className="px-4 py-4 text-left">MAC адрес</th>
-                  <th className="px-4 py-4 text-left whitespace-nowrap">Статус</th>
-                  <th className="px-4 py-4 text-left whitespace-nowrap">Дата выдачи</th>
-                  <th className="px-4 py-4 text-left whitespace-nowrap">Кому выдано</th>
-                  <th className="px-4 py-4 text-left whitespace-nowrap">Куда выдано</th>
-                  <th className="px-4 py-4 text-left">Комментарии</th>
-                  <th className="px-4 py-4 text-center w-20"></th>
+                  <th className="px-6 py-4 text-left w-[20%]">Наименование</th>
+                  <th className="px-4 py-4 text-left w-[6%]">Учёт</th>
+                  <th className="px-4 py-4 text-left w-[8%]">Предназн.</th>
+                  <th className="px-4 py-4 text-left w-[10%]">Серийный №</th>
+                  <th className="px-4 py-4 text-left w-[10%]">MAC адрес</th>
+                  <th className="px-4 py-4 text-left w-[9%] whitespace-nowrap">Статус</th>
+                  <th className="px-4 py-4 text-left w-[8%] whitespace-nowrap">Дата выдачи</th>
+                  <th className="px-4 py-4 text-left w-[9%] whitespace-nowrap">Кому выдано</th>
+                  <th className="px-4 py-4 text-left w-[9%] whitespace-nowrap">Куда выдано</th>
+                  <th className="px-4 py-4 text-left w-[6%]">Комм.</th>
+                  <th className="px-4 py-4 text-center w-[5%]"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
