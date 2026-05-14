@@ -13,6 +13,7 @@ import ManagerBroadcast from '../components/dashboard/manager/ManagerBroadcast';
 import BroadcastJournal from '../components/dashboard/manager/BroadcastJournal';
 import EquipmentRegister from '../components/dashboard/manager/EquipmentRegister';
 import MonitoringHistory from '../components/dashboard/manager/MonitoringHistory';
+import ManagerNews from '../components/dashboard/manager/ManagerNews';
 import { ChatDrawer } from '../components/dashboard/shared/ChatDrawer';
 import api from '../api/ky';
 
@@ -98,6 +99,7 @@ const ManagerDashboard = () => {
       {activeTab === 'broadcast-journal' && <BroadcastJournal />}
       {activeTab === 'equipment' && <EquipmentRegister />}
       {activeTab === 'monitoring-history' && <MonitoringHistory />}
+      {activeTab === 'news' && <ManagerNews />}
       
       <ChatDrawer isOpen={!!chatProject} project={chatProject} user={user} onClose={() => setChatProject(null)} variant="emerald" />
     </>

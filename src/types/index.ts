@@ -77,7 +77,8 @@ export type ActiveTabType =
   | 'db-viewer' // просмотр и редактирование БД
   | 'db-backup' // бэкап БД
   | 'equipment' // ведомость оборудования
-  | 'monitoring-history'; // история событий контроля
+  | 'monitoring-history' // история событий контроля
+  | 'news'; // управление новостями портала
 
 export interface ProjectStats {
   total: number;

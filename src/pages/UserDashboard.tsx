@@ -12,6 +12,7 @@ import DynamicProjectForm from '../components/dashboard/forms/DynamicProjectForm
 import { StatsView } from '../components/dashboard/shared/StatsView';
 import { ProjectsListView } from '../components/dashboard/shared/ProjectsListView';
 import { ChatDrawer } from '../components/dashboard/shared/ChatDrawer';
+import { NewsCards } from '../components/dashboard/shared/NewsCards';
 import api from '../api/ky';
 
 const SHOW_WORKING_FEATURES = true;
@@ -127,7 +128,10 @@ const UserDashboard = () => {
   return (
     <>
       {activeTab === 'stats' && (
-        <StatsView stats={stats} onRefresh={() => refetch()} isLoading={loading} title="Мои Проекты" variant="blue" />
+        <>
+          <NewsCards />
+          <StatsView stats={stats} onRefresh={() => refetch()} isLoading={loading} title="Мои Проекты" variant="blue" />
+        </>
       )}
       {activeTab === 'projects-list' && (
         <ProjectsListView

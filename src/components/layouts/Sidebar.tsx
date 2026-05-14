@@ -15,6 +15,7 @@ import {
   ClipboardList,
   History,
   Send,
+  Newspaper,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import type { ActiveTabType } from '../../types';
@@ -318,6 +319,17 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
                 onClick={() => setActiveTab('monitoring-history')} 
                 label="История событий" 
                 icon={<History size={16}/>} 
+                theme={theme} 
+              />
+            </div>
+
+            {/* 6. НОВОСТИ ПОРТАЛА */}
+            <div className="pt-2 pb-2">
+              <SubNavBtn 
+                active={activeTab === 'news'} 
+                onClick={() => setActiveTab('news')} 
+                label="Новости портала" 
+                icon={<Newspaper size={16}/>} 
                 theme={theme} 
               />
             </div>
