@@ -12,6 +12,9 @@ import {
   FileText, // добавлена иконка для логов
   Settings, // иконка для настроек
   Database, // иконка для БД
+  ClipboardList, // иконка для оборудования
+  History, // иконка для истории
+  Send, // иконка для журнала рассылок
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import type { ActiveTabType } from '../../types';
@@ -222,7 +225,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
                 className="w-full flex items-center justify-between px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
               >
                 <span>Проекты</span>
-                <ChevronDown size={14} className={`transition-transform duration-300 ${isProjectsOpen ? '' : '-rotate-90'}`} />
+                <FolderOpen size={14} className={`transition-transform duration-300 ${isProjectsOpen ? '' : '-rotate-90'}`} />
               </button>
               
               {isProjectsOpen && (
@@ -238,14 +241,14 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
               )}
             </div>
 
-                        {/* 2. РАЗДЕЛ ЗАКАЗЫ */}
+            {/* 2. РАЗДЕЛ ЗАКАЗЫ */}
             <div className="pt-2 pb-2">
               <button 
                 onClick={() => setIsOrdersOpen(!isOrdersOpen)}
                 className="w-full flex items-center justify-between px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
               >
                 <span>Заказы</span>
-                <ChevronDown size={14} className={`transition-transform duration-300 ${isOrdersOpen ? '' : '-rotate-90'}`} />
+                <ShoppingCart size={14} className={`transition-transform duration-300 ${isOrdersOpen ? '' : '-rotate-90'}`} />
               </button>
               
               {isOrdersOpen && (
@@ -261,13 +264,54 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
               )}
             </div>
 
-            {/* 3. РАЗДЕЛ ДОВЕДЕНИЕ ИНФОРМАЦИИ */}
+            {/* 3. РАЗДЕЛ ИНФОРМИРОВАНИЕ */}
+            <div className="pt-2 pb-2">
+              <button 
+                onClick={() => setIsOrdersOpen(!isOrdersOpen)}
+                className="w-full flex items-center justify-between px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <span>Информирование</span>
+                <FileText size={14} className={`transition-transform duration-300 ${isOrdersOpen ? '' : '-rotate-90'}`} />
+              </button>
+              
+              {isOrdersOpen && (
+                <div className="mt-2 space-y-1 px-2">
+                  <SubNavBtn 
+                    active={activeTab === 'broadcast'} 
+                    onClick={() => setActiveTab('broadcast')} 
+                    label="Создать рассылку" 
+                    icon={<Send size={16}/>} 
+                    theme={theme} 
+                  />
+                  <SubNavBtn 
+                    active={activeTab === 'broadcast-journal'} 
+                    onClick={() => setActiveTab('broadcast-journal')} 
+                    label="Журнал рассылок" 
+                    icon={<FileText size={16}/>} 
+                    theme={theme} 
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* 4. РАЗДЕЛ ОБОРУДОВАНИЕ */}
             <div className="pt-2 pb-2">
               <SubNavBtn 
-                active={activeTab === 'broadcast'} 
-                onClick={() => setActiveTab('broadcast')} 
-                label="Доведение информации" 
-                icon={<FileText size={16}/>} 
+                active={activeTab === 'equipment'} 
+                onClick={() => setActiveTab('equipment')} 
+                label="Ведомость оборудования" 
+                icon={<ClipboardList size={16}/>} 
+                theme={theme} 
+              />
+            </div>
+
+            {/* 5. РАЗДЕЛ МОНИТОРИНГ */}
+            <div className="pt-2 pb-2">
+              <SubNavBtn 
+                active={activeTab === 'monitoring-history'} 
+                onClick={() => setActiveTab('monitoring-history')} 
+                label="История событий" 
+                icon={<History size={16}/>} 
                 theme={theme} 
               />
             </div>

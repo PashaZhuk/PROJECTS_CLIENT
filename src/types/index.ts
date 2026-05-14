@@ -73,8 +73,11 @@ export type ActiveTabType =
   | 'logs'
   | 'settings'
   | 'broadcast' // доведение информации
+  | 'broadcast-journal' // журнал рассылок
   | 'db-viewer' // просмотр и редактирование БД
-  | 'db-backup'; // бэкап БД
+  | 'db-backup' // бэкап БД
+  | 'equipment' // ведомость оборудования
+  | 'monitoring-history'; // история событий контроля
 
 export interface ProjectStats {
   total: number;

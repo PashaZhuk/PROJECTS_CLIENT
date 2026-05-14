@@ -6,41 +6,21 @@ import { useChatStore } from '../store/useChatStore';
 import { useProjectSockets } from '../hooks/useProjectSockets';
 import { useGlobalChatLoader } from '../hooks/useGlobalChatLoader';
 import { useUserSockets } from '../hooks/useUserSockets';
-import { Rocket } from 'lucide-react';
 import type { Project, ActiveTabType } from '../types';
 import { StatsView } from '../components/dashboard/shared/StatsView';
 import { ProjectsListView } from '../components/dashboard/shared/ProjectsListView';
 import ManagerBroadcast from '../components/dashboard/manager/ManagerBroadcast';
+import BroadcastJournal from '../components/dashboard/manager/BroadcastJournal';
+import EquipmentRegister from '../components/dashboard/manager/EquipmentRegister';
+import MonitoringHistory from '../components/dashboard/manager/MonitoringHistory';
 import { ChatDrawer } from '../components/dashboard/shared/ChatDrawer';
-import api from '../api/ky'; // <-- импортируем api
-
-// Переключатель (оставьте как есть)
-const SHOW_WORKING_FEATURES = true;
-
-const WorkInProgressBanner = ({ title }: { title: string }) => (
-  <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in zoom-in-95 duration-500">
-    <div className="bg-white rounded-[3rem] border border-slate-200 shadow-xl p-12 max-w-2xl w-full text-center relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-200 via-emerald-400 to-emerald-200" />
-      <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-8 animate-pulse">
-        <Rocket className="text-emerald-500" size={48} />
-      </div>
-      <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-4">{title}</h2>
-      <p className="text-slate-500 font-medium mb-8 max-w-md mx-auto leading-relaxed text-lg">
-        Данный модуль находится в разработке. Доступ к текущему функционалу временно ограничен.
-      </p>
-      <div className="inline-flex items-center gap-3 px-6 py-3 bg-emerald-50 border border-emerald-200 rounded-full">
-        <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping" />
-        <span className="text-xs font-black text-emerald-700 uppercase tracking-widest">В процессе</span>
-      </div>
-    </div>
-  </div>
-);
+import api from '../api/ky';
 
 const ManagerDashboard = () => {
   const user = useAuthStore((state) => state.user);
   const { activeTab } = useOutletContext<{ activeTab: ActiveTabType }>();
   
-  useUserSockets(); 
+  useUserSockets();
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -80,19 +60,12 @@ const ManagerDashboard = () => {
       setActiveChatId(projectId);
       markMessagesAsReadLocally(projectId, user.id);
       try {
-        // Используем api.patch вместо fetch
         await api.patch(`chat/${projectId}/read`, { json: {} });
       } catch (err) {
         console.error("Failed to mark messages as read on server", err);
       }
     }
   }, [projects, setActiveChatId, markMessagesAsReadLocally, user?.id]);
-
-  if (!SHOW_WORKING_FEATURES) {
-    if (activeTab === 'orders-list') return <WorkInProgressBanner title="Все заказы" />;
-    if (activeTab === 'projects-list' || activeTab === 'stats') return <WorkInProgressBanner title="Управление проектами" />;
-    return <WorkInProgressBanner title="Раздел в разработке" />;
-  }
 
   return (
     <>
@@ -116,8 +89,15 @@ const ManagerDashboard = () => {
           onPageChange={setCurrentPage}
         />
       )}
-            {activeTab === 'orders-list' && <WorkInProgressBanner title="Все заказы" />}
+      {activeTab === 'orders-list' && (
+        <div className="p-8 text-center bg-white rounded-xl shadow-sm border border-gray-100">
+          <h2 className="text-xl font-semibold text-gray-400">Все заказы — в разработке</h2>
+        </div>
+      )}
       {activeTab === 'broadcast' && <ManagerBroadcast />}
+      {activeTab === 'broadcast-journal' && <BroadcastJournal />}
+      {activeTab === 'equipment' && <EquipmentRegister />}
+      {activeTab === 'monitoring-history' && <MonitoringHistory />}
       
       <ChatDrawer isOpen={!!chatProject} project={chatProject} user={user} onClose={() => setChatProject(null)} variant="emerald" />
     </>
