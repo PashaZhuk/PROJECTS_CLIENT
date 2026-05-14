@@ -15,7 +15,7 @@ import { ChatDrawer } from '../components/dashboard/shared/ChatDrawer';
 import { NewsCards } from '../components/dashboard/shared/NewsCards';
 import api from '../api/ky';
 
-const SHOW_WORKING_FEATURES = true;
+const SHOW_WORKING_FEATURES = false;
 
 const WorkInProgressBanner = ({ title }: { title: string }) => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in zoom-in-95 duration-500">
