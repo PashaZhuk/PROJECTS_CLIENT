@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ExternalLink, Newspaper, Loader2, ArrowUpRight, Info } from 'lucide-react';
+import { Newspaper, ExternalLink, Loader2 } from 'lucide-react';
 
 interface NewsItem {
   id: number;
@@ -9,27 +9,16 @@ interface NewsItem {
   createdAt: string;
 }
 
-const GRADIENT_COLORS = [
-  'from-blue-600 to-indigo-700',
-  'from-emerald-500 to-teal-600',
-  'from-purple-500 to-violet-600',
-  'from-amber-500 to-orange-600',
-  'from-rose-500 to-pink-600',
-  'from-cyan-500 to-blue-600',
-];
+const ICON_COLORS: Record<string, string> = {
+  orange: "bg-orange-50 text-orange-500 border-orange-100",
+  emerald: "bg-emerald-50 text-emerald-500 border-emerald-100",
+  blue: "bg-blue-50 text-blue-500 border-blue-100",
+  purple: "bg-purple-50 text-purple-500 border-purple-100",
+  amber: "bg-amber-50 text-amber-500 border-amber-100",
+  rose: "bg-rose-50 text-rose-500 border-rose-100",
+};
 
-const BORDER_COLORS = [
-  'border-blue-200 hover:border-blue-400',
-  'border-emerald-200 hover:border-emerald-400',
-  'border-purple-200 hover:border-purple-400',
-  'border-amber-200 hover:border-amber-400',
-];
-
-// Демо-новости для примера, пока менеджер не создал настоящие
-const DEMO_NEWS: NewsItem[] = [
-  { id: -1, title: 'Новая прошивка Yealink V86', link: 'https://yealink.com', imageUrl: null, createdAt: '2026-05-14' },
-  { id: -2, title: 'Обновление прайс-листа', link: 'https://google.com', imageUrl: null, createdAt: '2026-05-13' },
-];
+const CARD_COLORS = ['purple', 'amber', 'emerald', 'blue', 'rose', 'orange'];
 
 export const NewsCards = () => {
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -49,91 +38,45 @@ export const NewsCards = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-6">
-        <Loader2 size={20} className="animate-spin text-slate-300" />
+      <div className="flex items-center justify-center py-10">
+        <Loader2 size={24} className="animate-spin text-slate-300" />
       </div>
     );
   }
 
-  const items = news.length > 0 ? news : DEMO_NEWS;
+  if (news.length === 0) return null;
 
   return (
-    <div className="mb-6">
-      {news.length === 0 && (
-        <div className="flex items-center gap-2 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-          <Info size={12} />
-          <span>Примеры новостей — менеджер может добавлять свои через панель управления</span>
-        </div>
-      )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {items.map((item, idx) => {
-          // Чередуем стили: градиент / с边框
-          const useGradient = idx % 2 === 0;
-          
-          if (useGradient) {
-            const color = GRADIENT_COLORS[idx % GRADIENT_COLORS.length];
-            return (
-              <a
-                key={item.id}
-                href={item.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`relative overflow-hidden group p-4 rounded-2xl bg-gradient-to-br ${color} text-white transition-all hover:shadow-lg hover:scale-[1.02] active:scale-95`}
-              >
-                <div className="absolute -right-6 -top-6 w-20 h-20 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-colors" />
-                {item.imageUrl && (
-                  <div className="relative mb-3 rounded-xl overflow-hidden aspect-video">
-                    <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
-                  </div>
-                )}
-                <div className="relative flex items-start gap-3">
-                  {!item.imageUrl && (
-                    <div className="w-8 h-8 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                      <Newspaper size={16} />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-black uppercase tracking-tight truncate">{item.title}</span>
-                      <ArrowUpRight size={12} className="opacity-50 group-hover:opacity-100 transition-opacity shrink-0" />
-                    </div>
-                  </div>
-                </div>
-              </a>
-            );
-          } else {
-            const border = BORDER_COLORS[idx % BORDER_COLORS.length];
-            return (
-              <a
-                key={item.id}
-                href={item.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`group p-4 rounded-2xl border-2 ${border} bg-white transition-all hover:shadow-md hover:scale-[1.02] active:scale-95`}
-              >
-                {item.imageUrl && (
-                  <div className="mb-3 rounded-xl overflow-hidden aspect-video">
-                    <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
-                  </div>
-                )}
-                <div className="flex items-start gap-3">
-                  {!item.imageUrl && (
-                    <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                      <Newspaper size={16} className="text-slate-500" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-black uppercase tracking-tight text-slate-800 truncate group-hover:text-purple-700 transition-colors">{item.title}</span>
-                      <ArrowUpRight size={12} className="text-slate-300 group-hover:text-purple-500 transition-colors shrink-0" />
-                    </div>
-                  </div>
-                </div>
-              </a>
-            );
-          }
-        })}
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      {news.map((item, idx) => {
+        const colorKey = CARD_COLORS[idx % CARD_COLORS.length];
+        const iconColor = ICON_COLORS[colorKey];
+
+        return (
+          <a
+            key={item.id}
+            href={item.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-8 rounded-[2.5rem] border bg-white shadow-lg transition-all hover:-translate-y-1 duration-300 group"
+          >
+            <div className={`w-14 h-14 ${iconColor} rounded-2xl flex items-center justify-center mb-6 shadow-inner`}>
+              <Newspaper size={28} />
+            </div>
+            <div className="flex items-start gap-2">
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] flex-1">
+                {item.title}
+              </p>
+              <ExternalLink size={14} className="text-slate-300 group-hover:text-purple-500 transition-colors shrink-0 mt-0.5" />
+            </div>
+            {item.createdAt && (
+              <p className="text-[9px] font-bold text-slate-300 mt-2 uppercase tracking-wider">
+                {new Date(item.createdAt).toLocaleDateString('ru-RU')}
+              </p>
+            )}
+          </a>
+        );
+      })}
     </div>
   );
 };
