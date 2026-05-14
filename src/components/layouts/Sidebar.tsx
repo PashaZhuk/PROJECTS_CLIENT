@@ -23,10 +23,10 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   
-  const [isProjectsOpen, setIsProjectsOpen] = useState(true);
-  const [isUsersOpen, setIsUsersOpen] = useState(true);
-  const [isOrdersOpen, setIsOrdersOpen] = useState(true);
-  const [isDbOpen, setIsDbOpen] = useState(true);
+  const [isProjectsOpen, setIsProjectsOpen] = useState(false);
+  const [isUsersOpen, setIsUsersOpen] = useState(false);
+  const [isOrdersOpen, setIsOrdersOpen] = useState(false);
+  const [isDbOpen, setIsDbOpen] = useState(false);
 
   const role = user?.role || 'USER'; 
 
