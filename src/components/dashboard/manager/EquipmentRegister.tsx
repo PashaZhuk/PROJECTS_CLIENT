@@ -525,17 +525,17 @@ const CategorySection = ({
             <table className="w-full text-left">
               <thead className="bg-slate-50/80">
                 <tr className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  <th className="px-6 py-4 w-[16%]">Наименование</th>
-                  <th className="px-4 py-4 w-[8%]">Учёт</th>
-                  <th className="px-4 py-4 w-[10%]">Предназн.</th>
-                  <th className="px-4 py-4 w-[10%]">Серийный №</th>
-                  <th className="px-4 py-4 w-[10%]">MAC адрес</th>
-                  <th className="px-4 py-4 w-[8%]">Статус</th>
-                  <th className="px-4 py-4 w-[8%]">Дата выдачи</th>
-                  <th className="px-4 py-4 w-[10%]">Кому выдано</th>
-                  <th className="px-4 py-4 w-[10%]">Куда выдано</th>
-                  <th className="px-4 py-4 w-[12%]">Комментарии</th>
-                  <th className="px-4 py-4 w-[3%]"></th>
+                  <th className="px-6 py-4 text-left">Наименование</th>
+                  <th className="px-4 py-4 text-left">Учёт</th>
+                  <th className="px-4 py-4 text-left">Предназн.</th>
+                  <th className="px-4 py-4 text-left">Серийный №</th>
+                  <th className="px-4 py-4 text-left">MAC адрес</th>
+                  <th className="px-4 py-4 text-left whitespace-nowrap">Статус</th>
+                  <th className="px-4 py-4 text-left whitespace-nowrap">Дата выдачи</th>
+                  <th className="px-4 py-4 text-left whitespace-nowrap">Кому выдано</th>
+                  <th className="px-4 py-4 text-left whitespace-nowrap">Куда выдано</th>
+                  <th className="px-4 py-4 text-left">Комментарии</th>
+                  <th className="px-4 py-4 text-center w-20"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -546,17 +546,17 @@ const CategorySection = ({
                     className="hover:bg-purple-50/30 cursor-pointer transition-colors group"
                   >
                     <td className="px-6 py-4">
-                      <div className="text-sm font-bold text-slate-900 truncate max-w-[220px]">
+                      <div className="text-sm font-bold text-slate-900 truncate max-w-[350px]">
                         {item.name}
                       </div>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <span className="text-[11px] font-bold text-slate-600">
                         {item.accountingType || '—'}
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="text-[11px] text-slate-500 truncate block max-w-[130px]">
+                      <span className="text-[11px] text-slate-500 truncate block max-w-[180px]">
                         {item.purpose || '—'}
                       </span>
                     </td>
@@ -570,26 +570,26 @@ const CategorySection = ({
                         {item.macAddress || '—'}
                       </span>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <StatusBadge status={item.status} />
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <span className="text-[11px] font-bold text-slate-500">
                         {formatDate(item.issueDate)}
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="text-[11px] text-slate-600 truncate block max-w-[120px]">
+                      <span className="text-[11px] text-slate-600 truncate block max-w-[180px]">
                         {item.issuedTo || '—'}
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="text-[11px] text-slate-600 truncate block max-w-[120px]">
+                      <span className="text-[11px] text-slate-600 truncate block max-w-[180px]">
                         {item.issuedToWhere || '—'}
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="text-[11px] text-slate-500 truncate block max-w-[140px]" title={item.comments || ''}>
+                      <span className="text-[11px] text-slate-500 truncate block max-w-[200px]" title={item.comments || ''}>
                         {item.comments || '—'}
                       </span>
                     </td>
@@ -818,7 +818,7 @@ const EquipmentRegister = () => {
   };
 
   return (
-    <div className="animate-in fade-in duration-500 space-y-6">
+    <div className="animate-in fade-in duration-500 space-y-6 w-full max-w-full">
       {/* Toasts */}
       {toasts.length > 0 && (
         <div className="fixed top-6 right-6 z-[100] flex flex-col gap-3 max-w-sm">
