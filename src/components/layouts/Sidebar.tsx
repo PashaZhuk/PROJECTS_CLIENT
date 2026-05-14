@@ -9,12 +9,12 @@ import {
   ShoppingCart, 
   ChevronDown, 
   FolderOpen,
-  FileText, // добавлена иконка для логов
-  Settings, // иконка для настроек
-  Database, // иконка для БД
-  ClipboardList, // иконка для оборудования
-  History, // иконка для истории
-  Send, // иконка для журнала рассылок
+  FileText,
+  Settings,
+  Database,
+  ClipboardList,
+  History,
+  Send,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import type { ActiveTabType } from '../../types';
@@ -23,7 +23,6 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   
-  // Состояния для раскрытия групп меню
   const [isProjectsOpen, setIsProjectsOpen] = useState(true);
   const [isUsersOpen, setIsUsersOpen] = useState(true);
   const [isOrdersOpen, setIsOrdersOpen] = useState(true);
@@ -71,10 +70,11 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
           <div className="pt-6 pb-2">
             <button 
               onClick={() => setIsUsersOpen(!isUsersOpen)}
-              className="w-full flex items-center justify-between px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
+              className="w-full flex items-center gap-3 px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
             >
-              <span>Управление системой</span>
-              <Users size={14} className={`transition-transform duration-300 ${isUsersOpen ? '' : '-rotate-90'}`} />
+              <Users size={14} />
+              <span className="flex-1 text-left">Управление системой</span>
+              <ChevronDown size={14} className={`transition-transform duration-300 ${isUsersOpen ? '' : '-rotate-90'}`} />
             </button>
             
             {isUsersOpen && (
@@ -119,10 +119,11 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
           <div className="pt-2 pb-2">
             <button 
               onClick={() => setIsDbOpen(!isDbOpen)}
-              className="w-full flex items-center justify-between px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
+              className="w-full flex items-center gap-3 px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
             >
-              <span>Работа с БД</span>
-              <Database size={14} className={`transition-transform duration-300 ${isDbOpen ? '' : '-rotate-90'}`} />
+              <Database size={14} />
+              <span className="flex-1 text-left">Работа с БД</span>
+              <ChevronDown size={14} className={`transition-transform duration-300 ${isDbOpen ? '' : '-rotate-90'}`} />
             </button>
             
             {isDbOpen && (
@@ -155,9 +156,10 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
             <div className="pt-6 pb-2">
               <button 
                 onClick={() => setIsOrdersOpen(!isOrdersOpen)}
-                className="w-full flex items-center justify-between px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
+                className="w-full flex items-center gap-3 px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
               >
-                <span>Заказы</span>
+                <ShoppingCart size={14} />
+                <span className="flex-1 text-left">Заказы</span>
                 <ChevronDown size={14} className={`transition-transform duration-300 ${isOrdersOpen ? '' : '-rotate-90'}`} />
               </button>
               
@@ -185,9 +187,10 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
             <div className="pt-2 pb-2">
               <button 
                 onClick={() => setIsProjectsOpen(!isProjectsOpen)}
-                className="w-full flex items-center justify-between px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
+                className="w-full flex items-center gap-3 px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
               >
-                <span>Проекты</span>
+                <FolderOpen size={14} />
+                <span className="flex-1 text-left">Проекты</span>
                 <ChevronDown size={14} className={`transition-transform duration-300 ${isProjectsOpen ? '' : '-rotate-90'}`} />
               </button>
               
@@ -222,10 +225,11 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
             <div className="pt-6 pb-2">
               <button 
                 onClick={() => setIsProjectsOpen(!isProjectsOpen)}
-                className="w-full flex items-center justify-between px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
+                className="w-full flex items-center gap-3 px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
               >
-                <span>Проекты</span>
-                <FolderOpen size={14} className={`transition-transform duration-300 ${isProjectsOpen ? '' : '-rotate-90'}`} />
+                <FolderOpen size={14} />
+                <span className="flex-1 text-left">Проекты</span>
+                <ChevronDown size={14} className={`transition-transform duration-300 ${isProjectsOpen ? '' : '-rotate-90'}`} />
               </button>
               
               {isProjectsOpen && (
@@ -245,10 +249,11 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
             <div className="pt-2 pb-2">
               <button 
                 onClick={() => setIsOrdersOpen(!isOrdersOpen)}
-                className="w-full flex items-center justify-between px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
+                className="w-full flex items-center gap-3 px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
               >
-                <span>Заказы</span>
-                <ShoppingCart size={14} className={`transition-transform duration-300 ${isOrdersOpen ? '' : '-rotate-90'}`} />
+                <ShoppingCart size={14} />
+                <span className="flex-1 text-left">Заказы</span>
+                <ChevronDown size={14} className={`transition-transform duration-300 ${isOrdersOpen ? '' : '-rotate-90'}`} />
               </button>
               
               {isOrdersOpen && (
@@ -268,10 +273,11 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
             <div className="pt-2 pb-2">
               <button 
                 onClick={() => setIsOrdersOpen(!isOrdersOpen)}
-                className="w-full flex items-center justify-between px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
+                className="w-full flex items-center gap-3 px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
               >
-                <span>Информирование</span>
-                <FileText size={14} className={`transition-transform duration-300 ${isOrdersOpen ? '' : '-rotate-90'}`} />
+                <FileText size={14} />
+                <span className="flex-1 text-left">Информирование</span>
+                <ChevronDown size={14} className={`transition-transform duration-300 ${isOrdersOpen ? '' : '-rotate-90'}`} />
               </button>
               
               {isOrdersOpen && (
@@ -294,18 +300,18 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
               )}
             </div>
 
-            {/* 4. РАЗДЕЛ ОБОРУДОВАНИЕ */}
+            {/* 4. ТЕСТОВОЕ ОБОРУДОВАНИЕ */}
             <div className="pt-2 pb-2">
               <SubNavBtn 
                 active={activeTab === 'equipment'} 
                 onClick={() => setActiveTab('equipment')} 
-                label="Ведомость выдачи тестового оборудования" 
+                label="Тестовое оборудование" 
                 icon={<ClipboardList size={16}/>} 
                 theme={theme} 
               />
             </div>
 
-            {/* 5. РАЗДЕЛ МОНИТОРИНГ */}
+            {/* 5. ИСТОРИЯ СОБЫТИЙ */}
             <div className="pt-2 pb-2">
               <SubNavBtn 
                 active={activeTab === 'monitoring-history'} 
