@@ -299,7 +299,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
               <SubNavBtn 
                 active={activeTab === 'equipment'} 
                 onClick={() => setActiveTab('equipment')} 
-                label="Ведомость оборудования" 
+                label="Ведомость тестового оборудования" 
                 icon={<ClipboardList size={16}/>} 
                 theme={theme} 
               />

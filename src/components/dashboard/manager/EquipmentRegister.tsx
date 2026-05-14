@@ -9,11 +9,10 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
-  ChevronLeft,
+  ChevronDown,
   ChevronRight,
-  X,
-  Download,
   RotateCcw,
+  X,
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -47,12 +46,6 @@ interface EquipmentFormData {
   comments: string;
   category: string;
   status: string;
-}
-
-interface PaginationInfo {
-  total: number;
-  page: number;
-  perPage: number;
 }
 
 interface Toast {
@@ -475,12 +468,166 @@ const EquipmentModal = ({ isOpen, onClose, onSave, initialData, saving }: Equipm
   );
 };
 
+// ─── Category Accordion Section ──────────────────────────────────────────────
+
+interface CategorySectionProps {
+  category: string;
+  items: Equipment[];
+  expanded: boolean;
+  onToggle: () => void;
+  onEdit: (item: Equipment) => void;
+  onDelete: (item: Equipment) => void;
+  actionLoading: boolean;
+}
+
+const CategorySection = ({
+  category,
+  items,
+  expanded,
+  onToggle,
+  onEdit,
+  onDelete,
+  actionLoading,
+}: CategorySectionProps) => {
+  return (
+    <div className="border-b border-slate-100 last:border-b-0">
+      {/* Accordion Header */}
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-8 py-5 hover:bg-slate-50/50 transition-colors text-left group"
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className={`transition-transform duration-200 ${expanded ? 'rotate-0' : '-rotate-90'}`}
+          >
+            <ChevronDown size={18} className="text-slate-400" />
+          </div>
+          <span className="text-base font-black text-slate-900">{category}</span>
+          <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-[10px] font-black text-slate-500">
+            {items.length}
+          </span>
+        </div>
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+          {expanded ? 'Свернуть' : 'Развернуть'}
+        </span>
+      </button>
+
+      {/* Accordion Body */}
+      {expanded && (
+        <div className="overflow-x-auto animate-in slide-in-from-top-1 duration-200">
+          {items.length === 0 ? (
+            <div className="px-8 py-8 text-center">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">
+                Нет оборудования в этой категории
+              </span>
+            </div>
+          ) : (
+            <table className="w-full text-left">
+              <thead className="bg-slate-50/80">
+                <tr className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <th className="px-6 py-4 w-[16%]">Наименование</th>
+                  <th className="px-4 py-4 w-[8%]">Учёт</th>
+                  <th className="px-4 py-4 w-[10%]">Предназн.</th>
+                  <th className="px-4 py-4 w-[10%]">Серийный №</th>
+                  <th className="px-4 py-4 w-[10%]">MAC адрес</th>
+                  <th className="px-4 py-4 w-[8%]">Статус</th>
+                  <th className="px-4 py-4 w-[8%]">Дата выдачи</th>
+                  <th className="px-4 py-4 w-[10%]">Кому выдано</th>
+                  <th className="px-4 py-4 w-[10%]">Куда выдано</th>
+                  <th className="px-4 py-4 w-[3%]"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {items.map((item) => (
+                  <tr
+                    key={item.id}
+                    onClick={() => onEdit(item)}
+                    className="hover:bg-purple-50/30 cursor-pointer transition-colors group"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-bold text-slate-900 truncate max-w-[220px]">
+                        {item.name}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="text-[11px] font-bold text-slate-600">
+                        {item.accountingType || '—'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="text-[11px] text-slate-500 truncate block max-w-[130px]">
+                        {item.purpose || '—'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="text-[11px] font-mono font-bold text-slate-600">
+                        {item.serialNumber || '—'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="text-[11px] font-mono font-bold text-slate-600">
+                        {item.macAddress || '—'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <StatusBadge status={item.status} />
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="text-[11px] font-bold text-slate-500">
+                        {formatDate(item.issueDate)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="text-[11px] text-slate-600 truncate block max-w-[120px]">
+                        {item.issuedTo || '—'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="text-[11px] text-slate-600 truncate block max-w-[120px]">
+                        {item.issuedToWhere || '—'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(item);
+                          }}
+                          className="p-2 rounded-lg text-slate-300 hover:text-purple-600 hover:bg-purple-50 transition-all opacity-0 group-hover:opacity-100"
+                          title="Редактировать"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(item);
+                          }}
+                          disabled={actionLoading}
+                          className="p-2 rounded-lg text-slate-300 hover:text-red-600 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 disabled:opacity-30"
+                          title="Удалить"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── EquipmentRegister Component ─────────────────────────────────────────────
 
 const EquipmentRegister = () => {
   // Data state
   const [items, setItems] = useState<Equipment[]>([]);
-  const [pagination, setPagination] = useState<PaginationInfo>({ total: 0, page: 1, perPage: 25 });
   const [categories, setCategories] = useState<string[]>(CATEGORIES);
 
   // Filters
@@ -488,6 +635,11 @@ const EquipmentRegister = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Accordion state — all expanded by default
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>(() =>
+    CATEGORIES.reduce((acc, cat) => ({ ...acc, [cat]: true }), {}),
+  );
 
   // Loading
   const [loading, setLoading] = useState(true);
@@ -513,7 +665,6 @@ const EquipmentRegister = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery);
-      setPagination((prev) => ({ ...prev, page: 1 }));
     }, 400);
     return () => clearTimeout(timer);
   }, [searchQuery]);
@@ -532,7 +683,7 @@ const EquipmentRegister = () => {
     })();
   }, []);
 
-  // Fetch equipment
+  // Fetch all equipment (no pagination)
   const fetchEquipment = useCallback(async () => {
     setLoading(true);
     try {
@@ -540,27 +691,45 @@ const EquipmentRegister = () => {
       if (categoryFilter) params.set('category', categoryFilter);
       if (statusFilter) params.set('status', statusFilter);
       if (debouncedSearch) params.set('search', debouncedSearch);
-      params.set('page', String(pagination.page));
-      params.set('perPage', String(pagination.perPage));
+      params.set('perPage', '500');
 
       const data = await apiFetch(`${API_PREFIX}?${params.toString()}`);
-      setItems(data.items || []);
-      setPagination((prev) => ({
-        ...prev,
-        total: data.total ?? 0,
-        page: data.page ?? prev.page,
-        perPage: data.perPage ?? prev.perPage,
-      }));
+      const fetchedItems: Equipment[] = data.items || data || [];
+      setItems(Array.isArray(fetchedItems) ? fetchedItems : []);
     } catch (err: any) {
       addToast('error', err.message || 'Ошибка загрузки данных');
     } finally {
       setLoading(false);
     }
-  }, [categoryFilter, statusFilter, debouncedSearch, pagination.page, pagination.perPage, addToast]);
+  }, [categoryFilter, statusFilter, debouncedSearch, addToast]);
 
   useEffect(() => {
     fetchEquipment();
   }, [fetchEquipment]);
+
+  // Group items by category (preserving CATEGORIES order)
+  const groupedItems = CATEGORIES.reduce(
+    (acc, cat) => {
+      const matched = items.filter((item) => item.category === cat);
+      // Also catch any items whose category is in the dynamic categories list but not in CATEGORIES
+      acc[cat] = matched;
+      return acc;
+    },
+    {} as Record<string, Equipment[]>,
+  );
+
+  // Also handle items that belong to categories not in the predefined list
+  const otherCategories = items
+    .map((item) => item.category)
+    .filter((cat, idx, arr) => cat && arr.indexOf(cat) === idx && !CATEGORIES.includes(cat));
+
+  otherCategories.forEach((cat) => {
+    if (!groupedItems[cat]) {
+      groupedItems[cat] = items.filter((item) => item.category === cat);
+    }
+  });
+
+  const totalCount = items.length;
 
   // CRUD handlers
   const handleSave = async (formData: EquipmentFormData) => {
@@ -618,7 +787,29 @@ const EquipmentRegister = () => {
     setEditingItem(null);
   };
 
-  const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.perPage));
+  const toggleCategory = (cat: string) => {
+    setExpandedCategories((prev) => ({ ...prev, [cat]: !prev[cat] }));
+  };
+
+  const allExpanded = Object.values(expandedCategories).every(Boolean);
+  const anyExpanded = Object.values(expandedCategories).some(Boolean);
+
+  const expandAll = () => {
+    const allTrue = CATEGORIES.reduce((acc, cat) => ({ ...acc, [cat]: true }), {} as Record<string, boolean>);
+    // Also include dynamic categories
+    otherCategories.forEach((cat) => {
+      allTrue[cat] = true;
+    });
+    setExpandedCategories(allTrue);
+  };
+
+  const collapseAll = () => {
+    const allFalse = CATEGORIES.reduce((acc, cat) => ({ ...acc, [cat]: false }), {} as Record<string, boolean>);
+    otherCategories.forEach((cat) => {
+      allFalse[cat] = false;
+    });
+    setExpandedCategories(allFalse);
+  };
 
   return (
     <div className="animate-in fade-in duration-500 space-y-6">
@@ -641,7 +832,7 @@ const EquipmentRegister = () => {
             <div>
               <h2 className="text-2xl font-black text-slate-900">Реестр оборудования</h2>
               <p className="text-slate-400 text-sm font-medium mt-1">
-                {loading ? 'Загрузка...' : `Всего: ${pagination.total} ед.`}
+                {loading ? 'Загрузка...' : `Всего: ${totalCount} ед.`}
               </p>
             </div>
           </div>
@@ -678,10 +869,7 @@ const EquipmentRegister = () => {
               {/* Category filter */}
               <select
                 value={categoryFilter}
-                onChange={(e) => {
-                  setCategoryFilter(e.target.value);
-                  setPagination((prev) => ({ ...prev, page: 1 }));
-                }}
+                onChange={(e) => setCategoryFilter(e.target.value)}
                 className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 focus:ring-2 focus:ring-purple-500 shadow-sm"
               >
                 <option value="">Все категории</option>
@@ -695,10 +883,7 @@ const EquipmentRegister = () => {
               {/* Status filter */}
               <select
                 value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setPagination((prev) => ({ ...prev, page: 1 }));
-                }}
+                onChange={(e) => setStatusFilter(e.target.value)}
                 className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 focus:ring-2 focus:ring-purple-500 shadow-sm"
               >
                 <option value="">Все статусы</option>
@@ -735,197 +920,103 @@ const EquipmentRegister = () => {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-slate-50/80">
-              <tr className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                <th className="px-6 py-5 w-[18%]">Наименование</th>
-                <th className="px-4 py-5 w-[8%]">Категория</th>
-                <th className="px-4 py-5 w-[8%]">Учёт</th>
-                <th className="px-4 py-5 w-[10%]">Предназн.</th>
-                <th className="px-4 py-5 w-[10%]">Серийный №</th>
-                <th className="px-4 py-5 w-[10%]">MAC адрес</th>
-                <th className="px-4 py-5 w-[8%]">Статус</th>
-                <th className="px-4 py-5 w-[8%]">Дата выдачи</th>
-                <th className="px-4 py-5 w-[10%]">Кому выдано</th>
-                <th className="px-4 py-5 w-[10%]">Куда выдано</th>
-                <th className="px-4 py-5 w-[3%]"></th>
-              </tr>
-            </thead>
-            <tbody
-              className={`divide-y divide-slate-100 transition-opacity duration-300 ${
-                loading ? 'opacity-40' : 'opacity-100'
-              }`}
-            >
-              {loading && items.length === 0 ? (
-                <tr>
-                  <td colSpan={11} className="px-6 py-20 text-center">
-                    <div className="flex flex-col items-center gap-4">
-                      <Loader2 size={32} className="animate-spin text-slate-300" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                        Загрузка...
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              ) : items.length === 0 ? (
-                <tr>
-                  <td colSpan={11} className="px-6 py-20 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <Database size={40} className="text-slate-200" />
-                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">
-                        Оборудование не найдено
-                      </span>
-                      <button
-                        onClick={() => {
-                          setCategoryFilter('');
-                          setStatusFilter('');
-                          setSearchQuery('');
-                          setDebouncedSearch('');
-                        }}
-                        className="text-[10px] font-bold text-purple-600 hover:text-purple-700 underline"
-                      >
-                        Сбросить фильтры
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                items.map((item) => (
-                  <tr
-                    key={item.id}
-                    onClick={() => openEditModal(item)}
-                    className="border-b border-slate-100 hover:bg-purple-50/30 cursor-pointer transition-colors group"
-                  >
-                    <td className="px-6 py-5">
-                      <div className="text-sm font-bold text-slate-900 truncate max-w-[240px]">
-                        {item.name}
-                      </div>
-                    </td>
-                    <td className="px-4 py-5">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">
-                        {item.category || '—'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-5">
-                      <span className="text-[11px] font-bold text-slate-600">
-                        {item.accountingType || '—'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-5">
-                      <span className="text-[11px] text-slate-500 truncate block max-w-[140px]">
-                        {item.purpose || '—'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-5">
-                      <span className="text-[11px] font-mono font-bold text-slate-600">
-                        {item.serialNumber || '—'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-5">
-                      <span className="text-[11px] font-mono font-bold text-slate-600">
-                        {item.macAddress || '—'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-5">
-                      <StatusBadge status={item.status} />
-                    </td>
-                    <td className="px-4 py-5">
-                      <span className="text-[11px] font-bold text-slate-500">
-                        {formatDate(item.issueDate)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-5">
-                      <span className="text-[11px] text-slate-600 truncate block max-w-[130px]">
-                        {item.issuedTo || '—'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-5">
-                      <span className="text-[11px] text-slate-600 truncate block max-w-[130px]">
-                        {item.issuedToWhere || '—'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-5">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditModal(item);
-                          }}
-                          className="p-2 rounded-lg text-slate-300 hover:text-purple-600 hover:bg-purple-50 transition-all opacity-0 group-hover:opacity-100"
-                          title="Редактировать"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(item);
-                          }}
-                          disabled={actionLoading}
-                          className="p-2 rounded-lg text-slate-300 hover:text-red-600 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 disabled:opacity-30"
-                          title="Удалить"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="px-8 py-5 bg-slate-50/50 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-            {loading
-              ? 'Загрузка...'
-              : `Стр. ${pagination.page} из ${totalPages} (${pagination.total} записей)`}
+        {/* Loading overlay for initial load */}
+        {loading ? (
+          <div className="px-8 py-20 text-center">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 size={32} className="animate-spin text-slate-300" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                Загрузка...
+              </span>
+            </div>
           </div>
-
-          <div className="flex items-center gap-3">
-            {/* Per page */}
-            <select
-              value={pagination.perPage}
-              onChange={(e) => {
-                setPagination((prev) => ({ ...prev, perPage: Number(e.target.value), page: 1 }));
-              }}
-              disabled={loading}
-              className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-bold text-slate-600 focus:ring-2 focus:ring-purple-500 disabled:opacity-40"
-            >
-              {[10, 25, 50, 100].map((n) => (
-                <option key={n} value={n}>
-                  {n} на стр.
-                </option>
-              ))}
-            </select>
-
-            {/* Page nav */}
-            <div className="flex gap-2">
+        ) : totalCount === 0 ? (
+          <div className="px-8 py-20 text-center">
+            <div className="flex flex-col items-center gap-3">
+              <Database size={40} className="text-slate-200" />
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">
+                Оборудование не найдено
+              </span>
               <button
-                onClick={() =>
-                  setPagination((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))
-                }
-                disabled={pagination.page <= 1 || loading}
-                className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 shadow-sm disabled:opacity-30 transition-all"
+                onClick={() => {
+                  setCategoryFilter('');
+                  setStatusFilter('');
+                  setSearchQuery('');
+                  setDebouncedSearch('');
+                }}
+                className="text-[10px] font-bold text-purple-600 hover:text-purple-700 underline"
               >
-                <ChevronLeft size={18} className="text-slate-500" />
-              </button>
-              <button
-                onClick={() =>
-                  setPagination((prev) => ({ ...prev, page: Math.min(totalPages, prev.page + 1) }))
-                }
-                disabled={pagination.page >= totalPages || loading}
-                className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 shadow-sm disabled:opacity-30 transition-all"
-              >
-                <ChevronRight size={18} className="text-slate-500" />
+                Сбросить фильтры
               </button>
             </div>
           </div>
-        </div>
+        ) : (
+          <>
+            {/* Expand/Collapse All Controls */}
+            <div className="px-8 py-3 bg-slate-50/30 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  Разделы
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={expandAll}
+                  disabled={allExpanded}
+                  className="text-[10px] font-bold text-purple-600 hover:text-purple-700 transition-colors disabled:text-slate-300 disabled:cursor-not-allowed"
+                >
+                  Развернуть все
+                </button>
+                <span className="text-slate-200">|</span>
+                <button
+                  onClick={collapseAll}
+                  disabled={!anyExpanded}
+                  className="text-[10px] font-bold text-purple-600 hover:text-purple-700 transition-colors disabled:text-slate-300 disabled:cursor-not-allowed"
+                >
+                  Свернуть все
+                </button>
+              </div>
+            </div>
+
+            {/* Accordion Sections */}
+            <div className="divide-y divide-slate-100">
+              {CATEGORIES.map((cat) => {
+                const catItems = groupedItems[cat] || [];
+                // Only show categories that have items (or are explicitly being shown)
+                if (catItems.length === 0 && categoryFilter === '' && statusFilter === '' && debouncedSearch === '') return null;
+                return (
+                  <CategorySection
+                    key={cat}
+                    category={cat}
+                    items={catItems}
+                    expanded={expandedCategories[cat] ?? true}
+                    onToggle={() => toggleCategory(cat)}
+                    onEdit={openEditModal}
+                    onDelete={handleDelete}
+                    actionLoading={actionLoading}
+                  />
+                );
+              })}
+              {/* Show any dynamic categories not in the predefined list */}
+              {otherCategories.map((cat) => {
+                const catItems = groupedItems[cat] || [];
+                if (catItems.length === 0) return null;
+                return (
+                  <CategorySection
+                    key={cat}
+                    category={cat}
+                    items={catItems}
+                    expanded={expandedCategories[cat] ?? true}
+                    onToggle={() => toggleCategory(cat)}
+                    onEdit={openEditModal}
+                    onDelete={handleDelete}
+                    actionLoading={actionLoading}
+                  />
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Edit/Add Modal */}
