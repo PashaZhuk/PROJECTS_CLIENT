@@ -19,6 +19,7 @@ interface EventLog {
   entityId: number | null;
   userId: number;
   createdAt: string;
+  user?: { name: string | null; companyName: string | null; email: string | null } | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -268,15 +269,18 @@ const MonitoringHistory = () => {
         {/* Table */}
         <div className="p-8 pt-4">
           {/* Table header */}
-          <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-3 bg-slate-50 rounded-xl mb-1">
+          <div className="hidden md:grid grid-cols-13 gap-4 px-4 py-3 bg-slate-50 rounded-xl mb-1">
             <div className="col-span-3 text-[10px] font-black uppercase tracking-widest text-slate-400">
               Дата/время
             </div>
             <div className="col-span-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
               Действие
             </div>
-            <div className="col-span-5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <div className="col-span-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
               Описание
+            </div>
+            <div className="col-span-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+              Кто
             </div>
             <div className="col-span-2 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">
               Тип
@@ -288,7 +292,7 @@ const MonitoringHistory = () => {
             {events.map((event) => (
               <div
                 key={event.id}
-                className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 items-start md:items-center px-4 py-4 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-200"
+                className="grid grid-cols-1 md:grid-cols-13 gap-3 md:gap-4 items-start md:items-center px-4 py-4 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-200"
               >
                 {/* Дата/время */}
                 <div className="col-span-3 flex items-center gap-2">
@@ -305,9 +309,16 @@ const MonitoringHistory = () => {
                 </div>
 
                 {/* Описание */}
-                <div className="col-span-5 pl-6 md:pl-0">
+                <div className="col-span-4 pl-6 md:pl-0">
                   <span className="text-sm font-medium text-slate-700 leading-snug">
                     {event.description}
+                  </span>
+                </div>
+
+                {/* Кто */}
+                <div className="col-span-2 pl-6 md:pl-0">
+                  <span className="text-[11px] font-bold text-slate-600 truncate block">
+                    {event.user?.companyName || event.user?.name || event.user?.email || '—'}
                   </span>
                 </div>
 
