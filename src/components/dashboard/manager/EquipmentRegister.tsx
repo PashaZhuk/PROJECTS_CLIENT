@@ -534,6 +534,7 @@ const CategorySection = ({
                   <th className="px-4 py-4 w-[8%]">Дата выдачи</th>
                   <th className="px-4 py-4 w-[10%]">Кому выдано</th>
                   <th className="px-4 py-4 w-[10%]">Куда выдано</th>
+                  <th className="px-4 py-4 w-[12%]">Комментарии</th>
                   <th className="px-4 py-4 w-[3%]"></th>
                 </tr>
               </thead>
@@ -585,6 +586,11 @@ const CategorySection = ({
                     <td className="px-4 py-4">
                       <span className="text-[11px] text-slate-600 truncate block max-w-[120px]">
                         {item.issuedToWhere || '—'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="text-[11px] text-slate-500 truncate block max-w-[140px]" title={item.comments || ''}>
+                        {item.comments || '—'}
                       </span>
                     </td>
                     <td className="px-4 py-4">
@@ -830,7 +836,7 @@ const EquipmentRegister = () => {
               <Database size={28} className="text-purple-600" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-slate-900">Реестр оборудования</h2>
+              <h2 className="text-2xl font-black text-slate-900">Ведомость выдачи тестового оборудования</h2>
               <p className="text-slate-400 text-sm font-medium mt-1">
                 {loading ? 'Загрузка...' : `Всего: ${totalCount} ед.`}
               </p>
