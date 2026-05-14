@@ -10,6 +10,16 @@ interface BackupFile {
   createdAt: string;
 }
 
+// ─── Presets for schedule ───
+
+const SCHEDULE_PRESETS = [
+  { label: 'Не запускать', desc: 'Ручное создание бэкапов', cron: '' },
+  { label: 'Каждый час', desc: 'В начале каждого часа', cron: '0 * * * *' },
+  { label: 'Каждые 6 часов', desc: 'В 00:00, 06:00, 12:00, 18:00', cron: '0 */6 * * *' },
+  { label: 'Каждый день в 3:00', desc: 'Ночью, когда нагрузка минимальна', cron: '0 3 * * *' },
+  { label: 'Каждую неделю (пн, 3:00)', desc: 'После выходных, перед рабочей неделей', cron: '0 3 * * 1' },
+];
+
 // ─── DbBackup ───
 
 const DbBackup = () => {
@@ -306,21 +316,115 @@ const DbBackup = () => {
               Расписание
             </h2>
 
-            <label className="block text-[10px] font-black uppercase tracking-wider text-gray-500 mb-1.5">
-              Cron-выражение
-            </label>
-            <input
-              type="text"
-              value={scheduleInput}
-              onChange={e => setScheduleInput(e.target.value)}
-              placeholder='0 3 * * * (каждый день в 3:00)'
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 font-mono focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all mb-2"
-            />
-            <div className="flex items-center justify-between">
+            {/* Preset selector */}
+            <div className="space-y-2 mb-4">
+              {SCHEDULE_PRESETS.map(p => (
+                <label
+                  key={p.cron}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all ${
+                    scheduleInput === p.cron
+                      ? 'border-purple-300 bg-purple-50/50 text-purple-700'
+                      : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="schedule"
+                    checked={scheduleInput === p.cron}
+                    onChange={() => setScheduleInput(p.cron)}
+                    className="w-4 h-4 text-purple-600 accent-purple-600"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold">{p.label}</div>
+                    {p.desc && (
+                      <div className="text-[10px] text-gray-400 mt-0.5">{p.desc}</div>
+                    )}
+                  </div>
+                  {p.cron && (
+                    <code className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded shrink-0">
+                      {p.cron}
+                    </code>
+                  )}
+                </label>
+              ))}
+
+              {/* "Другое" — при выборе показывается поле ввода */}
+              <label
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all ${
+                  !SCHEDULE_PRESETS.some(p => p.cron === scheduleInput)
+                    ? 'border-purple-300 bg-purple-50/50 text-purple-700'
+                    : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="schedule"
+                  checked={!SCHEDULE_PRESETS.some(p => p.cron === scheduleInput)}
+                  onChange={() => {
+                    if (scheduleInput === '' || SCHEDULE_PRESETS.some(p => p.cron === scheduleInput)) {
+                      setScheduleInput('0 */2 * * *');
+                    }
+                  }}
+                  className="w-4 h-4 text-purple-600 accent-purple-600"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-bold">Своё выражение</div>
+                  <div className="text-[10px] text-gray-400 mt-0.5">Указать cron вручную</div>
+                </div>
+                <code className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded shrink-0">
+                  custom
+                </code>
+              </label>
+            </div>
+
+            {/* Custom cron input (when "Своё выражение" selected) */}
+            {!SCHEDULE_PRESETS.some(p => p.cron === scheduleInput) && (
+              <div className="mb-4 pl-1">
+                <label className="block text-[10px] font-black uppercase tracking-wider text-gray-500 mb-1.5">
+                  Cron-выражение
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={scheduleInput}
+                    onChange={e => setScheduleInput(e.target.value)}
+                    placeholder="0 */2 * * *  (каждые 2 часа)"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 font-mono focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all pr-8"
+                  />
+                  {scheduleInput && (
+                    <button
+                      onClick={() => setScheduleInput('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <span className="text-base leading-none">&times;</span>
+                    </button>
+                  )}
+                </div>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {[
+                    { label: '30 мин', cron: '*/30 * * * *' },
+                    { label: '2 часа', cron: '0 */2 * * *' },
+                    { label: '12:00 ежедневно', cron: '0 12 * * *' },
+                    { label: 'Пн–пт 9:00', cron: '0 9 * * 1-5' },
+                  ].map(p => (
+                    <button
+                      key={p.cron}
+                      onClick={() => setScheduleInput(p.cron)}
+                      className="px-2 py-1 text-[9px] font-bold bg-gray-100 text-gray-500 hover:bg-purple-50 hover:text-purple-600 rounded-lg transition-colors"
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Status + Save */}
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${schedule.enabled ? 'bg-emerald-500' : 'bg-gray-300'}`} />
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                  {schedule.enabled ? `Активно: ${schedule.cron}` : 'Неактивно'}
+                  {schedule.enabled ? scheduleInput : 'Неактивно'}
                 </span>
               </div>
               <button
@@ -331,27 +435,6 @@ const DbBackup = () => {
                 {savingSchedule ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                 <span>Сохранить</span>
               </button>
-            </div>
-
-            {/* Common presets */}
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2">Быстрые预设</p>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { label: 'Каждый час', cron: '0 * * * *' },
-                  { label: 'Каждый день в 3:00', cron: '0 3 * * *' },
-                  { label: 'Каждую неделю (пн, 3:00)', cron: '0 3 * * 1' },
-                  { label: 'Отключить', cron: '' },
-                ].map(p => (
-                  <button
-                    key={p.cron}
-                    onClick={() => setScheduleInput(p.cron)}
-                    className="px-3 py-1.5 text-[10px] font-bold bg-gray-100 text-gray-500 hover:bg-purple-50 hover:text-purple-600 rounded-lg transition-colors"
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
         </div>
