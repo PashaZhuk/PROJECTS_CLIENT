@@ -9,15 +9,15 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import DashboardLayout from './components/layouts/DashboardLayout';
 import Header from './components/ui/Header';
 import Footer from './components/ui/Footer';
+import LoginPage from './pages/LoginPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import ForcePasswordChange from './components/auth/ForcePasswordChange';
 
 import SessionExpiredModal from './components/ui/SessionExpiredModal';
 import SessionSupersededModal from './components/ui/SessionSupersededModal';
 import LockedModal from './components/ui/LockedModal';
 
-// Ленивая загрузка — эти компоненты не нужны на первом экране
-const LoginPage = lazy(() => import('./pages/LoginPage'))
-const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
-const ForcePasswordChange = lazy(() => import('./components/auth/ForcePasswordChange'))
+// Ленивая загрузка — только дашборд, не нужен на первом экране
 const DashboardDispatcher = lazy(() => import('./pages/dashboard/DashboardDispatcher'))
 
 const PageLoader = () => (
