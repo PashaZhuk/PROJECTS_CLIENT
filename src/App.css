@@ -57,7 +57,7 @@
   height: 72px;
   object-fit: contain;
   z-index: 3;
-  animation: rotateSphere 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: floatLogo 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 .loader-orbit {
@@ -104,10 +104,10 @@
 .loader-text span:nth-child(3) { animation-delay: .4s; }
 
 /* ===== Animations ===== */
-@keyframes rotateSphere {
-  0% { transform: rotateY(0deg) rotateX(4deg); }
-  50% { transform: rotateY(180deg) rotateX(-4deg); }
-  100% { transform: rotateY(360deg) rotateX(4deg); }
+@keyframes floatLogo {
+  0% { transform: translateY(0) scale(1) rotateZ(0deg); }
+  50% { transform: translateY(-5px) scale(1.04) rotateZ(3deg); }
+  100% { transform: translateY(0) scale(1) rotateZ(0deg); }
 }
 
 @keyframes pulseGlow {
