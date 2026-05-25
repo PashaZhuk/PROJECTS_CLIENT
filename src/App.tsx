@@ -20,8 +20,6 @@ const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 const ForcePasswordChange = lazy(() => import('./components/auth/ForcePasswordChange'))
 const DashboardDispatcher = lazy(() => import('./pages/dashboard/DashboardDispatcher'))
 
-import logo from './assets/logo.webp'
-
 const PageLoader = () => (
   <div className="loader-wrapper">
     <div className="loader-container">
@@ -29,8 +27,6 @@ const PageLoader = () => (
         <div className="loader-glow" />
         <div className="loader-orbit orbit-1" />
         <div className="loader-orbit orbit-2" />
-        <div className="loader-backdrop" />
-        <img src={logo} alt="Loading..." className="loader-logo" />
       </div>
       <div className="loader-text">
         ЗАГРУЗКА<span>.</span><span>.</span><span>.</span>

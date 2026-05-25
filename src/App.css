@@ -26,8 +26,8 @@
   display: grid;
   grid-template-areas: "layer";
   place-items: center;
-  width: 140px;
-  height: 140px;
+  width: 110px;
+  height: 110px;
 }
 
 .loader-media > * {
@@ -35,49 +35,32 @@
 }
 
 .loader-glow {
-  width: 100px;
-  height: 100px;
+  width: 80px;
+  height: 80px;
   background: radial-gradient(circle, rgba(0, 180, 216, 0.4) 0%, rgba(140, 214, 92, 0) 70%);
   border-radius: 50%;
   z-index: 1;
   animation: pulseGlow 2s ease-in-out infinite alternate;
 }
 
-.loader-backdrop {
-  width: 76px;
-  height: 76px;
-  background-color: #ffffff;
-  border-radius: 50%;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  z-index: 2;
-}
-
-.loader-logo {
-  width: 72px;
-  height: 72px;
-  object-fit: contain;
-  z-index: 3;
-  animation: floatLogo 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
 .loader-orbit {
   border-radius: 50%;
   border: 2px solid transparent;
-  z-index: 4;
+  z-index: 2;
   pointer-events: none;
 }
 
 .orbit-1 {
-  width: 110px;
-  height: 110px;
+  width: 88px;
+  height: 88px;
   border-top-color: rgba(241, 143, 35, 0.85);
   border-bottom-color: rgba(0, 180, 216, 0.85);
   animation: spinClockwise 2.8s linear infinite;
 }
 
 .orbit-2 {
-  width: 126px;
-  height: 126px;
+  width: 100px;
+  height: 100px;
   border-left-color: rgba(140, 214, 92, 0.75);
   border-right-color: rgba(0, 180, 216, 0.2);
   animation: spinCounterClockwise 2.2s linear infinite;
@@ -104,11 +87,6 @@
 .loader-text span:nth-child(3) { animation-delay: .4s; }
 
 /* ===== Animations ===== */
-@keyframes floatLogo {
-  0% { transform: translateY(0) scale(1) rotateZ(0deg); }
-  50% { transform: translateY(-5px) scale(1.04) rotateZ(3deg); }
-  100% { transform: translateY(0) scale(1) rotateZ(0deg); }
-}
 
 @keyframes pulseGlow {
   0% { transform: scale(0.92); opacity: 0.5; }
