@@ -28,6 +28,7 @@ const PageLoader = () => (
       <div className="loader-glow" />
       <div className="loader-orbit orbit-1" />
       <div className="loader-orbit orbit-2" />
+      <div className="absolute w-[80px] h-[80px] bg-white rounded-full shadow-md" style={{ zIndex: 1 }} />
       <img src={logo} alt="Loading..." className="loader-logo" />
       <div className="loader-text">ЗАГРУЗКА<span>.</span><span>.</span><span>.</span></div>
     </div>
