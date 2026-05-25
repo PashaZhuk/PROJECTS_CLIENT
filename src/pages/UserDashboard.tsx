@@ -11,6 +11,7 @@ import { Rocket } from 'lucide-react';
 import DynamicProjectForm from '../components/dashboard/forms/DynamicProjectForm';
 import { ProjectsListView } from '../components/dashboard/shared/ProjectsListView';
 import { ChatDrawer } from '../components/dashboard/shared/ChatDrawer';
+import { NewsCards } from '../components/dashboard/shared/NewsCards';
 import OneCIntegrationCards from '../components/dashboard/shared/OneCIntegrationCards';
 import api from '../api/ky';
 
@@ -118,6 +119,7 @@ const UserDashboard = () => {
     if (activeTab === 'stats') {
       return (
         <div className="space-y-10">
+          <NewsCards />
           <OneCIntegrationCards />
         </div>
       );

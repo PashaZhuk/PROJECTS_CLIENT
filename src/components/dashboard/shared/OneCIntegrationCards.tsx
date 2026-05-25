@@ -85,19 +85,7 @@ const OneCIntegrationCards = () => {
   const [activeModal, setActiveModal] = useState<string | null>(null)
 
   return (
-    <>
-      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="flex items-center gap-3">
-          <div className="w-1 h-8 bg-amber-400 rounded-full" />
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-            Интеграция с 1С
-          </h2>
-          <span className="px-3 py-1 rounded-lg bg-amber-50 border border-amber-200 text-[9px] font-black text-amber-600 uppercase tracking-widest">
-            Скоро
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {PLACEHOLDER_MODULES.map((mod) => (
             <button
               key={mod.id}
@@ -139,7 +127,7 @@ const OneCIntegrationCards = () => {
         onClose={() => setActiveModal(null)}
         title="Акт сверки"
       />
-    </>
+    </div>
   )
 }
 
