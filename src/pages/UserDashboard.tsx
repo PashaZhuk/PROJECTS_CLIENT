@@ -7,12 +7,10 @@ import { useChatStore } from '../store/useChatStore';
 import { useProjectSockets } from '../hooks/useProjectSockets';
 import { useGlobalChatLoader } from '../hooks/useGlobalChatLoader';
 import { useUserSockets } from '../hooks/useUserSockets';
-import { Rocket, DollarSign, FileSpreadsheet } from 'lucide-react';
+import { Rocket } from 'lucide-react';
 import DynamicProjectForm from '../components/dashboard/forms/DynamicProjectForm';
-import { StatsView } from '../components/dashboard/shared/StatsView';
 import { ProjectsListView } from '../components/dashboard/shared/ProjectsListView';
 import { ChatDrawer } from '../components/dashboard/shared/ChatDrawer';
-import { NewsCards } from '../components/dashboard/shared/NewsCards';
 import OneCIntegrationCards from '../components/dashboard/shared/OneCIntegrationCards';
 import api from '../api/ky';
 
@@ -121,8 +119,6 @@ const UserDashboard = () => {
       return (
         <div className="space-y-10">
           <OneCIntegrationCards />
-          <NewsCards />
-          <StatsView stats={stats} onRefresh={() => refetch()} isLoading={loading} title="Мои Проекты" variant="blue" />
         </div>
       );
     }
