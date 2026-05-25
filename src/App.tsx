@@ -21,9 +21,33 @@ const ForcePasswordChange = lazy(() => import('./components/auth/ForcePasswordCh
 const DashboardDispatcher = lazy(() => import('./pages/dashboard/DashboardDispatcher'))
 
 const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-white">
-    <div className="flex flex-col items-center gap-4">
-      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600"></div>
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-white">
+    <div className="flex flex-col items-center gap-6">
+      {/* Анимированные кольца */}
+      <div className="relative w-20 h-20">
+        <div className="absolute inset-0 rounded-full border-4 border-slate-100" />
+        <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 animate-spin" />
+        <div className="absolute inset-0 rounded-full border-4 border-transparent border-b-emerald-400 animate-spin" style={{ animationDuration: '1.2s' }} />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse" />
+        </div>
+      </div>
+
+      {/* Бренд */}
+      <div className="text-center">
+        <h1 className="text-2xl font-black tracking-tight text-slate-800">
+          IPMATIKA <span className="text-slate-300">B2B</span>
+        </h1>
+      </div>
+
+      {/* Текст-заглушка */}
+      <div className="flex items-center gap-2">
+        <div className="flex gap-1">
+          <span className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+          <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+          <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
+      </div>
     </div>
   </div>
 )
@@ -50,14 +74,7 @@ const AppContent = () => {
   }, [_hasHydrated, checkAuth]);
 
   if (!_hasHydrated || !isInitialized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600"></div>
-          <p className="text-gray-500 text-sm animate-pulse">Проверка сессии...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader />
   }
 
   return (
