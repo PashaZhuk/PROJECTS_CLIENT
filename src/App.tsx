@@ -25,12 +25,23 @@ import logo from './assets/logo.webp'
 const PageLoader = () => (
   <div className="loader-wrapper">
     <div className="loader-container">
+      {/* Мягкое цветное свечение */}
       <div className="loader-glow" />
+
+      {/* Орбиты */}
       <div className="loader-orbit orbit-1" />
       <div className="loader-orbit orbit-2" />
-      <div className="absolute w-[80px] h-[80px] bg-white rounded-full shadow-md" style={{ zIndex: 1 }} />
+
+      {/* Белая круглая подложка под логотип (теперь отцентрирована) */}
+      <div className="absolute w-[80px] h-[80px] bg-white rounded-full shadow-md inset-0 m-auto z-10" />
+
+      {/* Логотип */}
       <img src={logo} alt="Loading..." className="loader-logo" />
-      <div className="loader-text">ЗАГРУЗКА<span>.</span><span>.</span><span>.</span></div>
+
+      {/* Текст загрузки */}
+      <div className="loader-text">
+        ЗАГРУЗКА<span>.</span><span>.</span><span>.</span>
+      </div>
     </div>
   </div>
 )
