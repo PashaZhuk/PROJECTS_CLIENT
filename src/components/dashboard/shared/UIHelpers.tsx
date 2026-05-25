@@ -63,7 +63,7 @@ export const StatCard = ({
   };
 
   return (
-    <div className="p-8 rounded-[2.5rem] border bg-white shadow-lg transition-transform hover:-translate-y-1 duration-300">
+    <div className="p-8 rounded-[2.5rem] border bg-white shadow-lg transition-transform hover:-translate-y-1 duration-300 cursor-default">
       <div className={`w-14 h-14 ${colors[color]} rounded-2xl flex items-center justify-center mb-6 shadow-inner`}>
         {/* Здесь также типизируем клон */}
         {React.isValidElement(icon) && React.cloneElement(icon as ReactElement<any>, { size: 28 })}

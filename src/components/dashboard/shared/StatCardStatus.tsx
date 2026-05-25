@@ -9,7 +9,7 @@ export const StatCard = ({ title, value, icon, color, loading, subtitle }: any) 
     emerald: "bg-emerald-50/50 border-emerald-100 text-emerald-600"
   };
   return (
-    <div className={`p-8 rounded-[2.5rem] border ${colors[color]} shadow-sm transition-all hover:shadow-md relative overflow-hidden group`}>
+    <div className={`p-8 rounded-[2.5rem] border ${colors[color]} shadow-sm transition-all hover:shadow-md relative overflow-hidden group cursor-default`}>
       <div className="flex justify-between items-start mb-6">
         <div className="p-4 bg-white rounded-[1.25rem] shadow-sm group-hover:scale-110 transition-transform relative">
           {icon}
