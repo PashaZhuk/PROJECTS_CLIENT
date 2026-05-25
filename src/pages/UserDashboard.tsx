@@ -7,12 +7,13 @@ import { useChatStore } from '../store/useChatStore';
 import { useProjectSockets } from '../hooks/useProjectSockets';
 import { useGlobalChatLoader } from '../hooks/useGlobalChatLoader';
 import { useUserSockets } from '../hooks/useUserSockets';
-import { Rocket } from 'lucide-react';
+import { Rocket, DollarSign, FileSpreadsheet } from 'lucide-react';
 import DynamicProjectForm from '../components/dashboard/forms/DynamicProjectForm';
 import { StatsView } from '../components/dashboard/shared/StatsView';
 import { ProjectsListView } from '../components/dashboard/shared/ProjectsListView';
 import { ChatDrawer } from '../components/dashboard/shared/ChatDrawer';
 import { NewsCards } from '../components/dashboard/shared/NewsCards';
+import OneCIntegrationCards from '../components/dashboard/shared/OneCIntegrationCards';
 import api from '../api/ky';
 
 const SHOW_WORKING_FEATURES = false;
@@ -116,10 +117,19 @@ const UserDashboard = () => {
   }), [projects, totalCount]);
 
   if (!SHOW_WORKING_FEATURES) {
+    if (activeTab === 'stats') {
+      return (
+        <div className="space-y-10">
+          <OneCIntegrationCards />
+          <NewsCards />
+          <StatsView stats={stats} onRefresh={() => refetch()} isLoading={loading} title="Мои Проекты" variant="blue" />
+        </div>
+      );
+    }
     if (activeTab === 'orders-list' || activeTab === 'orders-create') {
       return <WorkInProgressBanner title={activeTab === 'orders-list' ? 'Мои заказы' : 'Создать новый заказ'} />;
     }
-    if (activeTab === 'projects-list' || activeTab === 'projects-create' || activeTab === 'stats') {
+    if (activeTab === 'projects-list' || activeTab === 'projects-create') {
        return <WorkInProgressBanner title="Работа с проектами" />;
     }
     return <WorkInProgressBanner title="Раздел в разработке" />;
