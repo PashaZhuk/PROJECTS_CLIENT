@@ -39,12 +39,38 @@ const AdminOverview = ({ stats, loading, isOnline, onRefresh }: any) => {
           color="emerald"
           subtitle={
             <div className="flex gap-4 mt-4 pt-4 border-t border-emerald-100/50">
-              <span className="text-[9px] text-slate-400 uppercase font-black">
-                Пользователи: {stats.details.onlineUsers}
-              </span>
-              <span className="text-[9px] text-slate-400 uppercase font-black border-l border-emerald-100/30 pl-4">
-                Менеджеры: {stats.details.onlineManagers}
-              </span>
+              <div className="relative group/tip">
+                <span className="text-[9px] text-slate-400 uppercase font-black cursor-help">
+                  Пользователи: {stats.details.onlineUsers}
+                </span>
+                {stats.details.onlineUserNames?.length > 0 && (
+                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover/tip:block z-50">
+                    <div className="bg-slate-900 text-white text-[10px] font-bold rounded-xl px-4 py-3 shadow-xl whitespace-nowrap">
+                      <div className="flex flex-col gap-1">
+                        {stats.details.onlineUserNames.map((name: string, i: number) => (
+                          <span key={i}>{name}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="relative group/tip">
+                <span className="text-[9px] text-slate-400 uppercase font-black border-l border-emerald-100/30 pl-4 cursor-help">
+                  Менеджеры: {stats.details.onlineManagers}
+                </span>
+                {stats.details.onlineManagerNames?.length > 0 && (
+                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover/tip:block z-50">
+                    <div className="bg-slate-900 text-white text-[10px] font-bold rounded-xl px-4 py-3 shadow-xl whitespace-nowrap">
+                      <div className="flex flex-col gap-1">
+                        {stats.details.onlineManagerNames.map((name: string, i: number) => (
+                          <span key={i}>{name}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           }
         />

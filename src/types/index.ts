@@ -43,6 +43,8 @@ export interface AdminStats {
   details: {
     onlineUsers: number;
     onlineManagers: number;
+    onlineUserNames: string[];
+    onlineManagerNames: string[];
   };
 }
 
