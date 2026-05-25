@@ -1,4 +1,4 @@
-import { useEffect, useRef, lazy, Suspense } from 'react';
+import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 
@@ -47,6 +47,7 @@ const AppContent = () => {
   } = useAuthStore();
 
   const authChecked = useRef(false);
+  const [phase, setPhase] = useState<'loading' | 'fading' | 'done'>('loading');
   useSessionManager();
 
   useEffect(() => {
@@ -56,8 +57,35 @@ const AppContent = () => {
     }
   }, [_hasHydrated, checkAuth]);
 
-  if (!_hasHydrated || !isInitialized) {
-    return <PageLoader />
+  useEffect(() => {
+    if (_hasHydrated && isInitialized && phase === 'loading') {
+      const t = setTimeout(() => setPhase('fading'), 80);
+      return () => clearTimeout(t);
+    }
+  }, [_hasHydrated, isInitialized, phase]);
+
+  useEffect(() => {
+    if (phase === 'fading') {
+      const t = setTimeout(() => setPhase('done'), 400);
+      return () => clearTimeout(t);
+    }
+  }, [phase]);
+
+  if (phase !== 'done') {
+    return (
+      <div className="loader-wrapper" style={{ opacity: phase === 'fading' ? 0 : 1, transition: 'opacity 0.35s ease' }}>
+        <div className="loader-container">
+          <div className="loader-media">
+            <div className="loader-glow" />
+            <div className="loader-orbit orbit-1" />
+            <div className="loader-orbit orbit-2" />
+          </div>
+          <div className="loader-text">
+            ЗАГРУЗКА<span>.</span><span>.</span><span>.</span>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
