@@ -85,7 +85,8 @@ const OneCIntegrationCards = () => {
   const [activeModal, setActiveModal] = useState<string | null>(null)
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {PLACEHOLDER_MODULES.map((mod) => (
             <button
               key={mod.id}
@@ -110,7 +111,6 @@ const OneCIntegrationCards = () => {
             </button>
           ))}
         </div>
-      </div>
 
       <OneCPlaceholderModal
         isOpen={activeModal === 'finance'}
@@ -127,7 +127,7 @@ const OneCIntegrationCards = () => {
         onClose={() => setActiveModal(null)}
         title="Акт сверки"
       />
-    </div>
+    </>
   )
 }
 
