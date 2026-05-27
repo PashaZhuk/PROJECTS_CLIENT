@@ -1,16 +1,31 @@
+import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, ShieldCheck, User as UserIcon } from 'lucide-react';
+import { LogOut, ShieldCheck, User as UserIcon, KeyRound, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 
 const Header = () => {
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isInitialized = useAuthStore((state) => state.isInitialized);
   const logout = useAuthStore((state) => state.logout);
 
+  // Закрытие по клику вне меню
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleLogout = async () => {
+    setMenuOpen(false);
     try {
       await logout();
     } catch (error) {
@@ -58,24 +73,54 @@ const Header = () => {
                   </p>
                 </div>
 
-                <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-blue-50 to-blue-100 flex items-center justify-center border-2 border-white shadow-sm overflow-hidden">
-                  {user.name ? (
-                    <span className="text-sm font-bold text-blue-600">
-                      {user.name.charAt(0).toUpperCase()}
-                    </span>
-                  ) : (
-                    <UserIcon className="w-4 h-4 text-slate-400" />
+                {/* Дропдаун вместо кружка */}
+                <div className="relative" ref={menuRef}>
+                  <button
+                    onClick={() => setMenuOpen(!menuOpen)}
+                    className="flex items-center gap-1 h-9 rounded-lg bg-gradient-to-tr from-blue-50 to-blue-100 border border-blue-100 px-2.5 hover:from-blue-100 hover:to-blue-200 transition-all shadow-sm"
+                  >
+                    <div className="flex items-center justify-center">
+                      {user.name ? (
+                        <span className="text-sm font-bold text-blue-600">
+                          {user.name.charAt(0).toUpperCase()}
+                        </span>
+                      ) : (
+                        <UserIcon className="w-4 h-4 text-blue-500" />
+                      )}
+                    </div>
+                    <ChevronDown className={`w-3.5 h-3.5 text-blue-400 transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {menuOpen && (
+                    <div className="absolute right-0 mt-2 w-56 rounded-xl bg-white border border-slate-100 shadow-lg shadow-slate-200/50 py-1.5 z-50">
+                      <div className="px-4 py-2 border-b border-slate-50">
+                        <p className="text-sm font-semibold text-slate-900 truncate">{user.name || 'Пользователь'}</p>
+                        <p className="text-xs text-slate-400 truncate">{user.email || ''}</p>
+                      </div>
+
+                      <button
+                        onClick={() => { setMenuOpen(false); navigate('/change-password'); }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+                      >
+                        <KeyRound className="w-4 h-4" />
+                        Сменить пароль
+                      </button>
+
+                      <div className="border-t border-slate-50 mt-1 pt-1">
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Выйти
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
 
-              <button
-                onClick={handleLogout}
-                className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
-                title="Выйти"
-              >
-                <LogOut className="h-5 w-5" />
-              </button>
+              {/* Старая кнопка выхода — убрана, теперь в дропдауне */}
             </>
           )}
         </div>

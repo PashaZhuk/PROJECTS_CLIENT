@@ -12,6 +12,7 @@ import Footer from './components/ui/Footer';
 import LoginPage from './pages/LoginPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ForcePasswordChange from './components/auth/ForcePasswordChange';
+import ChangePasswordPage from './pages/ChangePasswordPage';
 
 import SessionExpiredModal from './components/ui/SessionExpiredModal';
 import SessionSupersededModal from './components/ui/SessionSupersededModal';
@@ -121,8 +122,16 @@ const AppContent = () => {
                 </ProtectedRoute>
               } 
             />
-            <Route 
-              path="/" 
+            <Route
+              path="/change-password"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'USER']}>
+                  <ChangePasswordPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/"
               element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />} 
             />
             <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'USER']} />}>
