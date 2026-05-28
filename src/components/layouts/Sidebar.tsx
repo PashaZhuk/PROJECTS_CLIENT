@@ -4,7 +4,6 @@ import {
   Users, 
   PlusCircle, 
   List, 
-  LogOut, 
   ShieldCheck, 
   ShoppingCart, 
   ChevronDown, 
@@ -344,6 +343,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
             <p className="text-sm font-bold text-slate-700 truncate">{user?.companyName || user?.name || 'Гость'}</p>
             <p className="text-[9px] font-bold text-slate-400 truncate">{user?.email}</p>
         </div>
+        {/*
         <button 
           onClick={() => logout()} 
           className="w-full flex items-center gap-4 p-4 text-slate-400 hover:text-red-500 transition-all rounded-2xl hover:bg-red-50 font-black text-[11px] uppercase tracking-widest"
@@ -351,6 +351,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
           <LogOut size={20} />
           <span>Выход</span>
         </button>
+        */}
       </div>
     </aside>
   );

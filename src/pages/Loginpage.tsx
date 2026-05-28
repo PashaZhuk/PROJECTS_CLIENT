@@ -334,7 +334,7 @@ const LoginPage = () => {
           <div className="max-w-md mx-auto">
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-center">
-                <h1 className="text-3xl font-bold text-white mb-2">Вход в портал</h1>
+                <h1 className="text-3xl font-bold text-white mb-2">Вход</h1>
                 <p className="text-blue-100">Используйте данные, выданные администратором</p>
               </div>
 
@@ -417,7 +417,7 @@ const LoginPage = () => {
                   {authLoading ? (
                     <><RefreshCw className="animate-spin" size={18} /> Вход...</>
                   ) : (
-                    'Войти в систему'
+                    'Войти'
                   )}
                 </button>
               </form>

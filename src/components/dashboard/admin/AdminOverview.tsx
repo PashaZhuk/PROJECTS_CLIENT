@@ -1,7 +1,15 @@
-import { ShieldCheck, Activity } from 'lucide-react';
+import { ShieldCheck, Activity, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
 import { StatCard, ServerStatus } from '../shared/StatCardStatus';
 
 const AdminOverview = ({ stats, loading, isOnline, onRefresh }: any) => {
+  const [spin, setSpin] = useState(false);
+
+  const handleRefresh = async () => {
+    setSpin(true);
+    await onRefresh();
+    setSpin(false);
+  };
   if (!stats) return null;
 
   return (
@@ -17,11 +25,15 @@ const AdminOverview = ({ stats, loading, isOnline, onRefresh }: any) => {
           </p> */}
         </div>
         <button
-          onClick={onRefresh}
-          disabled={loading}
-          className="p-4 bg-white border border-slate-200 rounded-3xl text-slate-400 hover:text-purple-600 shadow-sm transition-all active:scale-95 disabled:opacity-50"
+          onClick={function(){
+            setSpin(true);
+            setTimeout(function(){
+              onRefresh().finally(function(){ setSpin(false); });
+            }, 50);
+          }}
+          className="p-4 bg-white border border-slate-200 rounded-3xl text-slate-400 hover:text-purple-600 shadow-sm transition-all active:scale-95"
         >
-          Обновить данные
+          <RefreshCw size={16} className={spin ? "spinning" : ""} />
         </button>
       </div>
 

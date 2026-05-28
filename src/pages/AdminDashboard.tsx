@@ -18,7 +18,7 @@ const AdminDashboard = () => {
     setActiveTab: (tab: ActiveTabType) => void;
   }>();
 
-  const { data: stats, isLoading: loading, refetch } = useAdminStats();
+  const { data: stats, isFetching: loading, refetch } = useAdminStats();
 
   const isSystemOnline = true; 
 
