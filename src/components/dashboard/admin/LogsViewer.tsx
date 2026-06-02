@@ -317,24 +317,6 @@ const LogsViewer = () => {
           <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Логи системы</h2>
           <p className="text-sm text-slate-500 mt-1">События и ошибки</p>
         </div>
-        <div className="flex gap-3">
-          <button
-            onClick={handleDownload}
-            disabled={downloading}
-            className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm font-bold"
-          >
-            <Download size={18} />
-            {downloading ? 'Скачивание...' : 'Скачать'}
-          </button>
-          <button
-            onClick={fetchLogs}
-            disabled={loading}
-            className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
-            title="Обновить"
-          >
-            <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
-          </button>
-        </div>
       </div>
 
       <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row gap-4 items-start">
@@ -416,8 +398,18 @@ const LogsViewer = () => {
           )}
         </div>
 
-        {/* Level buttons */}
-        <div className="flex gap-2 flex-wrap">
+        {/* Download */}
+        <button
+          onClick={handleDownload}
+          disabled={downloading}
+          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm font-bold"
+        >
+          <Download size={16} />
+          {downloading ? 'Скачивание...' : 'Скачать'}
+        </button>
+
+        {/* Level buttons + Refresh */}
+        <div className="flex items-center gap-2 flex-wrap">
           {['', 'info', 'warn', 'error'].map((lvl) => (
             <button
               key={lvl}
@@ -433,6 +425,14 @@ const LogsViewer = () => {
               {lvl === '' ? 'Все' : lvl.charAt(0).toUpperCase() + lvl.slice(1)}
             </button>
           ))}
+          <button
+            onClick={fetchLogs}
+            disabled={loading}
+            className="p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors ml-1"
+            title="Обновить"
+          >
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          </button>
         </div>
       </div>
 
