@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Save, MapPin, Phone, Clock, Headphones, Building2, Loader2, AlertCircle, CheckCircle2, Info, ChevronLeft, Settings, ArrowRight } from 'lucide-react';
 import YandexMap from '../../ui/YandexMap';
+import { broadcastSaved } from '../../../lib/broadcast';
 
 // ─── Типы ────────────────────────────────────────────
 
@@ -295,6 +296,7 @@ const ContactsEditor = ({ onBack }: { onBack: () => void }) => {
       const data = await res.json();
       if (data?.success) {
         setMessage({ type: 'success', text: 'Контакты сохранены' });
+        broadcastSaved('setting', 'updated', 'contacts');
       } else {
         setMessage({ type: 'error', text: data?.error || 'Ошибка сохранения' });
       }
@@ -516,6 +518,7 @@ const BrandingEditor = ({ onBack }: { onBack: () => void }) => {
       const data = await res.json();
       if (data?.success) {
         setMessage({ type: 'success', text: 'Брендинг сохранён' });
+        broadcastSaved('setting', 'updated', 'branding');
       } else {
         setMessage({ type: 'error', text: data?.error || 'Ошибка сохранения' });
       }

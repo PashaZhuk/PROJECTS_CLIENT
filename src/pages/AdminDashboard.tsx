@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useAdminStats } from '../hooks/useUsersQuery';
 import { useUserSockets } from '../hooks/useUserSockets';
@@ -9,6 +10,7 @@ import LogsViewer from '../components/dashboard/admin/LogsViewer';
 import AdminSettings from '../components/dashboard/admin/AdminSettings';
 import DbViewer from '../components/dashboard/admin/DbViewer';
 import DbBackup from '../components/dashboard/admin/DbBackup';
+import { listenBroadcastSaved } from '../lib/broadcast';
 
 const AdminDashboard = () => {
   useUserSockets();
@@ -17,6 +19,15 @@ const AdminDashboard = () => {
     activeTab: ActiveTabType;
     setActiveTab: (tab: ActiveTabType) => void;
   }>();
+
+  // Слушатель BroadcastChannel — синхронизация вкладок
+  useEffect(() => {
+    return listenBroadcastSaved((msg) => {
+      if (msg.entityType === 'user' || msg.entityType === 'setting') {
+        console.debug(`[Broadcast] ${msg.entityType} ${msg.action} in another tab`);
+      }
+    });
+  }, []);
 
   const { data: stats, isFetching: loading, refetch } = useAdminStats();
 

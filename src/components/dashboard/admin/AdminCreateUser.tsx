@@ -7,6 +7,7 @@ import { useCreateUser } from '../../../hooks/useUsersQuery';
 import { userFormSchema, type UserFormData } from '../../../schemas/userSchema';
 import api from '../../../api/ky';
 import { getErrorMessage } from '../shared/UIHelpers';
+import { broadcastSaved } from '../../../lib/broadcast';
 
 interface CompanyOption {
   value: number;
@@ -101,6 +102,7 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
     }
     try {
       await createMutation.mutateAsync(payload);
+      broadcastSaved('user', 'created');
       onCancel();
     } catch (err: any) {
       setServerError(getErrorMessage(err, 'Ошибка при создании пользователя'));
