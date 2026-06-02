@@ -7,7 +7,7 @@ import { useCreateUser } from '../../../hooks/useUsersQuery';
 import { userFormSchema, type UserFormData } from '../../../schemas/userSchema';
 import api from '../../../api/ky';
 import { getErrorMessage } from '../shared/UIHelpers';
-import { broadcastSaved } from '../../../lib/broadcast';
+import { broadcastSaved, listenBroadcastSaved } from '../../../lib/broadcast';
 
 interface CompanyOption {
   value: number;
@@ -26,6 +26,15 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
   const [serverError, setServerError] = useState('');
   const [companies, setCompanies] = useState<CompanyOption[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(null);
+
+  // Закрываем форму, если пользователь создан в другой вкладке
+  useEffect(() => {
+    return listenBroadcastSaved((msg) => {
+      if (msg.entityType === 'user' && msg.action === 'created') {
+        onCancel();
+      }
+    });
+  }, [onCancel]);
   const [isLoadingCompanies, setIsLoadingCompanies] = useState(false);
 
   const {
