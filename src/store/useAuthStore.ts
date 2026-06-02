@@ -172,6 +172,10 @@ export const useAuthStore = create<AuthState>()(
           try {
             const errorBody = await error.response.json();
             errorMessage = errorBody?.error || errorBody?.message || errorBody?.msg || errorMessage;
+            // Если есть field-level errors — показываем первую
+            if (errorBody?.errors?.length > 0) {
+              errorMessage = errorBody.errors[0].message || errorMessage;
+            }
             if (errorBody.lockUntil) extraData.lockUntil = new Date(errorBody.lockUntil);
             if (errorBody.timeLeft) extraData.timeLeft = errorBody.timeLeft;
             if (errorBody.attemptsLeft !== undefined) extraData.attemptsLeft = errorBody.attemptsLeft;
@@ -220,6 +224,10 @@ export const useAuthStore = create<AuthState>()(
           try {
             const errorBody = await error.response.json();
             errorMessage = errorBody?.error || errorBody?.message || errorMessage;
+            // Если есть field-level errors — показываем первую
+            if (errorBody?.errors?.length > 0) {
+              errorMessage = errorBody.errors[0].message || errorMessage;
+            }
             if (errorBody.timeLeft) extraData.timeLeft = errorBody.timeLeft;
             if (errorBody.attemptsLeft !== undefined) extraData.attemptsLeft = errorBody.attemptsLeft;
           } catch (e) {
