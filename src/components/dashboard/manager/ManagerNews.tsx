@@ -3,6 +3,7 @@ import {
   Newspaper,
   Plus,
   ExternalLink,
+  Pencil,
   Trash2,
   Loader2,
   AlertCircle,
@@ -117,18 +118,19 @@ interface NewsModalProps {
   onClose: () => void;
   onSave: (data: NewsFormData) => Promise<void>;
   saving: boolean;
+  initialData?: NewsItem | null;
 }
 
-const NewsModal = ({ isOpen, onClose, onSave, saving }: NewsModalProps) => {
+const NewsModal = ({ isOpen, onClose, onSave, saving, initialData }: NewsModalProps) => {
   const [form, setForm] = useState<NewsFormData>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof NewsFormData, string>>>({});
 
   useEffect(() => {
     if (isOpen) {
-      setForm(EMPTY_FORM);
+      setForm(initialData ? { title: initialData.title, link: initialData.link, imageUrl: initialData.imageUrl || '' } : EMPTY_FORM);
       setErrors({});
     }
-  }, [isOpen]);
+  }, [isOpen, initialData]);
 
   const handleChange = (field: keyof NewsFormData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -170,9 +172,9 @@ const NewsModal = ({ isOpen, onClose, onSave, saving }: NewsModalProps) => {
               <Newspaper size={18} className="text-emerald-600" />
             </div>
             <div>
-              <h3 className="text-lg font-black text-slate-900">Добавить новость</h3>
+              <h3 className="text-lg font-black text-slate-900">{initialData ? 'Редактировать новость' : 'Добавить новость'}</h3>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
-                Новая запись
+                {initialData ? 'Изменение записи' : 'Новая запись'}
               </p>
             </div>
           </div>
@@ -282,8 +284,8 @@ const NewsModal = ({ isOpen, onClose, onSave, saving }: NewsModalProps) => {
               disabled={saving}
               className="flex items-center gap-2 px-8 py-3 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 disabled:opacity-40 transition-all shadow-lg shadow-emerald-200"
             >
-              {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-              {saving ? 'Сохранение...' : 'Добавить'}
+              {saving ? <Loader2 size={16} className="animate-spin" /> : initialData ? <Pencil size={16} /> : <Plus size={16} />}
+              {saving ? 'Сохранение...' : initialData ? 'Сохранить' : 'Добавить'}
             </button>
           </div>
         </form>
@@ -350,6 +352,7 @@ const ManagerNews = () => {
 
   // Modal state
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [editItem, setEditItem] = useState<NewsItem | null>(null);
 
   // Delete confirm state
   const [deleteTarget, setDeleteTarget] = useState<NewsItem | null>(null);
@@ -393,6 +396,25 @@ const ManagerNews = () => {
       });
       addToast('success', 'Новость добавлена');
       setAddModalOpen(false);
+      fetchNews();
+    } catch (err: any) {
+      addToast('error', getErrorMessage(err, 'Ошибка сохранения'));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Edit news
+  const handleEdit = async (formData: NewsFormData) => {
+    if (!editItem) return;
+    setActionLoading(true);
+    try {
+      await apiFetch(`${API_PREFIX}/${editItem.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(formData),
+      });
+      addToast('success', `«${formData.title}» обновлена`);
+      setEditItem(null);
       fetchNews();
     } catch (err: any) {
       addToast('error', getErrorMessage(err, 'Ошибка сохранения'));
@@ -527,22 +549,35 @@ const ManagerNews = () => {
                       {item.link}
                     </a>
 
-                    {/* Date + Delete */}
+                    {/* Date + Actions */}
                     <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                         {formatDate(item.createdAt)}
                       </span>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setDeleteTarget(item);
-                        }}
-                        disabled={actionLoading}
-                        className="p-2 rounded-lg text-slate-300 hover:text-red-600 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 disabled:opacity-30"
-                        title="Удалить новость"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setEditItem(item);
+                          }}
+                          disabled={actionLoading}
+                          className="p-2 rounded-lg text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 transition-all disabled:opacity-30"
+                          title="Редактировать новость"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setDeleteTarget(item);
+                          }}
+                          disabled={actionLoading}
+                          className="p-2 rounded-lg text-slate-300 hover:text-red-600 hover:bg-red-50 transition-all disabled:opacity-30"
+                          title="Удалить новость"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -558,6 +593,15 @@ const ManagerNews = () => {
         onClose={() => setAddModalOpen(false)}
         onSave={handleAdd}
         saving={actionLoading}
+      />
+
+      {/* Edit Modal */}
+      <NewsModal
+        isOpen={!!editItem}
+        onClose={() => setEditItem(null)}
+        onSave={handleEdit}
+        saving={actionLoading}
+        initialData={editItem}
       />
 
       {/* Delete Confirm Modal */}
