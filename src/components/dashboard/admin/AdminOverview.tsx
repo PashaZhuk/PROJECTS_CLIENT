@@ -44,8 +44,8 @@ const AdminOverview = ({ stats, onRefresh }: any) => {
                   Пользователи: {stats.totalUsers}
                 </span>
                 {stats.totalUserNames?.length > 0 && (
-                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover/tip:block z-50">
-                    <div className="bg-slate-900 text-white text-[10px] font-bold rounded-xl px-4 py-3 shadow-xl max-h-48 overflow-y-auto whitespace-nowrap">
+                  <div className="absolute bottom-full left-0 z-50 before:content-[''] before:absolute before:top-full before:left-0 before:w-full before:h-2">
+                    <div className="bg-slate-900 text-white text-[10px] font-bold rounded-xl px-4 py-3 shadow-xl max-h-48 overflow-y-auto whitespace-nowrap mb-2 invisible opacity-0 group-hover/tip:visible group-hover/tip:opacity-100 transition-all duration-200">
                       <div className="flex flex-col gap-1">
                         {stats.totalUserNames.map((name: string, i: number) => (
                           <span key={i}>{name}</span>
@@ -60,8 +60,8 @@ const AdminOverview = ({ stats, onRefresh }: any) => {
                   Менеджеры: {stats.totalManagers}
                 </span>
                 {stats.totalManagerNames?.length > 0 && (
-                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover/tip:block z-50">
-                    <div className="bg-slate-900 text-white text-[10px] font-bold rounded-xl px-4 py-3 shadow-xl max-h-48 overflow-y-auto whitespace-nowrap">
+                  <div className="absolute bottom-full left-0 z-50 before:content-[''] before:absolute before:top-full before:left-0 before:w-full before:h-2">
+                    <div className="bg-slate-900 text-white text-[10px] font-bold rounded-xl px-4 py-3 shadow-xl max-h-48 overflow-y-auto whitespace-nowrap mb-2 invisible opacity-0 group-hover/tip:visible group-hover/tip:opacity-100 transition-all duration-200">
                       <div className="flex flex-col gap-1">
                         {stats.totalManagerNames.map((name: string, i: number) => (
                           <span key={i}>{name}</span>
@@ -86,8 +86,8 @@ const AdminOverview = ({ stats, onRefresh }: any) => {
                   Пользователи: {stats.details.onlineUsers}
                 </span>
                 {stats.details.onlineUserNames?.length > 0 && (
-                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover/tip:block z-50">
-                    <div className="bg-slate-900 text-white text-[10px] font-bold rounded-xl px-4 py-3 shadow-xl whitespace-nowrap">
+                  <div className="absolute bottom-full left-0 z-50 before:content-[''] before:absolute before:top-full before:left-0 before:w-full before:h-2">
+                    <div className="bg-slate-900 text-white text-[10px] font-bold rounded-xl px-4 py-3 shadow-xl whitespace-nowrap mb-2 invisible opacity-0 group-hover/tip:visible group-hover/tip:opacity-100 transition-all duration-200">
                       <div className="flex flex-col gap-1">
                         {stats.details.onlineUserNames.map((name: string, i: number) => (
                           <span key={i}>{name}</span>
@@ -102,8 +102,8 @@ const AdminOverview = ({ stats, onRefresh }: any) => {
                   Менеджеры: {stats.details.onlineManagers}
                 </span>
                 {stats.details.onlineManagerNames?.length > 0 && (
-                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover/tip:block z-50">
-                    <div className="bg-slate-900 text-white text-[10px] font-bold rounded-xl px-4 py-3 shadow-xl whitespace-nowrap">
+                  <div className="absolute bottom-full left-0 z-50 before:content-[''] before:absolute before:top-full before:left-0 before:w-full before:h-2">
+                    <div className="bg-slate-900 text-white text-[10px] font-bold rounded-xl px-4 py-3 shadow-xl whitespace-nowrap mb-2 invisible opacity-0 group-hover/tip:visible group-hover/tip:opacity-100 transition-all duration-200">
                       <div className="flex flex-col gap-1">
                         {stats.details.onlineManagerNames.map((name: string, i: number) => (
                           <span key={i}>{name}</span>
