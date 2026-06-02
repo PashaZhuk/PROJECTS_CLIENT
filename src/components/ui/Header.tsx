@@ -7,11 +7,24 @@ const Header = () => {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [branding, setBranding] = useState<{ companyName?: string; logo?: string }>({});
 
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isInitialized = useAuthStore((state) => state.isInitialized);
   const logout = useAuthStore((state) => state.logout);
+
+  useEffect(() => {
+    fetch('/api/settings/branding')
+      .then(r => r.json())
+      .then(data => {
+        if (data?.success && data.data) {
+          const val = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
+          setBranding(val);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Закрытие по клику вне меню
   useEffect(() => {
@@ -45,15 +58,23 @@ const Header = () => {
           className="flex items-center space-x-3 group"
         >
           <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-md shadow-slate-200 group-hover:scale-105 transition-transform duration-200 overflow-hidden border border-slate-50">
-            <img
-              src="/src/assets/logo.webp"
-              alt="АйПиМатика Лого"
-              className="h-full w-full object-cover"
-            />
+            {branding.logo ? (
+              <img
+                src={branding.logo}
+                alt="Логотип"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <img
+                src="/src/assets/logo.webp"
+                alt="АйПиМатика Лого"
+                className="h-full w-full object-cover"
+              />
+            )}
           </div>
           <div className="flex flex-col">
             <span className="text-lg font-black text-slate-900 leading-none tracking-tight">
-              АйПиМатика Бел - B2B
+              {branding.companyName || 'АйПиМатика Бел - B2B'}
             </span>
           </div>
         </Link>

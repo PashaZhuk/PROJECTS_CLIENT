@@ -39,6 +39,12 @@ const STATIC_SECTION: SettingsSection = {
   description: 'Редактирование контактных данных, реквизитов и прочей публичной информации',
   tools: [
     {
+      id: 'branding',
+      label: 'Брендинг',
+      description: 'Логотип компании и название',
+      icon: <Building2 size={20} />,
+    },
+    {
       id: 'contacts',
       label: 'Контакты',
       description: 'Адрес, телефоны, email, Яндекс.Карта',
@@ -462,11 +468,176 @@ const ContactsEditor = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
+// ─── BrandingEditor ────────────────────────────────────
+
+const BrandingEditor = ({ onBack }: { onBack: () => void }) => {
+  const [companyName, setCompanyName] = useState('АйПиМатика Бел - B2B');
+  const [logoSrc, setLogoSrc] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/admin/settings/branding')
+      .then(r => r.json())
+      .then(data => {
+        if (data?.success && data.data) {
+          const val = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
+          if (val.companyName) setCompanyName(val.companyName);
+          if (val.logo) setLogoSrc(val.logo);
+        }
+      })
+      .catch(() => setMessage({ type: 'error', text: 'Ошибка загрузки брендинга' }))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 500 * 1024) {
+      setMessage({ type: 'error', text: 'Файл слишком большой. Максимум 500 КБ.' });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setLogoSrc(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const res = await fetch('/api/admin/settings/branding', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ value: { companyName, logo: logoSrc } }),
+      });
+      const data = await res.json();
+      if (data?.success) {
+        setMessage({ type: 'success', text: 'Брендинг сохранён' });
+      } else {
+        setMessage({ type: 'error', text: data?.error || 'Ошибка сохранения' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Ошибка сети' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-20">
+        <Loader2 size={32} className="animate-spin text-purple-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex items-start gap-4">
+        <button onClick={onBack} className="flex items-center justify-center w-10 h-10 mt-1 rounded-xl border border-gray-200 text-gray-400 hover:text-purple-600 hover:border-purple-200 hover:bg-purple-50 transition-all shrink-0">
+          <ChevronLeft size={20} />
+        </button>
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Брендинг</h1>
+          <p className="text-slate-500 text-sm mt-1">Логотип компании и название портала</p>
+        </div>
+      </div>
+
+      {message && (
+        <div className={`flex items-center gap-3 px-6 py-4 rounded-2xl border shadow-lg ${
+          message.type === 'success'
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+            : 'bg-red-50 border-red-200 text-red-700'
+        }`}>
+          {message.type === 'success' ? <CheckCircle2 size={22} /> : <AlertCircle size={22} />}
+          <span className="text-sm font-bold">{message.text}</span>
+          <button onClick={() => setMessage(null)} className="ml-auto p-1 rounded-lg hover:bg-black/5">&times;</button>
+        </div>
+      )}
+
+      <Section title="Логотип" icon={<Building2 size={18} className="text-purple-600" />}>
+        <div className="flex items-start gap-6">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden bg-gray-50">
+              {logoSrc ? (
+                <img src={logoSrc} alt="Логотип" className="w-full h-full object-contain" />
+              ) : (
+                <span className="text-[10px] text-gray-400 font-bold text-center px-2">Нет логотипа</span>
+              )}
+            </div>
+            <label className="px-4 py-2 bg-purple-600 text-white text-xs font-bold rounded-xl hover:bg-purple-700 cursor-pointer transition-colors">
+              Загрузить
+              <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={handleFileUpload} className="hidden" />
+            </label>
+            {logoSrc && (
+              <button onClick={() => setLogoSrc('')} className="text-[11px] text-red-500 font-bold hover:underline">
+                Удалить
+              </button>
+            )}
+          </div>
+          <div className="flex-1 text-xs text-gray-400 leading-relaxed">
+            <p className="font-bold mb-1">Рекомендации:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Формат: PNG, WebP или SVG</li>
+              <li>Максимум 500 КБ</li>
+              <li>Квадратное изображение (1:1)</li>
+              <li>Прозрачный фон — предпочтительно</li>
+            </ul>
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Название компании" icon={<Info size={18} className="text-purple-600" />}>
+        <Field label="Название в шапке портала">
+          <input
+            type="text"
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+            maxLength={100}
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all"
+          />
+        </Field>
+      </Section>
+
+      <div className="flex justify-end pt-4 border-t border-gray-100">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="group relative flex items-center justify-center px-10 py-4 min-w-[240px] bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:from-gray-300 disabled:to-gray-300 text-white font-bold text-sm tracking-wider uppercase rounded-2xl transition-all duration-300 active:scale-[0.97] disabled:active:scale-100 shadow-lg shadow-purple-200/60 hover:shadow-xl hover:shadow-purple-300/40 disabled:shadow-none overflow-hidden"
+        >
+          <span className={`absolute inset-0 flex items-center justify-center gap-3 transition-all duration-200 ${
+            saving ? 'opacity-0 scale-75' : 'opacity-100 scale-100'
+          }`}>
+            <Save size={18} />
+            <span>Сохранить брендинг</span>
+          </span>
+          <span className={`absolute inset-0 flex items-center justify-center gap-3 transition-all duration-200 ${
+            saving ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+          }`}>
+            <Loader2 size={18} className="animate-spin" />
+            <span>Сохранение...</span>
+          </span>
+          <span className="invisible inline-flex items-center gap-3">
+            <Save size={18} />
+            <span>Сохранить брендинг</span>
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // ─── AdminSettings (роутер) ────────────────────────────
 
 const AdminSettings = () => {
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
 
+  if (selectedTool === 'branding') {
+    return <BrandingEditor onBack={() => setSelectedTool(null)} />;
+  }
   if (selectedTool === 'contacts') {
     return <ContactsEditor onBack={() => setSelectedTool(null)} />;
   }
