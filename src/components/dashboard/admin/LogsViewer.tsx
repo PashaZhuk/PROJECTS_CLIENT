@@ -402,10 +402,10 @@ const LogsViewer = () => {
         <button
           onClick={handleDownload}
           disabled={downloading}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm font-bold"
+          className="flex items-center justify-center p-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50"
+          title="Скачать логи за выбранный период"
         >
-          <Download size={16} />
-          {downloading ? 'Скачивание...' : 'Скачать'}
+          <Download size={16} className={downloading ? 'animate-pulse' : ''} />
         </button>
 
         {/* Level buttons + Refresh */}
