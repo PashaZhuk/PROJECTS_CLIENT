@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2B Portal — Документация проекта</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --sidebar-w: 280px;
+  --accent: #2563eb;
+  --accent-light: #dbeafe;
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --green: #16a34a;
+  --amber: #d97706;
+  --rose: #e11d48;
+  --cyan: #0891b2;
+  --violet: #7c3aed;
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: #1e293b;
+  color: #e2e8f0;
+  overflow-y: auto;
+  z-index: 100;
+  padding: 0;
+}
+.sidebar-header {
+  padding: 20px 16px;
+  border-bottom: 1px solid #334155;
+}
+.sidebar-header h1 { font-size: 16px; font-weight: 700; color: #fff; }
+.sidebar-header p { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+.sidebar-nav { padding: 8px 0; }
+.sidebar-nav a {
+  display: block;
+  padding: 8px 16px 8px 20px;
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 13px;
+  border-left: 3px solid transparent;
+  transition: all .15s;
+}
+.sidebar-nav a:hover, .sidebar-nav a.active {
+  color: #fff;
+  background: rgba(255,255,255,.05);
+}
+.sidebar-nav a.active { border-left-color: var(--accent); color: #60a5fa; }
+.sidebar-nav .section-label {
+  padding: 12px 16px 4px 20px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #64748b;
+  font-weight: 600;
+}
+.sidebar-nav a.sub { padding-left: 28px; font-size: 12.5px; color: var(--text-muted); }
+
+/* Main */
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  max-width: 960px;
+  padding: 40px 48px 80px;
+}
+.main h2 { font-size: 24px; font-weight: 700; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); }
+.main h2:first-child { margin-top: 0; }
+.main h3 { font-size: 18px; font-weight: 600; margin: 28px 0 12px; color: #334155; }
+.main h4 { font-size: 15px; font-weight: 600; margin: 20px 0 8px; }
+.main p { margin: 8px 0; color: #475569; }
+.main ul, .main ol { margin: 8px 0; padding-left: 24px; }
+.main li { margin: 4px 0; }
+
+/* Cards */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin: 16px 0;
+}
+.card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.card-dot { width: 10px; height: 10px; border-radius: 50%; }
+.card-dot.cyan { background: var(--cyan); }
+.card-dot.green { background: var(--green); }
+.card-dot.violet { background: var(--violet); }
+.card-dot.rose { background: var(--rose); }
+.card-dot.amber { background: var(--amber); }
+.card h4 { margin: 0; font-size: 14px; }
+.card ul { margin: 4px 0; padding-left: 16px; }
+.card ul li { font-size: 13px; color: #475569; margin: 3px 0; }
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13px;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  text-align: left;
+}
+th {
+  background: #f1f5f9;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+tr:hover { background: #f8fafc; }
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #334155;
+}
+pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 16px 20px;
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  overflow-x: auto;
+  margin: 12px 0;
+  line-height: 1.5;
+}
+pre .comment { color: #64748b; }
+pre .keyword { color: #38bdf8; }
+pre .string { color: #a5d6ff; }
+pre .type { color: #c084fc; }
+pre .func { color: #fbbf24; }
+
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.badge.post { background: #dcfce7; color: #15803d; }
+.badge.get { background: #dbeafe; color: #1d4ed8; }
+.badge.patch { background: #fef3c7; color: #b45309; }
+.badge.put { background: #f3e8ff; color: #7c3aed; }
+.badge.delete { background: #fce7f3; color: #be123c; }
+
+/* Архитектурная SVG схема */
+.diagram-container {
+  background: #020617;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  overflow-x: auto;
+}
+.diagram-container svg { display: block; margin: 0 auto; }
+
+/* Tag cloud */
+.tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin: 2px; font-weight: 500; }
+.tag.ts { background: #dbeafe; color: #1d4ed8; }
+.tag.react { background: #e0f2fe; color: #0369a1; }
+.tag.node { background: #dcfce7; color: #15803d; }
+.tag.db { background: #f3e8ff; color: #7c3aed; }
+.tag.auth { background: #fce7f3; color: #be123c; }
+.tag.socket { background: #fef9c3; color: #a16207; }
+.tag.test { background: #f0fdf4; color: #16a34a; }
+
+.callout {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+  font-size: 13px;
+  border-left: 4px solid;
+}
+.callout.info { background: #eff6ff; border-color: #3b82f6; }
+.callout.warn { background: #fef9c3; border-color: #eab308; }
+.callout.success { background: #f0fdf4; border-color: #22c55e; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+
+.flow-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.flow-row .arrow { color: var(--text-muted); font-size: 18px; }
+.flow-step {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.flow-step.client { background: #dbeafe; color: #1d4ed8; }
+.flow-step.server { background: #dcfce7; color: #15803d; }
+.flow-step.db { background: #f3e8ff; color: #7c3aed; }
+.flow-step.external { background: #fef3c7; color: #b45309; }
+.flow-step.socket { background: #fce7f3; color: #be123c; }
+
+.hamburger { display: none; position: fixed; top: 12px; left: 12px; z-index: 200; background: #1e293b; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 20px; }
+@media (max-width: 768px) {
+  .hamburger { display: block; }
+  .sidebar { transform: translateX(-100%); transition: transform .2s; }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; padding: 40px 20px 60px; padding-top: 60px; }
+}
+</style>
+</head>
+<body>
+
+<button class="hamburger" id="hamburger">☰</button>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h1>B2B Portal</h1>
+    <p>IPMATIKA Bel — документация проекта</p>
+    <div style="margin-top:8px;">
+      <span class="tag ts">TypeScript</span>
+      <span class="tag react">React 19</span>
+      <span class="tag node">Express 5</span>
+      <span class="tag db">PostgreSQL 18</span>
+      <span class="tag auth">JWT</span>
+      <span class="tag socket">Socket.IO</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="section-label">Обзор</div>
+    <a href="#overview" class="active">Общая архитектура</a>
+    <a href="#stack" class="sub">Стек технологий</a>
+
+    <div class="section-label">Архитектура</div>
+    <a href="#diagram-arch">Схема архитектуры</a>
+    <a href="#data-models">Модели данных</a>
+    <a href="#auth-scheme">Схема авторизации</a>
+    <div class="section-label">API</div>
+    <a href="#endpoints">Эндпоинты</a>
+    <a href="#socketio">Socket.IO</a>
+
+    <div class="section-label">Data Flow</div>
+    <a href="#auth-flow">Аутентификация</a>
+    <a href="#auth-flow" class="sub">1. Логин · 2FA · Refresh</a>
+    <a href="#flow-users" class="sub">2. Пользователи</a>
+    <a href="#flow-projects" class="sub">3. Проекты</a>
+    <a href="#flow-chat" class="sub">4. Чат</a>
+    <a href="#flow-companies" class="sub">5. Компании</a>
+    <a href="#flow-manager" class="sub">6. Менеджер</a>
+    <a href="#flow-admin" class="sub">7. Администрирование</a>
+    <a href="#flow-socket" class="sub">8. Socket.IO</a>
+
+    <div class="section-label">Клиент</div>
+    <a href="#client-structure">Структура React SPA</a>
+    <a href="#state">Стейт-менеджмент</a>
+
+    <div class="section-label">Конфигурация</div>
+    <a href="#config">Переменные окружения</a>
+    <a href="#setup">Запуск проекта</a>
+    <a href="#tests">Тестирование</a>
+  </nav>
+</aside>
+
+<!-- Main Content -->
+<main class="main">
+
+<!-- ========== OVERVIEW ========== -->
+<h2 id="overview">Общая архитектура</h2>
+<p>
+  B2B-портал для партнёров компании <strong>IPMATIKA Bel</strong>.
+  Позволяет партнёрам создавать заявки на проекты, общаться с менеджерами в чате,
+  отслеживать статусы. Менеджеры управляют проектами, оборудованием, рассылками.
+  Администраторы управляют пользователями, настройками, БД и бэкапами.
+</p>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><div class="card-dot cyan"></div><h4>Frontend</h4></div>
+    <ul>
+      <li>React 19 + Vite 7 + TypeScript 5.9</li>
+      <li>Tailwind CSS 4 + Roboto</li>
+      <li>TanStack Query v5 (серверный кэш)</li>
+      <li>Zustand v5 (локальный стейт: auth, chat)</li>
+      <li>ky (HTTP-клиент с поддержкой httpOnly cookies)</li>
+      <li>Socket.IO client (чат, онлайн)</li>
+      <li>Zod v4 (валидация)</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-dot green"></div><h4>Backend</h4></div>
+    <ul>
+      <li>Express 5 + TypeScript 5.9</li>
+      <li>Prisma 7 ORM</li>
+      <li>PostgreSQL 18 (Docker)</li>
+      <li>Socket.IO 4 (чат, events, онлайн)</li>
+      <li>JWT (access 15m) + Refresh Rotation (7d)</li>
+      <li>2FA SMS (A1 Smart Sender)</li>
+      <li>Helmet CSP, rate limiting</li>
+      <li>Winston + Daily Rotate File (логи)</li>
+    </ul>
+  </div>
+</div>
+
+<h3 id="stack">Стек технологий</h3>
+<table>
+  <tr><th>Компонент</th><th>Технология</th><th>Версия</th></tr>
+  <tr><td>Фреймворк клиента</td><td>React</td><td>19.x</td></tr>
+  <tr><td>Сборка</td><td>Vite</td><td>7.x</td></tr>
+  <tr><td>CSS</td><td>Tailwind CSS</td><td>4.x</td></tr>
+  <tr><td>HTTP клиент</td><td>ky</td><td>1.x</td></tr>
+  <tr><td>Серверный стейт</td><td>TanStack Query</td><td>5.x</td></tr>
+  <tr><td>Локальный стейт</td><td>Zustand</td><td>5.x</td></tr>
+  <tr><td>Валидация</td><td>Zod</td><td>4.x</td></tr>
+  <tr><td>Фреймворк сервера</td><td>Express</td><td>5.x</td></tr>
+  <tr><td>ORM</td><td>Prisma</td><td>7.x</td></tr>
+  <tr><td>База данных</td><td>PostgreSQL</td><td>18.x</td></tr>
+  <tr><td>Realtime</td><td>Socket.IO</td><td>4.x</td></tr>
+  <tr><td>Аутентификация</td><td>JWT + Refresh Rotation</td><td>—</td></tr>
+  <tr><td>2FA</td><td>A1 Smart Sender (SMS)</td><td>—</td></tr>
+  <tr><td>Тесты</td><td>Vitest + supertest + testing-library</td><td>—</td></tr>
+</table>
+
+<!-- ========== ARCHITECTURE DIAGRAM ========== -->
+<h2 id="diagram-arch">Схема архитектуры</h2>
+
+<div class="diagram-container">
+<svg viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+    </pattern>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arrow-cyan" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#22d3ee"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#34d399"/>
+    </marker>
+    <marker id="arrow-violet" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#a78bfa"/>
+    </marker>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="520" fill="url(#grid)"/>
+
+  <!-- Boundaries -->
+  <rect x="20" y="10" width="420" height="500" rx="12" fill="rgba(8,51,68,0.08)" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="8,4" opacity="0.5"/>
+  <text x="40" y="36" fill="#22d3ee" font-size="11" font-family="JetBrains Mono, monospace" opacity="0.8">▼ Browser (Client)</text>
+
+  <rect x="460" y="10" width="420" height="290" rx="12" fill="rgba(6,78,59,0.08)" stroke="#34d399" stroke-width="1.5" stroke-dasharray="8,4" opacity="0.5"/>
+  <text x="480" y="36" fill="#34d399" font-size="11" font-family="JetBrains Mono, monospace" opacity="0.8">▼ Server (Express 5)</text>
+
+  <rect x="460" y="320" width="420" height="190" rx="12" fill="rgba(76,29,149,0.08)" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="8,4" opacity="0.5"/>
+  <text x="480" y="346" fill="#a78bfa" font-size="11" font-family="JetBrains Mono, monospace" opacity="0.8">▼ Data Layer</text>
+
+  <!-- Client components -->
+  <g transform="translate(50, 60)">
+    <rect width="360" height="48" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/>
+    <rect width="360" height="48" rx="6" fill="rgba(8,51,68,0.4)"/>
+    <text x="16" y="30" fill="#e2e8f0" font-size="13" font-family="JetBrains Mono, monospace" font-weight="500">React SPA</text>
+    <text x="200" y="30" fill="#94a3b8" font-size="9" font-family="JetBrains Mono, monospace">Vite 7 · Tailwind 4</text>
+  </g>
+
+  <g transform="translate(50, 130)">
+    <rect width="170" height="48" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/>
+    <rect width="170" height="48" rx="6" fill="rgba(8,51,68,0.3)"/>
+    <text x="12" y="30" fill="#e2e8f0" font-size="11" font-family="JetBrains Mono, monospace">TanStack Query</text>
+    <text x="12" y="42" fill="#64748b" font-size="8" font-family="JetBrains Mono, monospace">Server state · staleTime: 30s</text>
+  </g>
+  <g transform="translate(240, 130)">
+    <rect width="170" height="48" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/>
+    <rect width="170" height="48" rx="6" fill="rgba(8,51,68,0.3)"/>
+    <text x="12" y="30" fill="#e2e8f0" font-size="11" font-family="JetBrains Mono, monospace">Zustand v5</text>
+    <text x="12" y="42" fill="#64748b" font-size="8" font-family="JetBrains Mono, monospace">Local state: auth, chat</text>
+  </g>
+
+  <g transform="translate(50, 200)">
+    <rect width="170" height="48" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/>
+    <rect width="170" height="48" rx="6" fill="rgba(8,51,68,0.3)"/>
+    <text x="12" y="30" fill="#e2e8f0" font-size="11" font-family="JetBrains Mono, monospace">ky (HTTP)</text>
+    <text x="12" y="42" fill="#64748b" font-size="8" font-family="JetBrains Mono, monospace">credentials: include</text>
+  </g>
+  <g transform="translate(240, 200)">
+    <rect width="170" height="48" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/>
+    <rect width="170" height="48" rx="6" fill="rgba(8,51,68,0.3)"/>
+    <text x="12" y="30" fill="#e2e8f0" font-size="11" font-family="JetBrains Mono, monospace">Socket.IO client</text>
+    <text x="12" y="42" fill="#64748b" font-size="8" font-family="JetBrains Mono, monospace">WebSocket + polling</text>
+  </g>
+
+  <!-- Server components -->
+  <g transform="translate(490, 60)">
+    <rect width="360" height="48" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+    <rect width="360" height="48" rx="6" fill="rgba(6,78,59,0.4)"/>
+    <text x="16" y="30" fill="#e2e8f0" font-size="13" font-family="JetBrains Mono, monospace" font-weight="500">Express 5 Server</text>
+    <text x="200" y="30" fill="#94a3b8" font-size="9" font-family="JetBrains Mono, monospace">PORT 5001 · httpOnly cookies</text>
+  </g>
+
+  <g transform="translate(490, 130)">
+    <rect width="170" height="48" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+    <rect width="170" height="48" rx="6" fill="rgba(6,78,59,0.3)"/>
+    <text x="12" y="30" fill="#e2e8f0" font-size="11" font-family="JetBrains Mono, monospace">Routes & Controllers</text>
+    <text x="12" y="42" fill="#64748b" font-size="8" font-family="JetBrains Mono, monospace">9 route files · ~45 endpoints</text>
+  </g>
+  <g transform="translate(680, 130)">
+    <rect width="170" height="48" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+    <rect width="170" height="48" rx="6" fill="rgba(6,78,59,0.3)"/>
+    <text x="12" y="30" fill="#e2e8f0" font-size="11" font-family="JetBrains Mono, monospace">Middleware</text>
+    <text x="12" y="42" fill="#64748b" font-size="8" font-family="JetBrains Mono, monospace">auth · admin · manager · validate</text>
+  </g>
+
+  <g transform="translate(490, 200)">
+    <rect width="170" height="48" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+    <rect width="170" height="48" rx="6" fill="rgba(6,78,59,0.3)"/>
+    <text x="12" y="30" fill="#e2e8f0" font-size="11" font-family="JetBrains Mono, monospace">Services</text>
+    <text x="12" y="42" fill="#64748b" font-size="8" font-family="JetBrains Mono, monospace">auth · user · project · chat · company</text>
+  </g>
+  <g transform="translate(680, 200)">
+    <rect width="170" height="48" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+    <rect width="170" height="48" rx="6" fill="rgba(6,78,59,0.3)"/>
+    <text x="12" y="30" fill="#e2e8f0" font-size="11" font-family="JetBrains Mono, monospace">Socket.IO server</text>
+    <text x="12" y="42" fill="#64748b" font-size="8" font-family="JetBrains Mono, monospace">5 rooms · 15+ events</text>
+  </g>
+
+  <!-- External -->
+  <g transform="translate(490, 270)">
+    <rect width="170" height="40" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5"/>
+    <rect width="170" height="40" rx="6" fill="rgba(120,53,15,0.3)"/>
+    <text x="12" y="24" fill="#e2e8f0" font-size="10" font-family="JetBrains Mono, monospace">A1 Smart Sender</text>
+    <text x="12" y="36" fill="#64748b" font-size="8" font-family="JetBrains Mono, monospace">SMS (2FA)</text>
+  </g>
+  <g transform="translate(680, 270)">
+    <rect width="170" height="40" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5"/>
+    <rect width="170" height="40" rx="6" fill="rgba(120,53,15,0.3)"/>
+    <text x="12" y="24" fill="#e2e8f0" font-size="10" font-family="JetBrains Mono, monospace">SMTP</text>
+    <text x="12" y="36" fill="#64748b" font-size="8" font-family="JetBrains Mono, monospace">Email (broadcast, welcome)</text>
+  </g>
+
+  <!-- Data Layer -->
+  <g transform="translate(490, 360)">
+    <rect width="360" height="55" rx="6" fill="#0f172a" stroke="#a78bfa" stroke-width="1.5"/>
+    <rect width="360" height="55" rx="6" fill="rgba(76,29,149,0.4)"/>
+    <text x="16" y="24" fill="#e2e8f0" font-size="12" font-family="JetBrains Mono, monospace">Prisma 7 ORM</text>
+    <text x="300" y="24" fill="#64748b" font-size="9" font-family="JetBrains Mono, monospace">9 tables</text>
+    <text x="16" y="42" fill="#94a3b8" font-size="9" font-family="JetBrains Mono, monospace">User · Company · Project · Message · RefreshToken</text>
+  </g>
+
+  <g transform="translate(490, 435)">
+    <rect width="360" height="55" rx="6" fill="#0f172a" stroke="#a78bfa" stroke-width="1.5"/>
+    <rect width="360" height="55" rx="6" fill="rgba(76,29,149,0.4)"/>
+    <text x="16" y="24" fill="#e2e8f0" font-size="12" font-family="JetBrains Mono, monospace">PostgreSQL 18 (Docker)</text>
+    <text x="16" y="42" fill="#94a3b8" font-size="9" font-family="JetBrains Mono, monospace">b2b_portal · Volume: postgres_data_v18 · PORT 5432</text>
+  </g>
+
+  <!-- Arrows -->
+  <!-- Client → Server HTTP -->
+  <line x1="220" y1="224" x2="490" y2="84" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrow-cyan)" stroke-dasharray="4,3"/>
+  <text x="310" y="170" fill="#22d3ee" font-size="8" font-family="JetBrains Mono, monospace" opacity="0.7">HTTP (json + cookies)</text>
+
+  <!-- Client → Server Socket.IO -->
+  <line x1="325" y1="248" x2="490" y2="224" stroke="#fb7185" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,3"/>
+  <text x="345" y="242" fill="#fb7185" font-size="8" font-family="JetBrains Mono, monospace" opacity="0.7">WebSocket</text>
+
+  <!-- Server → Prisma -->
+  <line x1="670" y1="248" x2="670" y2="360" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrow-violet)"/>
+
+  <!-- Prisma → PostgreSQL -->
+  <line x1="670" y1="415" x2="670" y2="435" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrow-violet)"/>
+
+  <!-- Server → External -->
+  <line x1="575" y1="248" x2="575" y2="270" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <g transform="translate(50, 460)">
+    <rect width="350" height="44" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+    <circle cx="20" cy="16" r="4" fill="#22d3ee"/>
+    <text x="30" y="20" fill="#94a3b8" font-size="9" font-family="JetBrains Mono, monospace">Frontend</text>
+    <circle cx="120" cy="16" r="4" fill="#34d399"/>
+    <text x="130" y="20" fill="#94a3b8" font-size="9" font-family="JetBrains Mono, monospace">Backend</text>
+    <circle cx="220" cy="16" r="4" fill="#a78bfa"/>
+    <text x="230" y="20" fill="#94a3b8" font-size="9" font-family="JetBrains Mono, monospace">Database / ORM</text>
+    <circle cx="20" cy="34" r="4" fill="#fbbf24"/>
+    <text x="30" y="38" fill="#94a3b8" font-size="9" font-family="JetBrains Mono, monospace">External</text>
+    <circle cx="140" cy="34" r="4" fill="#fb7185"/>
+    <text x="150" y="38" fill="#94a3b8" font-size="9" font-family="JetBrains Mono, monospace">Socket.IO</text>
+  </g>
+</svg>
+</div>
+
+
+<!-- ========== DATA MODELS ========== -->
+<h2 id="data-models">Модели данных</h2>
+
+<p>10 таблиц в PostgreSQL, управляемых через Prisma 7 ORM.</p>
+
+<h3>User</h3>
+<table>
+  <tr><th>Поле</th><th>Тип</th><th>Описание</th></tr>
+  <tr><td>id</td><td>Int (PK)</td><td>Автоинкремент</td></tr>
+  <tr><td>email</td><td>String (unique)</td><td>Логин</td></tr>
+  <tr><td>password</td><td>String</td><td>bcrypt хеш</td></tr>
+  <tr><td>role</td><td>Role enum</td><td>ADMIN / MANAGER / USER</td></tr>
+  <tr><td>name</td><td>String?</td><td>ФИО (для MANAGER/ADMIN)</td></tr>
+  <tr><td>companyName</td><td>String?</td><td>Название компании (для USER)</td></tr>
+  <tr><td>unp</td><td>String? (unique)</td><td>УНП</td></tr>
+  <tr><td>phone</td><td>String? (unique)</td><td>Телефон (для 2FA SMS)</td></tr>
+  <tr><td>mustChangePassword</td><td>Boolean</td><td>Принудительная смена пароля</td></tr>
+  <tr><td>isBlocked</td><td>Boolean</td><td>Блокировка админом</td></tr>
+  <tr><td>failedLoginAttempts</td><td>Int</td><td>Счётчик брутфорса</td></tr>
+  <tr><td>lockUntil</td><td>DateTime?</td><td>Блокировка пароля (5 попыток)</td></tr>
+  <tr><td>currentSessionId</td><td>String?</td><td>UUID текущей сессии</td></tr>
+  <tr><td>twoFactorCodeHash</td><td>String?</td><td>bcrypt хеш кода 2FA</td></tr>
+  <tr><td>twoFactorAttempts</td><td>Int</td><td>Попытки 2FA</td></tr>
+  <tr><td>twoFactorLockUntil</td><td>DateTime?</td><td>Блокировка 2FA (3 попытки)</td></tr>
+  <tr><td colspan="3"><em>Связи: projects (1:N), messages (1:N), refreshTokens (1:N), eventLogs (1:N)</em></td></tr>
+</table>
+
+<h3>Project</h3>
+<table>
+  <tr><th>Поле</th><th>Тип</th><th>Описание</th></tr>
+  <tr><td>id</td><td>Int (PK)</td><td>Автоинкремент</td></tr>
+  <tr><td>number</td><td>String? (unique)</td><td>Номер проекта</td></tr>
+  <tr><td>status</td><td>ProjectStatus enum</td><td>PENDING → IN_PROGRESS → APPROVED/REJECTED/REVISION/CLOSED</td></tr>
+  <tr><td>formType</td><td>String</td><td>Тип формы</td></tr>
+  <tr><td>partnerId</td><td>Int → User</td><td>Владелец проекта</td></tr>
+  <tr><td>lastEditorId</td><td>Int? → User</td><td>Кто последним редактировал</td></tr>
+  <tr><td>customerName</td><td>String</td><td>Имя заказчика</td></tr>
+  <tr><td>customerInn</td><td>String</td><td>УНП заказчика</td></tr>
+  <tr><td>purchaseMethod</td><td>String?</td><td>Способ закупки</td></tr>
+  <tr><td>executionDate</td><td>DateTime?</td><td>Дата исполнения</td></tr>
+  <tr><td>dynamicData</td><td>Json</td><td>Свободные поля формы</td></tr>
+</table>
+
+<h3>Другие таблицы</h3>
+<table>
+  <tr><th>Таблица</th><th>Назначение</th><th>Ключевые поля</th></tr>
+  <tr><td>Company</td><td>Справочник компаний (1С</td><td>name, unp, externalId, address, phone, email</td></tr>
+  <tr><td>RefreshToken</td><td>Refresh token rotation</td><td>tokenHash (SHA-256), userId, sessionId, expiresAt, replacedByHash (chain)</td></tr>
+  <tr><td>Message</td><td>Сообщения чата</td><td>text, projectId, senderId, isRead, createdAt</td></tr>
+  <tr><td>SiteSetting</td><td>Настройки портала</td><td>key (unique), value (Json)</td></tr>
+  <tr><td>TestEquipment</td><td>Оборудование (ведомость)</td><td>category, name, serialNumber, macAddress, status, issuedTo</td></tr>
+  <tr><td>News</td><td>Новости</td><td>title, link, imageUrl</td></tr>
+  <tr><td>BroadcastLog</td><td>Журнал рассылок</td><td>subject, message, recipients, status, sentBy</td></tr>
+  <tr><td>EventLog</td><td>История событий</td><td>action, description, entityType, entityId, userId</td></tr>
+</table>
+
+
+<!-- ========== AUTH ========== -->
+<h2 id="auth-scheme">Схема авторизации</h2>
+
+<div class="diagram-container">
+<svg viewBox="0 0 900 340" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="grid2" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+    </pattern>
+    <marker id="ar" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#94a3b8"/>
+    </marker>
+    <marker id="ar-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#fb7185"/>
+    </marker>
+  </defs>
+  <rect width="900" height="340" fill="url(#grid2)"/>
+
+  <text x="40" y="30" fill="#e2e8f0" font-size="13" font-family="JetBrains Mono, monospace" font-weight="500">Поток входа с 2FA</text>
+
+  <!-- Steps -->
+  <g transform="translate(50, 60)">
+    <rect width="200" height="36" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/>
+    <rect width="200" height="36" rx="6" fill="rgba(8,51,68,0.4)"/>
+    <text x="12" y="22" fill="#e2e8f0" font-size="10" font-family="JetBrains Mono, monospace">LoginPage</text>
+    <text x="12" y="34" fill="#64748b" font-size="8" font-family="JetBrains Mono, monospace">Email + Password</text>
+  </g>
+  <g transform="translate(320, 60)">
+    <rect width="200" height="36" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+    <rect width="200" height="36" rx="6" fill="rgba(6,78,59,0.4)"/>
+    <text x="12" y="22" fill="#e2e8f0" font-size="10" font-family="JetBrains Mono, monospace">POST /auth/login</text>
+    <text x="12" y="34" fill="#64748b" font-size="8" font-family="JetBrains Mono, monospace">bcrypt + brute-force check</text>
+  </g>
+  <g transform="translate(590, 60)">
+    <rect width="200" height="36" rx="6" fill="#0f172a" stroke="#a78bfa" stroke-width="1.5"/>
+    <rect width="200" height="36" rx="6" fill="rgba(76,29,149,0.4)"/>
+    <text x="12" y="22" fill="#e2e8f0" font-size="10" font-family="JetBrains Mono, monospace">Read User</text>
+    <text x="12" y="34" fill="#64748b" font-size="8" font-family="JetBrains Mono, monospace">findUnique by email</text>
+  </g>
+
+  <!-- Arrow 1→2 -->
+  <line x1="250" y1="78" x2="320" y2="78" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="265" y="72" fill="#64748b" font-size="7" font-family="JetBrains Mono, monospace">POST</text>
+  <!-- Arrow 2→3 -->
+  <line x1="520" y1="78" x2="590" y2="78" stroke="#34d399" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- 2FA Decision -->
+  <g transform="translate(50, 140)">
+    <rect width="360" height="40" rx="8" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <rect width="360" height="40" rx="8" fill="rgba(120,53,15,0.3)"/>
+    <text x="16" y="24" fill="#e2e8f0" font-size="11" font-family="JetBrains Mono, monospace">role === 'USER' → 2FA Required</text>
+    <text x="16" y="38" fill="#64748b" font-size="8" font-family="JetBrains Mono, monospace">MANAGER/ADMIN → Login OK (JWT + refresh cookie)</text>
+  </g>
+
+  <!-- Arrow down to 2FA -->
+  <line x1="150" y1="96" x2="150" y2="140" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="80" y="124" fill="#64748b" font-size="7" font-family="JetBrains Mono, monospace">USER detected</text>
+
+  <!-- 2FA Flow -->
+  <g transform="translate(50, 210)">
+    <rect width="140" height="40" rx="6" fill="#0f172a" stroke="#fb7185" stroke-width="1.5"/>
+    <rect width="140" height="40" rx="6" fill="rgba(136,19,55,0.3)"/>
+    <text x="8" y="24" fill="#e2e8f0" font-size="9" font-family="JetBrains Mono, monospace">POST /2fa/send</text>
+    <text x="8" y="38" fill="#64748b" font-size="7" font-family="JetBrains Mono, monospace">rate: 3/min</text>
+  </g>
+  <g transform="translate(240, 210)">
+    <rect width="140" height="40" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5"/>
+    <rect width="140" height="40" rx="6" fill="rgba(120,53,15,0.3)"/>
+    <text x="8" y="24" fill="#e2e8f0" font-size="9" font-family="JetBrains Mono, monospace">A1 Smart Sender</text>
+    <text x="8" y="38" fill="#64748b" font-size="7" font-family="JetBrains Mono, monospace">SMS: 6-значный код</text>
+  </g>
+  <g transform="translate(440, 210)">
+    <rect width="140" height="40" rx="6" fill="#0f172a" stroke="#fb7185" stroke-width="1.5"/>
+    <rect width="140" height="40" rx="6" fill="rgba(136,19,55,0.3)"/>
+    <text x="8" y="24" fill="#e2e8f0" font-size="9" font-family="JetBrains Mono, monospace">POST /2fa/verify</text>
+    <text x="8" y="38" fill="#64748b" font-size="7" font-family="JetBrains Mono, monospace">bcrypt + 3 attempts</text>
+  </g>
+  <g transform="translate(640, 210)">
+    <rect width="180" height="40" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+    <rect width="180" height="40" rx="6" fill="rgba(6,78,59,0.4)"/>
+    <text x="12" y="24" fill="#e2e8f0" font-size="10" font-family="JetBrains Mono, monospace">generateTokens()</text>
+    <text x="12" y="38" fill="#64748b" font-size="8" font-family="JetBrains Mono, monospace">JWT 15m + refresh UUID 7d</text>
+  </g>
+
+  <!-- Arrows between 2FA steps -->
+  <line x1="190" y1="230" x2="240" y2="230" stroke="#fb7185" stroke-width="1.5" marker-end="url(#ar-red)"/>
+  <line x1="380" y1="230" x2="440" y2="230" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#ar)"/>
+  <line x1="580" y1="230" x2="640" y2="230" stroke="#fb7185" stroke-width="1.5" marker-end="url(#ar-red)"/>
+
+  <!-- Refresh Token Rotation -->
+  <g transform="translate(50, 280)">
+    <rect width="800" height="50" rx="8" fill="#0f172a" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4,3"/>
+    <rect width="800" height="50" rx="8" fill="rgba(76,29,149,0.15)"/>
+    <text x="16" y="22" fill="#c084fc" font-size="11" font-family="JetBrains Mono, monospace">Refresh Token Rotation</text>
+    <text x="16" y="38" fill="#94a3b8" font-size="9" font-family="JetBrains Mono, monospace">Каждый /auth/refresh → отзыв старого tokenHash (SHA-256) + создание нового. Reuse detection: если пришёл уже revoked → все токены пользователя отзываются.</text>
+  </g>
+</svg>
+</div>
+
+<!-- old "Поток: вход пользователя" moved to Data Flow section below -->
+
+
+<!-- ========== API ENDPOINTS ========== -->
+<h2 id="endpoints">API — Эндпоинты</h2>
+
+<h3>Auth — <code>/api/auth</code></h3>
+<table>
+  <tr><th>Метод</th><th>Путь</th><th>Доступ</th><th>Описание</th></tr>
+  <tr><td><span class="badge post">POST</span></td><td>/register</td><td>ADMIN</td><td>Создать пользователя (welcome email)</td></tr>
+  <tr><td><span class="badge post">POST</span></td><td>/login</td><td>—</td><td>Вход с паролем (+ брутфорс защита)</td></tr>
+  <tr><td><span class="badge post">POST</span></td><td>/logout</td><td>—</td><td>Выход + отзыв refresh токенов</td></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/profile</td><td>auth</td><td>Профиль пользователя</td></tr>
+  <tr><td><span class="badge post">POST</span></td><td>/refresh</td><td>—</td><td>Ротация refresh token</td></tr>
+  <tr><td><span class="badge post">POST</span></td><td>/forgot-password</td><td>—</td><td>Сброс пароля</td></tr>
+  <tr><td><span class="badge post">POST</span></td><td>/reset-password</td><td>—</td><td>Сброс по токену</td></tr>
+  <tr><td><span class="badge post">POST</span></td><td>/change-password</td><td>auth</td><td>Смена пароля</td></tr>
+  <tr><td><span class="badge post">POST</span></td><td>/2fa/send</td><td>—</td><td>Отправить 2FA код (rate: 3/мин)</td></tr>
+  <tr><td><span class="badge post">POST</span></td><td>/2fa/verify</td><td>—</td><td>Проверить 2FA код</td></tr>
+</table>
+
+<h3>User — <code>/api/user</code></h3>
+<table>
+  <tr><th>Метод</th><th>Путь</th><th>Доступ</th><th>Описание</th></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/users</td><td>ADMIN</td><td>Список (пагинация, поиск)</td></tr>
+  <tr><td><span class="badge delete">DEL</span></td><td>/users/:id</td><td>ADMIN</td><td>Удалить пользователя</td></tr>
+  <tr><td><span class="badge patch">PATCH</span></td><td>/users/:id/block</td><td>ADMIN</td><td>Блокировка/разблокировка</td></tr>
+  <tr><td><span class="badge post">POST</span></td><td>/change-password</td><td>auth</td><td>Смена пароля (admin)</td></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/admin/stats</td><td>ADMIN</td><td>Статистика портала</td></tr>
+</table>
+
+<h3>Projects — <code>/api/projects</code></h3>
+<table>
+  <tr><th>Метод</th><th>Путь</th><th>Доступ</th><th>Описание</th></tr>
+  <tr><td><span class="badge post">POST</span></td><td>/</td><td>auth</td><td>Создать проект (USER)</td></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/</td><td>auth</td><td>Список проектов</td></tr>
+  <tr><td><span class="badge put">PUT</span></td><td>/:id</td><td>auth</td><td>Обновить проект</td></tr>
+  <tr><td><span class="badge patch">PATCH</span></td><td>/:id/status</td><td>MANAGER</td><td>Изменить статус</td></tr>
+</table>
+
+<h3>Chat — <code>/api/chat</code> (rate: 30/мин)</h3>
+<table>
+  <tr><th>Метод</th><th>Путь</th><th>Доступ</th><th>Описание</th></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/:projectId/messages</td><td>auth</td><td>История чата</td></tr>
+  <tr><td><span class="badge post">POST</span></td><td>/:projectId/messages</td><td>auth</td><td>Отправить сообщение</td></tr>
+  <tr><td><span class="badge patch">PATCH</span></td><td>/:projectId/read</td><td>auth</td><td>Отметить прочитанным</td></tr>
+</table>
+
+<h3>Admin — <code>/api/admin</code> (ADMIN only)</h3>
+<table>
+  <tr><th>Метод</th><th>Путь</th><th>Описание</th></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/logs</td><td>Логи сервера (date/dateFrom+dateTo, level, search)</td></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/logs/download</td><td>Скачать логи за период (dateFrom+dateTo, level) → JSON file</td></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/settings</td><td>Все настройки портала</td></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/settings/:key</td><td>Получить настройку (admin)</td></tr>
+  <tr><td><span class="badge put">PUT</span></td><td>/settings/:key</td><td>Обновить настройку</td></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/db/tables</td><td>Список таблиц (whitelist)</td></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/db/tables/:name</td><td>Данные таблицы</td></tr>
+  <tr><td><span class="badge put">PUT</span></td><td>/db/tables/:name/:id</td><td>Редактировать строку</td></tr>
+  <tr><td><span class="badge post">POST</span></td><td>/backup/create</td><td>Создать бэкап pg_dump</td></tr>
+  <tr><td><span class="badge post">POST</span></td><td>/backup/upload</td><td>Загрузить .sql</td></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/backup/list</td><td>Список бэкапов</td></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/backup/download/:name</td><td>Скачать бэкап</td></tr>
+  <tr><td><span class="badge delete">DEL</span></td><td>/backup/:name</td><td>Удалить бэкап</td></tr>
+  <tr><td><span class="badge post">POST</span></td><td>/backup/restore/:name</td><td>Восстановить из бэкапа</td></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/backup/schedule</td><td>Расписание бэкапов</td></tr>
+  <tr><td><span class="badge put">PUT</span></td><td>/backup/schedule</td><td>Установить cron</td></tr>
+</table>
+
+<h3>Manager — <code>/api/manager</code> (MANAGER only)</h3>
+<table>
+  <tr><th>Метод</th><th>Путь</th><th>Описание</th></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/partners</td><td>Список партнёров</td></tr>
+  <tr><td><span class="badge post">POST</span></td><td>/send-broadcast</td><td>Email рассылка</td></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/equipment</td><td>Оборудование (фильтры)</td></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/equipment/categories</td><td>Категории оборудования</td></tr>
+  <tr><td><span class="badge post">POST</span></td><td>/equipment</td><td>Добавить оборудование</td></tr>
+  <tr><td><span class="badge put">PUT</span></td><td>/equipment/:id</td><td>Изменить оборудование</td></tr>
+  <tr><td><span class="badge delete">DEL</span></td><td>/equipment/:id</td><td>Удалить оборудование</td></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/news</td><td>Управление новостями</td></tr>
+  <tr><td><span class="badge post">POST</span></td><td>/news</td><td>Создать новость</td></tr>
+  <tr><td><span class="badge delete">DEL</span></td><td>/news/:id</td><td>Удалить новость</td></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/broadcast-log</td><td>Журнал рассылок</td></tr>
+  <tr><td><span class="badge get">GET</span></td><td>/events</td><td>История событий</td></tr>
+</table>
+
+<!-- ========== SOCKET.IO ========== -->
+<h2 id="socketio">Socket.IO — Архитектура</h2>
+
+<div class="diagram-container">
+<svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="grid3" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+    </pattern>
+    <marker id="ar3" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#94a3b8"/>
+    </marker>
+    <marker id="ar3-r" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#fb7185"/>
+    </marker>
+  </defs>
+  <rect width="900" height="280" fill="url(#grid3)"/>
+
+  <!-- Client -->
+  <g transform="translate(50, 50)">
+    <rect width="180" height="70" rx="8" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/>
+    <rect width="180" height="70" rx="8" fill="rgba(8,51,68,0.3)"/>
+    <text x="12" y="24" fill="#e2e8f0" font-size="11" font-family="JetBrains Mono, monospace">React Client</text>
+    <text x="12" y="40" fill="#94a3b8" font-size="9" font-family="JetBrains Mono, monospace">Socket.IO client</text>
+    <text x="12" y="56" fill="#64748b" font-size="8" font-family="JetBrains Mono, monospace">5 reconnection attempts</text>
+  </g>
+
+  <!-- Server -->
+  <g transform="translate(340, 30)">
+    <rect width="220" height="110" rx="8" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+    <rect width="220" height="110" rx="8" fill="rgba(6,78,59,0.3)"/>
+    <text x="12" y="22" fill="#e2e8f0" font-size="11" font-family="JetBrains Mono, monospace">Socket.IO Server</text>
+    <text x="12" y="40" fill="#94a3b8" font-size="9" font-family="JetBrains Mono, monospace">Middleware: JWT auth</text>
+    <text x="12" y="56" fill="#94a3b8" font-size="9" font-family="JetBrains Mono, monospace">Rooms: user_{id}, admin_room,</text>
+    <text x="12" y="70" fill="#94a3b8" font-size="9" font-family="JetBrains Mono, monospace">       project_{id}</text>
+    <text x="12" y="88" fill="#64748b" font-size="8" font-family="JetBrains Mono, monospace">15+ server→client events</text>
+  </g>
+
+  <!-- Arrow client→server -->
+  <line x1="230" y1="85" x2="340" y2="85" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#ar3)"/>
+  <text x="260" y="78" fill="#22d3ee" font-size="8" font-family="JetBrains Mono, monospace">WebSocket connect</text>
+  <text x="260" y="92" fill="#64748b" font-size="7" font-family="JetBrains Mono, monospace">JWT в cookie</text>
+
+  <!-- Events -->
+  <g transform="translate(640, 30)">
+    <rect width="220" height="50" rx="6" fill="#0f172a" stroke="#fb7185" stroke-width="1"/>
+    <rect width="220" height="50" rx="6" fill="rgba(136,19,55,0.2)"/>
+    <text x="12" y="20" fill="#e2e8f0" font-size="10" font-family="JetBrains Mono, monospace">Client→Server</text>
+    <text x="12" y="36" fill="#94a3b8" font-size="8" font-family="JetBrains Mono, monospace">join_project · user_logging_out</text>
+  </g>
+
+  <g transform="translate(640, 100)">
+    <rect width="220" height="110" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1"/>
+    <rect width="220" height="110" rx="6" fill="rgba(6,78,59,0.2)"/>
+    <text x="12" y="18" fill="#e2e8f0" font-size="10" font-family="JetBrains Mono, monospace">Server→Client</text>
+    <text x="12" y="34" fill="#94a3b8" font-size="8" font-family="JetBrains Mono, monospace">stats_updated → admin_room</text>
+    <text x="12" y="48" fill="#94a3b8" font-size="8" font-family="JetBrains Mono, monospace">user:online/offline → admin_room</text>
+    <text x="12" y="62" fill="#94a3b8" font-size="8" font-family="JetBrains Mono, monospace">user_blocked → user_{id}</text>
+    <text x="12" y="76" fill="#94a3b8" font-size="8" font-family="JetBrains Mono, monospace">session_superseded → user_{id}</text>
+    <text x="12" y="90" fill="#94a3b8" font-size="8" font-family="JetBrains Mono, monospace">new_message → project_{id}</text>
+    <text x="12" y="104" fill="#94a3b8" font-size="8" font-family="JetBrains Mono, monospace">project_*/messages_read → ...</text>
+  </g>
+
+  <line x1="560" y1="55" x2="640" y2="55" stroke="#fb7185" stroke-width="1" marker-end="url(#ar3-r)"/>
+  <line x1="560" y1="155" x2="640" y2="155" stroke="#34d399" stroke-width="1" marker-end="url(#ar3)"/>
+
+  <!-- Legend -->
+  <g transform="translate(50, 230)">
+    <rect width="200" height="40" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+    <circle cx="16" cy="14" r="4" fill="#fb7185"/>
+    <text x="26" y="18" fill="#94a3b8" font-size="9" font-family="JetBrains Mono, monospace">Client → Server</text>
+    <circle cx="16" cy="32" r="4" fill="#34d399"/>
+    <text x="26" y="36" fill="#94a3b8" font-size="9" font-family="JetBrains Mono, monospace">Server → Client</text>
+  </g>
+</svg>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-dot violet"></div><h4>Комнаты</h4></div>
+  <ul>
+    <li><code>user_{id}</code> — личные события (block, superseded, status)</li>
+    <li><code>admin_room</code> — ADMIN + MANAGER (статистика, проекты, статусы)</li>
+    <li><code>project_{id}</code> — участники чата (сообщения)</li>
+  </ul>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-dot cyan"></div><h4>События сервер → клиент</h4></div>
+  <ul>
+    <li><strong>stats_updated</strong> — статистика онлайн (admin_room)</li>
+    <li><strong>user:online / user:offline</strong> — статусы пользователей (admin_room)</li>
+    <li><strong>user_blocked / user_unblocked_by_admin</strong> — блокировка (user_{id})</li>
+    <li><strong>session_superseded</strong> — сессия вытеснена (user_{id})</li>
+    <li><strong>project_created / project_updated / project_status_changed</strong> — изменения проектов</li>
+    <li><strong>new_message</strong> — новое сообщение в чате</li>
+    <li><strong>messages_read</strong> — прочтение сообщений</li>
+  </ul>
+</div>
+
+
+<!-- ========== DATA FLOW ========== -->
+<h2>Data Flow — все сценарии</h2>
+<p>Каждый сценарий описан как цепочка: <strong>Client → Route [Middleware] → Controller → Service → DB → [Socket] → Response</strong></p>
+
+<h3 id="auth-flow">1. Аутентификация</h3>
+
+<div class="card">
+<h4>1.1 Регистрация пользователя (ADMIN)</h4>
+<table class="flow-table">
+<tr><td>POST</td><td><code>/api/auth/register</code></td><td>ADMIN only</td></tr>
+</table>
+<div class="flow-row"><span class="flow-step client">Client</span> <span class="arrow">→</span> AdminCreateUser → POST с данными пользователя</div>
+<div class="flow-row"><span class="flow-step server">authMiddleware</span> <span class="arrow">→</span> adminMiddleware → validate(registerSchema)</div>
+<div class="flow-row"><span class="flow-step server">authService</span> <span class="arrow">→</span> registerUser(): проверка уникальности email/УНП/телефона</div>
+<div class="flow-row"><span class="flow-step db">Prisma</span> <span class="arrow">→</span> bcrypt.hash(password), user.create()</div>
+<div class="flow-row"><span class="flow-step external">Email</span> <span class="arrow">→</span> sendWelcomeEmailToUser (nodemailer)</div>
+<div class="flow-row"><span class="flow-step server">Response</span> <span class="arrow">→</span> 201 { user }</div>
+</div>
+
+<div class="card">
+<h4>1.2 Логин</h4>
+<div class="flow-row"><span class="flow-step client">LoginPage</span> <span class="arrow">→</span> POST <code>/api/auth/login</code> (email + password)</div>
+<div class="flow-row"><span class="flow-step server">authService</span> <span class="arrow">→</span> loginUser(): findUnique → проверка блокировок → bcrypt.compare</div>
+<div class="flow-row"><span class="flow-step db">Prisma</span> <span class="arrow">→</span> failedLoginAttempts++ → при 5+ lockUntil на 15 мин</div>
+<div class="flow-row"><span class="flow-step server">USER</span> <span class="arrow">→</span> { requires2FA: true, userId }</div>
+<div class="flow-row"><span class="flow-step server">ADMIN/MGR</span> <span class="arrow">→</span> generateTokens(): JWT 15m + refresh UUID 7d → httpOnly cookies</div>
+<div class="flow-row"><span class="flow-step socket">Socket</span> <span class="arrow">→</span> session_superseded → user_{id}, user:online → admin_room, stats_updated</div>
+</div>
+
+<div class="card">
+<h4>1.3 2FA — отправка кода</h4>
+<div class="flow-row"><span class="flow-step client">LoginPage</span> <span class="arrow">→</span> POST <code>/api/auth/2fa/send</code> (rate: 3/min)</div>
+<div class="flow-row"><span class="flow-step server">send2FACodeService</span> <span class="arrow">→</span> проверка 2FA lock, rate-limit 60s</div>
+<div class="flow-row"><span class="flow-step server">Server</span> <span class="arrow">→</span> generate 6-digit code → bcrypt.hash(code)</div>
+<div class="flow-row"><span class="flow-step external">A1 SMS</span> <span class="arrow">→</span> Smart Sender: <code>IPMATIKA: код подтверждения XXXXXX</code></div>
+<div class="flow-row"><span class="flow-step server">Response</span> <span class="arrow">→</span> { debugCode } (всегда, для отладки)</div>
+</div>
+
+<div class="card">
+<h4>1.4 2FA — верификация</h4>
+<div class="flow-row"><span class="flow-step client">LoginPage</span> <span class="arrow">→</span> POST <code>/api/auth/2fa/verify</code> (code)</div>
+<div class="flow-row"><span class="flow-step server">verify2FACodeService</span> <span class="arrow">→</span> bcrypt.compare(code, hash) → 3 attempts → lock 15 min</div>
+<div class="flow-row"><span class="flow-step server">✅ Success</span> <span class="arrow">→</span> generateTokens() → httpOnly cookies</div>
+<div class="flow-row"><span class="flow-step db">Prisma</span> <span class="arrow">→</span> twoFactorVerified: true, сброс попыток/хеша</div>
+<div class="flow-row"><span class="flow-step socket">Socket</span> <span class="arrow">→</span> session_superseded, user:blocked_status_changed, stats_updated, user_status_changed</div>
+</div>
+
+<div class="card">
+<h4>1.5 Logout</h4>
+<div class="flow-row"><span class="flow-step client">Client</span> <span class="arrow">→</span> POST <code>/api/auth/logout</code></div>
+<div class="flow-row"><span class="flow-step server">logoutUser()</span> <span class="arrow">→</span> revokeUserRefreshTokens() → отзыв ВСЕХ refresh токенов</div>
+<div class="flow-row"><span class="flow-step db">Prisma</span> <span class="arrow">→</span> user.update(): lastSeen = now - 10min, currentSessionId: null</div>
+<div class="flow-row"><span class="flow-step socket">Socket</span> <span class="arrow">→</span> user_status_changed → admin_room, stats_updated</div>
+<div class="flow-row"><span class="flow-step server">Response</span> <span class="arrow">→</span> 200, чистит jwt cookie</div>
+</div>
+
+<div class="card">
+<h4>1.6 Забыли пароль / Сброс пароля</h4>
+<div class="flow-row"><span class="flow-step client">LoginPage</span> <span class="arrow">→</span> POST <code>/api/auth/forgot-password</code> (email)</div>
+<div class="flow-row"><span class="flow-step server">forgotPasswordService()</span> <span class="arrow">→</span> uuidv4 resetToken + 1 час expiry → email со ссылкой</div>
+<div class="flow-row"><span class="flow-step client">Email link</span> <span class="arrow">→</span> POST <code>/api/auth/reset-password</code> (token + newPassword)</div>
+<div class="flow-row"><span class="flow-step server">resetPasswordService()</span> <span class="arrow">→</span> findFirst по токену → bcrypt.hash → update</div>
+</div>
+
+<div class="card">
+<h4>1.7 Смена пароля</h4>
+<div class="flow-row"><span class="flow-step client">ChangePasswordPage</span> <span class="arrow">→</span> POST <code>/api/auth/change-password</code> [auth]</div>
+<div class="flow-row"><span class="flow-step server">changePasswordService()</span> <span class="arrow">→</span> bcrypt.compare(current) → bcrypt.hash(new) → update</div>
+</div>
+
+<div class="card">
+<h4>1.8 Refresh Token Rotation</h4>
+<div class="flow-row"><span class="flow-step client">ky interceptor</span> <span class="arrow">→</span> 401 → POST <code>/api/auth/refresh</code> (cookie)</div>
+<div class="flow-row"><span class="flow-step server">rotateRefreshToken()</span> <span class="arrow">→</span> SHA-256 → findUnique → проверка revokedAt</div>
+<div class="flow-row" style="color: var(--rose);"><span class="flow-step db">⚠️ Reuse</span> <span class="arrow">→</span> revokedAt !== null → отзыв ВСЕХ токенов пользователя</div>
+<div class="flow-row"><span class="flow-step db">✅ Valid</span> <span class="arrow">→</span> prisma.$transaction([отозвать старый, создать новый])</div>
+<div class="flow-row"><span class="flow-step server">Response</span> <span class="arrow">→</span> новый access JWT + refresh cookie</div>
+</div>
+
+<div class="card">
+<h4>1.9 Профиль</h4>
+<div class="flow-row"><span class="flow-step client">Client</span> <span class="arrow">→</span> GET <code>/api/auth/profile</code> [auth] → req.user (без password)</div>
+</div>
+
+<div class="card">
+<h4>1.10 Валидация и ошибки</h4>
+<div class="flow-row"><strong>Email-валидация:</strong> <code>z.string().regex(/@/)</code> вместо <code>z.string().email()</code> — Zod .email() требует TLD ≥2 символов, <code>d@e.t</code> не проходит.</div>
+<div class="flow-row"><strong>Field-level ошибки:</strong> в catch-блоках проверять <code>errorBody?.errors?.length > 0</code> и показывать <code>errors[0].message</code> вместо <code>errorBody.message</code>.</div>
+<div class="flow-row"><strong>Сетевые ошибки:</strong> хелпер <code>getErrorMessage(err, fallback)</code> из <code>UIHelpers.tsx</code>. TypeError → «Сервер недоступен», TimeoutError → «Сервер не отвечает», HTTPError → fallback.</div>
+<div class="flow-row"><span class="flow-note">Исправлено 11 catch-блоков в 7 файлах. <code>err.message || fallback</code> больше не используется.</span></div>
+</div>
+
+<h3 id="flow-users">2. Управление пользователями (ADMIN)</h3>
+
+<div class="card">
+<h4>2.1 Список пользователей</h4>
+<div class="flow-row"><span class="flow-step client">Admin</span> <span class="arrow">→</span> GET <code>/api/user/users?page=&limit=&search=&role=</code> [auth, admin]</div>
+<div class="flow-row"><span class="flow-step server">getUsersList()</span> <span class="arrow">→</span> findMany + count (исключая ADMIN)</div>
+<div class="flow-row"><span class="flow-step server">Online check</span> <span class="arrow">→</span> getIo().sockets.sockets — определяет кто онлайн</div>
+</div>
+
+<div class="card">
+<h4>2.2 Удаление пользователя</h4>
+<div class="flow-row"><span class="flow-step client">Admin</span> <span class="arrow">→</span> DELETE <code>/api/user/users/:id</code> [auth, admin]</div>
+<div class="flow-row"><span class="flow-step server">deleteUserById()</span> <span class="arrow">→</span> проверка id !== self → prisma.user.delete()</div>
+<div class="flow-row"><span class="flow-step socket">Socket</span> <span class="arrow">→</span> stats_updated → admin_room</div>
+</div>
+
+<div class="card">
+<h4>2.3 Блокировка/разблокировка</h4>
+<div class="flow-row"><span class="flow-step client">Admin</span> <span class="arrow">→</span> PATCH <code>/api/user/users/:id/block</code> [auth, admin]</div>
+<div class="flow-row"><span class="flow-step server">toggleBlockUser()</span> <span class="arrow">→</span> 3 режима в одном endpoint'е:</div>
+<div class="flow-row"><span class="flow-step db">🔓 lockUntil > now</span> <span class="arrow">→</span> снять брутфорс-блокировку (lockUntil: null, failedLoginAttempts: 0)</div>
+<div class="flow-row" style="color: var(--rose);"><span class="flow-step db">🔒 Иначе</span> <span class="arrow">→</span> ручная блокировка: isBlocked = !isBlocked, currentSessionId: null</div>
+<div class="flow-row"><span class="flow-step socket">Socket</span> <span class="arrow">→</span> user:blocked_status_changed, user_blocked / user_unblocked_by_admin, stats_updated</div>
+</div>
+
+<div class="card">
+<h4>2.4 Смена пароля (force change)</h4>
+<div class="flow-row"><span class="flow-step client">ForcePasswordChange</span> <span class="arrow">→</span> POST <code>/api/user/change-password</code> [auth]</div>
+<div class="flow-row"><span class="flow-step server">changeUserPassword()</span> <span class="arrow">→</span> bcrypt.hash → update (mustChangePassword: false)</div>
+</div>
+
+<h3 id="flow-projects">3. Проекты</h3>
+
+<div class="card">
+<h4>3.1 Создание проекта (USER)</h4>
+<div class="flow-row"><span class="flow-step client">UserDashboard</span> <span class="arrow">→</span> POST <code>/api/projects</code> [auth] (dynamicData + customerInn)</div>
+<div class="flow-row"><span class="flow-step server">createProject()</span> <span class="arrow">→</span> проверка дубликата customerInn → create(status: PENDING)</div>
+<div class="flow-row"><span class="flow-step socket">Socket</span> <span class="arrow">→</span> project_created → user_{partnerId} + admin_room</div>
+</div>
+
+<div class="card">
+<h4>3.2 Список проектов</h4>
+<div class="flow-row"><span class="flow-step client">Dashboard</span> <span class="arrow">→</span> GET <code>/api/projects</code> [auth] (?search=&page=&limit=)</div>
+<div class="flow-row"><span class="flow-step server">getProjects()</span> <span class="arrow">→</span> USER фильтр по partnerId, MANAGER — все</div>
+<div class="flow-row"><span class="flow-step db">Prisma</span> <span class="arrow">→</span> findMany + count + _count.messages (unread)</div>
+</div>
+
+<div class="card">
+<h4>3.3 Обновление проекта</h4>
+<div class="flow-row"><span class="flow-step client">Dashboard</span> <span class="arrow">→</span> PUT <code>/api/projects/:id</code> [auth]</div>
+<div class="flow-row"><span class="flow-step server">updateProject()</span> <span class="arrow">→</span> проверка прав (partnerId или MANAGER) → update</div>
+<div class="flow-row"><span class="flow-step socket">Socket</span> <span class="arrow">→</span> project_updated → user_{partnerId} + admin_room</div>
+</div>
+
+<div class="card">
+<h4>3.4 Изменение статуса (MANAGER)</h4>
+<div class="flow-row"><span class="flow-step client">ManagerDashboard</span> <span class="arrow">→</span> PATCH <code>/api/projects/:id/status</code> [auth, manager]</div>
+<div class="flow-row"><span class="flow-step server">updateProjectStatus()</span> <span class="arrow">→</span> проверка статуса → update → logEvent()</div>
+<div class="flow-row"><span class="flow-step socket">Socket</span> <span class="arrow">→</span> project_status_changed → partner + admin_room, stats_updated</div>
+</div>
+
+<h3 id="flow-chat">4. Чат</h3>
+
+<div class="card">
+<h4>4.1 История сообщений</h4>
+<div class="flow-row"><span class="flow-step client">ChatDrawer</span> <span class="arrow">→</span> GET <code>/api/chat/:projectId/messages</code> [auth]</div>
+<div class="flow-row"><span class="flow-step server">getProjectMessages()</span> <span class="arrow">→</span> проверка доступа → findMany (include: sender)</div>
+</div>
+
+<div class="card">
+<h4>4.2 Отправка сообщения</h4>
+<div class="flow-row"><span class="flow-step client">ChatDrawer</span> <span class="arrow">→</span> POST <code>/api/chat/:projectId/messages</code> [auth]</div>
+<div class="flow-row"><span class="flow-step server">sendMessage()</span> <span class="arrow">→</span> prisma.$transaction([create message, update project.updatedAt])</div>
+<div class="flow-row"><span class="flow-step socket">Socket</span> <span class="arrow">→</span> new_message → project_{projectId}</div>
+</div>
+
+<div class="card">
+<h4>4.3 Отметка прочтения</h4>
+<div class="flow-row"><span class="flow-step client">ChatDrawer</span> <span class="arrow">→</span> PATCH <code>/api/chat/:projectId/read</code> [auth]</div>
+<div class="flow-row"><span class="flow-step server">markMessagesAsRead()</span> <span class="arrow">→</span> updateMany(isRead: true) для чужих сообщений</div>
+<div class="flow-row"><span class="flow-step socket">Socket</span> <span class="arrow">→</span> messages_read → user_{senderId} + project_{projectId}</div>
+</div>
+
+<h3 id="flow-companies">5. Компании (ADMIN)</h3>
+<div class="card">
+<div class="flow-row"><span class="flow-step client">Admin</span> <span class="arrow">→</span> GET <code>/api/companies</code> [auth, admin]</div>
+<div class="flow-row"><span class="flow-step server">getCompanies(search)</span> <span class="arrow">→</span> findMany (name/unp like, take: 100)</div>
+</div>
+
+<h3 id="flow-manager">6. Менеджер</h3>
+
+<div class="card">
+<h4>6.1 Список партнёров</h4>
+<div class="flow-row"><span class="flow-step client">Manager</span> <span class="arrow">→</span> GET <code>/api/manager/partners</code> [auth, manager]</div>
+<div class="flow-row"><span class="flow-step server">Controller</span> <span class="arrow">→</span> findMany(role: USER, orderBy: companyName)</div>
+</div>
+
+<div class="card">
+<h4>6.2 Broadcast (рассылка)</h4>
+<div class="flow-row"><span class="flow-step client">ManagerBroadcast</span> <span class="arrow">→</span> POST <code>/api/manager/send-broadcast</code> [auth, manager]</div>
+<div class="flow-row"><span class="flow-step server">Controller</span> <span class="arrow">→</span> findMany(recipients) → Promise.allSettled (nodemailer)</div>
+<div class="flow-row"><span class="flow-step db">Fire-and-forget</span> <span class="arrow">→</span> logBroadcast() + logEvent() (после ответа клиенту)</div>
+<div class="flow-row"><span class="flow-step server">Response</span> <span class="arrow">→</span> { sent: N, failed: M }</div>
+</div>
+
+<div class="card">
+<h4>6.3-6.7 CRUD Оборудования</h4>
+<table>
+  <tr><th>Операция</th><th>Метод/Путь</th><th>Действие</th></tr>
+  <tr><td>Список</td><td>GET /equipment</td><td>findMany + count (фильтры: category, status, search)</td></tr>
+  <tr><td>По ID</td><td>GET /equipment/:id</td><td>findUnique</td></tr>
+  <tr><td>Создать</td><td>POST /equipment</td><td>create → logEvent('equipment_added')</td></tr>
+  <tr><td>Обновить</td><td>PUT /equipment/:id</td><td>update → logEvent('equipment_edited')</td></tr>
+  <tr><td>Удалить</td><td>DELETE /equipment/:id</td><td>getById + delete → logEvent('equipment_deleted')</td></tr>
+  <tr><td>Категории</td><td>GET /equipment/categories</td><td>distinct: ['category']</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h4>6.8-6.10 CRUD Новостей (Manager)</h4>
+<table>
+  <tr><th>Операция</th><th>Метод/Путь</th><th>Действие</th></tr>
+  <tr><td>Список</td><td>GET /manager/news</td><td>findMany (orderBy: createdAt desc)</td></tr>
+  <tr><td>Создать</td><td>POST /manager/news</td><td>create → logEvent('news_added')</td></tr>
+  <tr><td>Удалить</td><td>DELETE /manager/news/:id</td><td>delete → logEvent('news_deleted')</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h4>6.11 Лог рассылок / Лог событий</h4>
+<div class="flow-row"><span class="flow-step client">Manager</span> <span class="arrow">→</span> GET <code>/api/manager/broadcast-log</code> [auth, manager] → findMany(take: 50)</div>
+<div class="flow-row"><span class="flow-step client">Manager</span> <span class="arrow">→</span> GET <code>/api/manager/events</code> [auth, manager] → findMany(take: 100, include: user)</div>
+</div>
+
+<h3 id="flow-admin">7. Администрирование</h3>
+
+<div class="card">
+<h4>7.1 Логи сервера</h4>
+<div class="flow-row"><span class="flow-step client">Admin</span> <span class="arrow">→</span> GET <code>/api/admin/logs?date=YYYY-MM-DD&level=&search=&limit=500</code> [auth, admin]</div>
+<div class="flow-row"><span class="flow-step client">Admin</span> <span class="arrow">→</span> GET <code>/api/admin/logs?dateFrom=YYYY-MM-DD&dateTo=YYYY-MM-DD&level=</code> — за период</div>
+<div class="flow-row"><span class="flow-step client">Admin</span> <span class="arrow">→</span> GET <code>/api/admin/logs/download?dateFrom=...&dateTo=...&level=</code> → скачать JSON</div>
+<div class="flow-row"><span class="flow-step server">fetchLogs()</span> <span class="arrow">→</span> читает <code>logs/combined-YYYY-MM-DD.log</code> (последние 1MB), парсит JSON, фильтрует</div>
+<div class="flow-row"><span class="flow-step server">fetchLogsRange()</span> <span class="arrow">→</span> читает файлы за все даты в диапазоне, возвращает без лимита</div>
+<div class="flow-row"><span class="flow-step ui">LogsViewer</span> <span class="arrow">→</span> переключатель «1 день» / «Период», календари, кнопка Download (иконка)</div>
+</div>
+
+<div class="card">
+<h4>7.2 Настройки портала (CRUD)</h4>
+<table>
+  <tr><th>Операция</th><th>Метод/Путь</th><th>Действие</th></tr>
+  <tr><td>Все настройки</td><td>GET /admin/settings</td><td>findMany → { [key]: value }</td></tr>
+  <tr><td>Одна настройка</td><td>GET /admin/settings/:key</td><td>findUnique</td></tr>
+  <tr><td>Обновить</td><td>PUT /admin/settings/:key</td><td>upsert(key, value)</td></tr>
+  <tr><td>Публичная</td><td>GET /api/settings/:key</td><td>findUnique (публично, без auth — брендинг, контакты)</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h4>7.3 Брендинг (логотип + название компании)</h4>
+<div class="flow-row"><span class="flow-step ui">Admin → Настройки → Брендинг</span></div>
+<div class="flow-row"><span class="arrow">→</span> загрузка логотипа (PNG/WebP/SVG, до 500KB, base64) + название компании</div>
+<div class="flow-row"><span class="arrow">→</span> сохраняется в <code>SiteSetting</code> (key: <code>branding</code>) как JSON <code>{ companyName, logo }</code></div>
+<div class="flow-row"><span class="flow-step client">Header</span> <span class="arrow">→</span> GET <code>/api/settings/branding</code> (публично) при монтировании</div>
+<div class="flow-row"><span class="flow-step server">getPublicSetting()</span> <span class="arrow">→</span> findUnique → рендер логотипа и названия в шапке</div>
+<div class="flow-row"><span class="flow-note">Падение на дефолт: <code>/src/assets/logo.webp</code> + «АйПиМатика Бел - B2B»</span></div>
+</div>
+
+<div class="card">
+<h4>7.4 DB Browser</h4>
+<table>
+  <tr><th>Операция</th><th>Метод/Путь</th><th>Действие</th></tr>
+  <tr><td>Список таблиц</td><td>GET /admin/db/tables</td><td>information_schema.columns для 4 whitelist таблиц</td></tr>
+  <tr><td>Данные</td><td>GET /admin/db/tables/:name</td><td>raw SQL: SELECT * с ILIKE поиском + пагинация</td></tr>
+  <tr><td>Обновить строку</td><td>PUT /admin/db/tables/:name/:id</td><td>raw SQL: UPDATE (исключая PK + readOnly поля)</td></tr>
+</table>
+<p><strong>Whitelist:</strong> Company, User, Project, Message</p>
+<p><strong>ReadOnly поля:</strong> password, resetPassword*, currentSessionId, createdAt, updatedAt, lastSeen</p>
+</div>
+
+<div class="card">
+<h4>7.5 Бэкапы</h4>
+<table>
+  <tr><th>Операция</th><th>Метод/Путь</th><th>Действие</th></tr>
+  <tr><td>Создать</td><td>POST /admin/backup/create</td><td>docker exec pg_dump → backup_TIMESTAMP.sql</td></tr>
+  <tr><td>Загрузить</td><td>POST /admin/backup/upload</td><td>multer (500MB, .sql only)</td></tr>
+  <tr><td>Список</td><td>GET /admin/backup/list</td><td>readdir backups/ + stat (размер, дата)</td></tr>
+  <tr><td>Скачать</td><td>GET /admin/backup/download/:name</td><td>res.download (защита от traversal)</td></tr>
+  <tr><td>Удалить</td><td>DELETE /admin/backup/:name</td><td>fs.unlink</td></tr>
+  <tr><td>Восстановить</td><td>POST /admin/backup/restore/:name</td><td>docker exec -i psql < backup.sql</td></tr>
+  <tr><td>Расписание</td><td>GET/PUT /admin/backup/schedule</td><td>cron.schedule()</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h4>7.6 Новости (для всех авторизованных)</h4>
+<div class="flow-row"><span class="flow-step client">Dashboard</span> <span class="arrow">→</span> GET <code>/api/news</code> [auth] → findMany(orderBy: createdAt desc)</div>
+</div>
+
+<h3 id="flow-socket">8. Socket.IO — полная таблица событий</h3>
+<table>
+  <tr><th>Событие</th><th>Куда</th><th>Когда</th></tr>
+  <tr><td><code>session_superseded</code></td><td>user_{id}</td><td>Логин/2FA, если уже была активная сессия</td></tr>
+  <tr><td><code>user:online</code></td><td>admin_room</td><td>Подключение сокета (не ADMIN)</td></tr>
+  <tr><td><code>user:offline</code></td><td>admin_room</td><td>Disconnect/logout (с задержкой 1.5s)</td></tr>
+  <tr><td><code>user_status_changed</code></td><td>admin_room</td><td>2FA verify, logout, изменение lastSeen</td></tr>
+  <tr><td><code>user:blocked_status_changed</code></td><td>admin_room</td><td>Блокировка/сброс failedLoginAttempts/2FA lock</td></tr>
+  <tr><td><code>user_blocked</code></td><td>user_{id}</td><td>Ручная блокировка администратором</td></tr>
+  <tr><td><code>user_unblocked_by_admin</code></td><td>user_{id}</td><td>Снятие системной блокировки</td></tr>
+  <tr><td><code>stats_updated</code></td><td>admin_room</td><td>Логин, logout, 2FA, блокировка, удаление, статус проекта</td></tr>
+  <tr><td><code>project_created</code></td><td>partner + admin_room</td><td>Создание проекта</td></tr>
+  <tr><td><code>project_updated</code></td><td>partner + admin_room</td><td>Обновление проекта</td></tr>
+  <tr><td><code>project_status_changed</code></td><td>partner + admin_room</td><td>Изменение статуса проекта</td></tr>
+  <tr><td><code>new_message</code></td><td>project_{id}</td><td>Отправка сообщения</td></tr>
+  <tr><td><code>messages_read</code></td><td>sender + project_{id}</td><td>Отметка прочтения</td></tr>
+</table>
+
+<p><strong>JWT Refresh в Socket.IO middleware:</strong> при истечении access-токена (15 мин) middleware автоматически выполняет refresh через refreshToken-куку. SHA-256 верификация, ротация токенов, установка нового JWT через Set-Cookie. Без этого фикса socket-соединение падало каждые 15 минут и пользователи пропадали из списка онлайн.</p>
+
+
+<!-- ========== CLIENT ========== -->
+<h2 id="client-structure">Клиент — Структура React SPA</h2>
+
+<h3>Маршруты</h3>
+<table>
+  <tr><th>Путь</th><th>Компонент</th><th>Доступ</th></tr>
+  <tr><td><code>/login</code></td><td>LoginPage (+ 2FA форма)</td><td>—</td></tr>
+  <tr><td><code>/reset-password</code></td><td>ResetPasswordPage</td><td>—</td></tr>
+  <tr><td><code>/force-change-password</code></td><td>ForcePasswordChange</td><td>auth</td></tr>
+  <tr><td><code>/change-password</code></td><td>ChangePasswordPage</td><td>auth</td></tr>
+  <tr><td><code>/dashboard</code></td><td>DashboardDispatcher → Admin/Manager/UserDashboard</td><td>auth</td></tr>
+  <tr><td><code>/unauthorized</code></td><td>403</td><td>—</td></tr>
+  <tr><td><code>*</code></td><td>Redirect → /dashboard</td><td>—</td></tr>
+</table>
+
+<h3 id="state">Стейт-менеджмент</h3>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><div class="card-dot cyan"></div><h4>Zustand (localStorage persist)</h4></div>
+    <ul>
+      <li><strong>useAuthStore</strong> — user, isAuthenticated, is2FARequired, tempUserId, модалки</li>
+      <li><strong>useChatStore</strong> — messages по projectId, activeChatId, loading</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-dot green"></div><h4>TanStack Query</h4></div>
+    <ul>
+      <li><strong>staleTime:</strong> 30s, retry: 1</li>
+      <li><strong>Кэш:</strong> ['projects'], ['users'], ['admin-stats']</li>
+      <li><strong>ky HTTP client:</strong> credentials: include, refresh on 401</li>
+    </ul>
+  </div>
+</div>
+
+<h3>Ключевые React хуки</h3>
+<table>
+  <tr><th>Хук</th><th>Назначение</th></tr>
+  <tr><td><code>useSessionManager</code></td><td>Таймер неактивности (USER 30min, MANAGER/ADMIN 120min), подписка на socket events</td></tr>
+  <tr><td><code>useUserSockets</code></td><td>Обновление users кэша через Socket.IO (online/offline/blocked)</td></tr>
+  <tr><td><code>useProjectSockets</code></td><td>Обновление projects кэша через Socket.IO (created/updated/status)</td></tr>
+  <tr><td><code>useGlobalChatLoader</code></td><td>Подписка join_project, обработка new_message/messages_read</td></tr>
+  <tr><td><code>useChatLogic</code></td><td>Загрузка/отправка сообщений, read receipts</td></tr>
+</table>
+
+<h3>API модули (клиент)</h3>
+<table>
+  <tr><th>Модуль</th><th>Методы</th></tr>
+  <tr><td><code>api/auth.ts</code></td><td>login, logout, profile, refresh, forgotPassword, resetPassword, send2FACode, verify2FACode</td></tr>
+  <tr><td><code>api/projects.ts</code></td><td>getProjects, getProjectById, createProject, updateProject, deleteProject, updateStatus</td></tr>
+  <tr><td><code>api/user.ts</code></td><td>getAllUsers, register, deleteUser, changePw, getAdminStats, toggleBlock</td></tr>
+</table>
+
+<h3>Структура папок <code>client/src/</code></h3>
+<pre>
+src/
+├── api/           <span class="comment">// HTTP-клиент (ky) + Socket.IO client</span>
+│   ├── auth.ts
+│   ├── projects.ts
+│   ├── socket.ts
+│   └── user.ts
+├── components/    <span class="comment">// UI компоненты</span>
+│   ├── layout/    <span class="comment">// Sidebar, DashboardLayout</span>
+│   ├── admin/     <span class="comment">// AdminDashboard, LogsViewer, DbViewer, DbBackup ...</span>
+│   ├── manager/   <span class="comment">// ManagerDashboard, Broadcast, Equipment ...</span>
+│   └── shared/    <span class="comment">// ProjectsListView, ChatDrawer, DynamicProjectForm ...</span>
+├── hooks/         <span class="comment">// React hooks (TanStack Query, sockets)</span>
+│   ├── useSessionManager.ts
+│   └── useUserSockets.ts useProjectSockets.ts useGlobalChatLoader.ts useChatLogic.ts
+├── pages/         <span class="comment">// Страницы</span>
+│   └── LoginPage.tsx ResetPasswordPage.tsx DashboardDispatcher.tsx ...
+├── store/         <span class="comment">// Zustand stores</span>
+│   ├── authStore.ts
+│   └── chatStore.ts
+├── types/         <span class="comment">// TS типы</span>
+│   └── index.ts
+</pre>
+
+
+<!-- ========== CONFIG ========== -->
+<h2 id="config">Переменные окружения</h2>
+
+<table>
+  <tr><th>Переменная</th><th>Где</th><th>Назначение</th></tr>
+  <tr><td>DATABASE_URL</td><td>server</td><td>PostgreSQL connection string</td></tr>
+  <tr><td>JWT_SECRET</td><td>server</td><td>Secret для подписи JWT</td></tr>
+  <tr><td>CLIENT_URL</td><td>server</td><td>URL клиента (CORS, ссылки в письмах)</td></tr>
+  <tr><td>SOCKET_URL</td><td>server</td><td>URL Socket.IO (CSP)</td></tr>
+  <tr><td>PORT / HOST</td><td>server</td><td>5001 / 0.0.0.0</td></tr>
+  <tr><td>NODE_ENV</td><td>server</td><td>production / development</td></tr>
+  <tr><td>ALLOWED_ORIGINS</td><td>server</td><td>CORS origins (через запятую)</td></tr>
+  <tr><td>SMTP_HOST / PORT / USER / PASS</td><td>server</td><td>Nodemailer</td></tr>
+  <tr><td>SMART_SENDER_USER / APIKEY</td><td>server</td><td>A1 Smart Sender (SMS 2FA)</td></tr>
+  <tr><td>SMART_SENDER_SENDER</td><td>server</td><td>Отправитель SMS</td></tr>
+  <tr><td>VITE_API_URL</td><td>client</td><td>Базовый URL API</td></tr>
+  <tr><td>VITE_SOCKET_URL</td><td>client</td><td>URL Socket.IO</td></tr>
+</table>
+
+<h2 id="setup">Запуск проекта</h2>
+
+<pre>
+<span class="comment"># 1. База данных (Docker)</span>
+cd server
+docker compose up -d                  <span class="comment"># PostgreSQL 18 на порту 5432</span>
+npx prisma migrate deploy              <span class="comment"># Накатить миграции</span>
+npx tsx prisma/seed.ts                 <span class="comment"># Тестовые данные</span>
+
+<span class="comment"># 2. Сервер</span>
+npm install && npm run dev             <span class="comment"># http://0.0.0.0:5001</span>
+
+<span class="comment"># 3. Клиент</span>
+cd client
+npm install && npm run dev             <span class="comment"># http://192.168.85.110:5173</span>
+</pre>
+
+<div class="callout success">
+  <strong>Тестовые учётные данные:</strong><br>
+  ADMIN: admin@test.com / admin<br>
+  MANAGER: manager@test.com / manager<br>
+  USER: создаётся через админ-панель (регистрирует ADMIN)
+</div>
+
+<h2 id="tests">Тестирование</h2>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><div class="card-dot green"></div><h4>Server (108 тестов)</h4></div>
+    <ul>
+      <li>Vitest + supertest</li>
+      <li>Тестовая БД: Docker порт 5433</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-dot cyan"></div><h4>Client</h4></div>
+    <ul>
+      <li>Vitest + testing-library</li>
+      <li>22 теста (authStore, ProtectedRoute)</li>
+    </ul>
+  </div>
+</div>
+
+<pre>
+<span class="comment"># Сервер</span>
+cd server
+docker compose -f docker-compose.test.yml up -d  <span class="comment"># PG на порту 5433</span>
+npm test                                            <span class="comment"># 108 тестов, 9 файлов</span>
+
+<span class="comment"># Клиент</span>
+cd client
+npm test                                            <span class="comment"># 22 теста</span>
+</pre>
+
+<div class="callout info">
+  <strong>Покрытие тестов:</strong> authService (17), generateToken (13), smsService (9), middleware (15), companyService (4), userService, response (5), validationSchemas (24), api/integration.
+</div>
+
+<!-- Footer -->
+<div style="margin-top:60px;padding-top:20px;border-top:1px solid var(--border);font-size:12px;color:var(--text-muted);text-align:center;">
+  B2B Portal — IPMATIKA Bel &nbsp;·&nbsp; Документация собрана 01.06.2026 &nbsp;·&nbsp; Ветка: feat/phase1-security
+</div>
+
+</main>
+
+<script>
+// Hamburger toggle
+document.getElementById('hamburger').addEventListener('click', function() {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+
+// Close sidebar on link click (mobile)
+document.querySelectorAll('.sidebar-nav a').forEach(a => {
+  a.addEventListener('click', function(e) {
+    const sidebar = document.getElementById('sidebar');
+    if (window.innerWidth <= 768) sidebar.classList.remove('open');
+    // Active state
+    document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// Highlight current section on scroll
+const sections = document.querySelectorAll('h2[id]');
+const links = document.querySelectorAll('.sidebar-nav a[href^="#"]');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector(`.sidebar-nav a[href="#${entry.target.id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-80px 0px -60% 0px' });
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
