@@ -1,5 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import userApi from '../api/user';
+import { broadcastSaved } from '../lib/broadcast';
 import type { RegisterInput } from '../types';
 import type { AdminStats } from '../types';
 
@@ -66,6 +67,7 @@ export const useDeleteUser = () => {
   return useMutation({
     mutationFn: (id: number) => userApi.deleteUser(id),
     onSuccess: (_data, deletedId) => {
+      broadcastSaved('user', 'deleted', deletedId);
       // Оптимистично удаляем из кеша
       queryClient.setQueriesData({ queryKey: ['users'] }, (old: any) => {
         if (!old?.users) return old;
@@ -84,7 +86,8 @@ export const useToggleBlock = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => userApi.toggleBlock(id),
-    onSuccess: () => {
+    onSuccess: (data, toggledId) => {
+      broadcastSaved('user', 'updated', toggledId);
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });

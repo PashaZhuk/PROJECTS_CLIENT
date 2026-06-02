@@ -1,12 +1,25 @@
 import { useEffect, useState } from 'react';
 import { Mail, Trash2, Search, ChevronLeft, ChevronRight, RefreshCw, UserCheck, Ban, CheckCircle, Lock, KeyRound } from 'lucide-react';
 import { useUsers, useDeleteUser, useToggleBlock } from '../../../hooks/useUsersQuery';
+import { listenBroadcastSaved } from '../../../lib/broadcast';
+import { useQueryClient } from '@tanstack/react-query';
 
 const UsersList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const queryClient = useQueryClient();
 
+  useEffect(() => {
+    return listenBroadcastSaved((msg) => {
+      if (msg.entityType === 'user') {
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+        queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      }
+    });
+  }, [queryClient]);
+
+  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery);
