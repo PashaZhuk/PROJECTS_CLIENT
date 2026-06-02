@@ -13,7 +13,7 @@ import {
   Link,
 } from 'lucide-react';
 import { getErrorMessage } from '../shared/UIHelpers';
-import { broadcastSaved } from '../../../lib/broadcast';
+import { broadcastSaved, listenBroadcastSaved } from '../../../lib/broadcast';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -442,6 +442,18 @@ const ManagerNews = () => {
       setActionLoading(false);
     }
   };
+
+  // Закрываем модалки, если новость сохранена в другой вкладке
+  useEffect(() => {
+    return listenBroadcastSaved((msg) => {
+      if (msg.entityType === 'news') {
+        setAddModalOpen(false);
+        setEditItem(null);
+        setDeleteTarget(null);
+        fetchNews();
+      }
+    });
+  }, [fetchNews]);
 
   return (
     <div className="animate-in fade-in duration-500 space-y-6 w-full max-w-full">

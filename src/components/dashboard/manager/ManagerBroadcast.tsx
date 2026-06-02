@@ -3,6 +3,7 @@ import { useAuthStore } from '../../../store/useAuthStore';
 import api from '../../../api/ky';
 import { Send, Paperclip, X, Search, Mail, CheckCircle, AlertCircle, Loader2, FileWarning, FileText } from 'lucide-react';
 import { getErrorMessage } from '../shared/UIHelpers';
+import { broadcastSaved } from '../../../lib/broadcast';
 
 interface Partner {
   id: number;
@@ -208,6 +209,7 @@ const ManagerBroadcast = () => {
 
       if (res.success) {
         setResult(res.data);
+        broadcastSaved('broadcast', 'created');
         setSelectedIds(new Set());
         setSelectAll(false);
         setSubject('');

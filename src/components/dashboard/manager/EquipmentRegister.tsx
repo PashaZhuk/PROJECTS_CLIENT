@@ -14,7 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import { getErrorMessage } from '../shared/UIHelpers';
-import { broadcastSaved } from '../../../lib/broadcast';
+import { broadcastSaved, listenBroadcastSaved } from '../../../lib/broadcast';
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface Equipment {
@@ -688,6 +688,17 @@ const EquipmentRegister = () => {
       }
     })();
   }, []);
+
+  // Закрываем модалку, если оборудование сохранено в другой вкладке
+  useEffect(() => {
+    return listenBroadcastSaved((msg) => {
+      if (msg.entityType === 'equipment' && modalOpen) {
+        setModalOpen(false);
+        setEditingItem(null);
+        fetchEquipment();
+      }
+    });
+  }, [modalOpen, fetchEquipment]);
 
   // Fetch all equipment (no pagination)
   const fetchEquipment = useCallback(async () => {
