@@ -689,17 +689,6 @@ const EquipmentRegister = () => {
     })();
   }, []);
 
-  // Закрываем модалку, если оборудование сохранено в другой вкладке
-  useEffect(() => {
-    return listenBroadcastSaved((msg) => {
-      if (msg.entityType === 'equipment' && modalOpen) {
-        setModalOpen(false);
-        setEditingItem(null);
-        fetchEquipment();
-      }
-    });
-  }, [modalOpen, fetchEquipment]);
-
   // Fetch all equipment (no pagination)
   const fetchEquipment = useCallback(async () => {
     setLoading(true);
@@ -748,6 +737,17 @@ const EquipmentRegister = () => {
 
   const totalCount = items.length;
 
+  // Закрываем модалку, если оборудование сохранено в другой вкладке
+  useEffect(() => {
+    return listenBroadcastSaved((msg) => {
+      if (msg.entityType === 'equipment' && modalOpen) {
+        setModalOpen(false);
+        setEditingItem(null);
+        fetchEquipment();
+      }
+    });
+  }, [modalOpen, fetchEquipment]);
+
   // CRUD handlers
   const handleSave = async (formData: EquipmentFormData) => {
     setActionLoading(true);
@@ -777,14 +777,13 @@ const EquipmentRegister = () => {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
+  const handleDelete = async (item: Equipment) => {
+    if (!window.confirm(`Удалить «${item.name}»? Это действие необратимо.`)) return;
     setActionLoading(true);
     try {
-      await apiFetch(`${API_PREFIX}/${deleteTarget.id}`, { method: 'DELETE' });
-      addToast('success', `«${deleteTarget.name}» удалено`);
-      broadcastSaved('equipment', 'deleted', deleteTarget.id);
-      setDeleteTarget(null);
+      await apiFetch(`${API_PREFIX}/${item.id}`, { method: 'DELETE' });
+      addToast('success', `«${item.name}» удалено`);
+      broadcastSaved('equipment', 'deleted', item.id);
       fetchEquipment();
     } catch (err: any) {
       addToast('error', getErrorMessage(err, 'Ошибка удаления'));

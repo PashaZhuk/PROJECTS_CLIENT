@@ -296,7 +296,7 @@ const ContactsEditor = ({ onBack }: { onBack: () => void }) => {
       const data = await res.json();
       if (data?.success) {
         setMessage({ type: 'success', text: 'Контакты сохранены' });
-        broadcastSaved('setting', 'updated', 'contacts');
+        broadcastSaved('setting', 'updated');
       } else {
         setMessage({ type: 'error', text: data?.error || 'Ошибка сохранения' });
       }
@@ -518,7 +518,7 @@ const BrandingEditor = ({ onBack }: { onBack: () => void }) => {
       const data = await res.json();
       if (data?.success) {
         setMessage({ type: 'success', text: 'Брендинг сохранён' });
-        broadcastSaved('setting', 'updated', 'branding');
+        broadcastSaved('setting', 'updated');
       } else {
         setMessage({ type: 'error', text: data?.error || 'Ошибка сохранения' });
       }
