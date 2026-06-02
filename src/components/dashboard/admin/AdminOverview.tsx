@@ -37,6 +37,42 @@ const AdminOverview = ({ stats, onRefresh }: any) => {
           value={stats.totalUsers}
           icon={<Activity className="text-purple-600" />}
           color="purple"
+          subtitle={
+            <div className="flex gap-4 mt-4 pt-4 border-t border-purple-100/50">
+              <div className="relative group/tip">
+                <span className="text-[9px] text-slate-400 uppercase font-black cursor-help">
+                  Пользователи: {stats.totalUsers}
+                </span>
+                {stats.totalUserNames?.length > 0 && (
+                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover/tip:block z-50">
+                    <div className="bg-slate-900 text-white text-[10px] font-bold rounded-xl px-4 py-3 shadow-xl max-h-48 overflow-y-auto whitespace-nowrap">
+                      <div className="flex flex-col gap-1">
+                        {stats.totalUserNames.map((name: string, i: number) => (
+                          <span key={i}>{name}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="relative group/tip">
+                <span className="text-[9px] text-slate-400 uppercase font-black border-l border-purple-100/30 pl-4 cursor-help">
+                  Менеджеры: {stats.totalManagers}
+                </span>
+                {stats.totalManagerNames?.length > 0 && (
+                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover/tip:block z-50">
+                    <div className="bg-slate-900 text-white text-[10px] font-bold rounded-xl px-4 py-3 shadow-xl max-h-48 overflow-y-auto whitespace-nowrap">
+                      <div className="flex flex-col gap-1">
+                        {stats.totalManagerNames.map((name: string, i: number) => (
+                          <span key={i}>{name}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          }
         />
         <StatCard
           title="Сейчас в сети"
