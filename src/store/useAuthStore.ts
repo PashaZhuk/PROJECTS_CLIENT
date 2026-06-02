@@ -102,6 +102,30 @@ export const useAuthStore = create<AuthState>()(
             throw new Error('Данные пользователя не найдены');
           }
         } catch (error) {
+          // Пробуем refresh перед тем как разлогинивать
+          try {
+            const refreshRes = await fetch(
+              `${import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/auth/refresh`,
+              { method: 'POST', credentials: 'include' }
+            );
+            if (refreshRes.ok) {
+              // Повторяем checkAuth с новым токеном
+              const retryResponse: any = await authAPI.profile();
+              const userData = retryResponse.data?.user || retryResponse.data || retryResponse.user || retryResponse;
+              if (userData && userData.id) {
+                set({
+                  user: userData,
+                  isAuthenticated: true,
+                  isInitialized: true,
+                  is2FARequired: false,
+                  tempUserId: null,
+                });
+                initSocket();
+                return;
+              }
+            }
+          } catch { /* refresh не удался — разлогиниваем */ }
+
           console.error('Auth check failed:', error);
           set({
             user: null,
