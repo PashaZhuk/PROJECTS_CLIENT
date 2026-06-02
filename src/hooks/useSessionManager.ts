@@ -3,6 +3,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { getSocket } from '../api/socket';
 import { useAuthStore } from '../store/useAuthStore';
 import { devLog, devError } from '../utils/devLog';
+import { broadcastAuth, listenBroadcast } from '../lib/broadcast';
 
 const INACTIVITY_LIMITS = {
   USER: 30 * 60 * 1000,
@@ -68,11 +69,13 @@ export const useSessionManager = () => {
       socket.emit('join_self_room', user.id);
       socket.on('session_superseded', () => {
         console.warn('⚠️ Сессия вытеснена');
+        broadcastAuth('session_superseded');
         setSessionSuperseded(true);
         logout();
       });
       socket.on('user_blocked', () => {
         console.warn('🛑 Аккаунт заблокирован');
+        broadcastAuth('user_blocked');
         logout();
         setUserBlocked(true);
       });
@@ -88,4 +91,21 @@ export const useSessionManager = () => {
       }
     };
   }, [isAuthenticated, user?.id, setSessionSuperseded, setUserBlocked, logout]);
+
+  // Слушатель BroadcastChannel — модалки во всех вкладках
+  useEffect(() => {
+    return listenBroadcast((msg: any) => {
+      if (msg?.type === 'auth_event') {
+        if (msg.authType === 'session_superseded') {
+          setSessionSuperseded(true);
+          logout();
+        } else if (msg.authType === 'user_blocked') {
+          logout();
+          setUserBlocked(true);
+        } else if (msg.authType === 'session_expired') {
+          setSessionExpired(true);
+        }
+      }
+    });
+  }, [setSessionSuperseded, setUserBlocked, setSessionExpired, logout]);
 };

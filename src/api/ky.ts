@@ -1,5 +1,6 @@
 import ky from 'ky';
 import { useAuthStore } from '../store/useAuthStore';
+import { broadcastAuth } from '../lib/broadcast';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
@@ -75,15 +76,20 @@ const api = ky.create({
           if (!isAuthenticated) return;
 
           if (errorBody.code === 'USER_BLOCKED') {
+            broadcastAuth('user_blocked');
             setUserBlocked(true);
           } else if (errorBody.code === 'SESSION_SUPERSEDED') {
+            broadcastAuth('session_superseded');
             setSessionSuperseded(true);
           } else if (errorBody.code === 'SESSION_EXPIRED') {
+            broadcastAuth('session_expired');
             setSessionExpired(true);
           } else {
+            broadcastAuth('logout');
             useAuthStore.getState().logout();
           }
         } catch {
+          broadcastAuth('logout');
           useAuthStore.getState().logout();
         }
       },
