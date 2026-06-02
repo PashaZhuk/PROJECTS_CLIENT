@@ -268,6 +268,7 @@ pre .func { color: #fbbf24; }
     <a href="#flow-manager" class="sub">6. Менеджер</a>
     <a href="#flow-admin" class="sub">7. Администрирование</a>
     <a href="#flow-socket" class="sub">8. Socket.IO</a>
+    <a href="#flow-broadcast" class="sub">9. BroadcastChannel</a>
 
     <div class="section-label">Клиент</div>
     <a href="#client-structure">Структура React SPA</a>
@@ -944,6 +945,7 @@ pre .func { color: #fbbf24; }
 <div class="flow-row"><strong>Email-валидация:</strong> <code>z.string().regex(/@/)</code> вместо <code>z.string().email()</code> — Zod .email() требует TLD ≥2 символов, <code>d@e.t</code> не проходит.</div>
 <div class="flow-row"><strong>Field-level ошибки:</strong> в catch-блоках проверять <code>errorBody?.errors?.length > 0</code> и показывать <code>errors[0].message</code> вместо <code>errorBody.message</code>.</div>
 <div class="flow-row"><strong>Сетевые ошибки:</strong> хелпер <code>getErrorMessage(err, fallback)</code> из <code>UIHelpers.tsx</code>. TypeError → «Сервер недоступен», TimeoutError → «Сервер не отвечает», HTTPError → fallback.</div>
+<div class="flow-row"><strong>Асинхронные ошибки (с сервера):</strong> <code>getErrorMessageAsync(err, fallback)</code> — читает тело ответа <code>{ error, message }</code>. Использовать в catch с <code>await</code>. Пример: AdminCreateUser → «Партнер с УНП X уже зарегистрирован».</div>
 <div class="flow-row"><span class="flow-note">Исправлено 11 catch-блоков в 7 файлах. <code>err.message || fallback</code> больше не используется.</span></div>
 </div>
 
@@ -1167,6 +1169,28 @@ pre .func { color: #fbbf24; }
 </table>
 
 <p><strong>JWT Refresh в Socket.IO middleware:</strong> при истечении access-токена (15 мин) middleware автоматически выполняет refresh через refreshToken-куку. SHA-256 верификация, ротация токенов, установка нового JWT через Set-Cookie. Без этого фикса socket-соединение падало каждые 15 минут и пользователи пропадали из списка онлайн.</p>
+
+<h3 id="flow-broadcast">9. BroadcastChannel — синхронизация вкладок</h3>
+
+<div class="card">
+<h4>9.1 entity_saved — формы и списки</h4>
+<div class="flow-row"><span class="flow-step client">broadcastSaved(type, action, id)</span> <span class="arrow">→</span> после успешного API-вызова (create/update/delete)</div>
+<div class="flow-row"><span class="flow-step client">listenBroadcastSaved</span> <span class="arrow">→</span> в компоненте формы: закрыть модалку + refetch</div>
+<div class="flow-row"><span class="flow-step client">queryClient.invalidateQueries</span> <span class="arrow">→</span> для списков (UsersList)</div>
+</div>
+
+<div class="card">
+<h4>9.2 auth_event — модалки авторизации</h4>
+<div class="flow-row"><span class="flow-step client">broadcastAuth(type)</span> <span class="arrow">→</span> при socket session_superseded / user_blocked / 401 из ky</div>
+<div class="flow-row"><span class="flow-step client">listenBroadcast</span> <span class="arrow">→</span> useSessionManager: показать модалку + logout во всех вкладках</div>
+<div class="flow-row"><span class="flow-step note">Типы: session_superseded, user_blocked, session_expired, logout</span></div>
+</div>
+
+<div class="card">
+<h4>9.3 checkAuth — refresh при загрузке страницы</h4>
+<div class="flow-row">ky пропускает refresh для /auth/profile (строка ~47). При дубликате вкладки / F5 JWT может истечь → profile 401.</div>
+<div class="flow-row">checkAuth в catch пробует POST /auth/refresh через fetch. При успехе → повторный profile.</div>
+</div>
 
 
 <!-- ========== CLIENT ========== -->
