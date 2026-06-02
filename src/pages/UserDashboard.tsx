@@ -8,6 +8,7 @@ import { useProjectSockets } from '../hooks/useProjectSockets';
 import { useGlobalChatLoader } from '../hooks/useGlobalChatLoader';
 import { useUserSockets } from '../hooks/useUserSockets';
 import { Rocket } from 'lucide-react';
+import { listenBroadcastSaved } from '../lib/broadcast';
 import DynamicProjectForm from '../components/dashboard/forms/DynamicProjectForm';
 import { ProjectsListView } from '../components/dashboard/shared/ProjectsListView';
 import { ChatDrawer } from '../components/dashboard/shared/ChatDrawer';
@@ -74,6 +75,16 @@ const UserDashboard = () => {
       setIsFormOpen(true);
     }
   }, [activeTab]);
+
+  // Закрываем форму, если проект сохранён в другой вкладке
+  useEffect(() => {
+    return listenBroadcastSaved((msg) => {
+      if (msg.entityType === 'project' && isFormOpen) {
+        setIsFormOpen(false);
+        setEditingProject(null);
+      }
+    });
+  }, [isFormOpen]);
 
   const handleOpenChat = useCallback(async (projectId: number) => {
     const project = projects.find(p => p.id === projectId);

@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import { getErrorMessage } from '../shared/UIHelpers';
+import { broadcastSaved } from '../../../lib/broadcast';
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface Equipment {
@@ -746,12 +747,14 @@ const EquipmentRegister = () => {
           body: JSON.stringify(formData),
         });
         addToast('success', 'Оборудование обновлено');
+        broadcastSaved('equipment', 'updated', editingItem.id);
       } else {
         await apiFetch(API_PREFIX, {
           method: 'POST',
           body: JSON.stringify(formData),
         });
         addToast('success', 'Оборудование добавлено');
+        broadcastSaved('equipment', 'created');
       }
       setModalOpen(false);
       setEditingItem(null);
@@ -763,12 +766,14 @@ const EquipmentRegister = () => {
     }
   };
 
-  const handleDelete = async (item: Equipment) => {
-    if (!window.confirm(`Удалить «${item.name}»? Это действие необратимо.`)) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     setActionLoading(true);
     try {
-      await apiFetch(`${API_PREFIX}/${item.id}`, { method: 'DELETE' });
-      addToast('success', `«${item.name}» удалено`);
+      await apiFetch(`${API_PREFIX}/${deleteTarget.id}`, { method: 'DELETE' });
+      addToast('success', `«${deleteTarget.name}» удалено`);
+      broadcastSaved('equipment', 'deleted', deleteTarget.id);
+      setDeleteTarget(null);
       fetchEquipment();
     } catch (err: any) {
       addToast('error', getErrorMessage(err, 'Ошибка удаления'));

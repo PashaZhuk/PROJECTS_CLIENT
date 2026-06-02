@@ -6,6 +6,7 @@ import { PROJECT_CATEGORIES } from '../../../config/projectFields';
 
 import projectApi from '../../../api/projects';
 import type { Project } from '../../../types';
+import { broadcastSaved } from '../../../lib/broadcast';
 
 const PLACEHOLDERS: Record<string, string> = {
   customerName: 'ООО "Вектор Плюс"',
@@ -148,8 +149,10 @@ const DynamicProjectForm = ({ onClose, onSuccess, initialData }: Props) => {
 
       if (isEditing && initialData) {
         await projectApi.updateProject(initialData.id, body);
+        broadcastSaved('project', 'updated', initialData.id);
       } else {
         await projectApi.createProject(body);
+        broadcastSaved('project', 'created');
       }
 
       setIsSuccess(true);

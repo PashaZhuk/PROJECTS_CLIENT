@@ -13,6 +13,7 @@ import {
   Link,
 } from 'lucide-react';
 import { getErrorMessage } from '../shared/UIHelpers';
+import { broadcastSaved } from '../../../lib/broadcast';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -396,6 +397,7 @@ const ManagerNews = () => {
       });
       addToast('success', 'Новость добавлена');
       setAddModalOpen(false);
+      broadcastSaved('news', 'created');
       fetchNews();
     } catch (err: any) {
       addToast('error', getErrorMessage(err, 'Ошибка сохранения'));
@@ -415,6 +417,7 @@ const ManagerNews = () => {
       });
       addToast('success', `«${formData.title}» обновлена`);
       setEditItem(null);
+      broadcastSaved('news', 'updated', editItem.id);
       fetchNews();
     } catch (err: any) {
       addToast('error', getErrorMessage(err, 'Ошибка сохранения'));
@@ -431,6 +434,7 @@ const ManagerNews = () => {
       await apiFetch(`${API_PREFIX}/${deleteTarget.id}`, { method: 'DELETE' });
       addToast('success', `«${deleteTarget.title}» удалена`);
       setDeleteTarget(null);
+      broadcastSaved('news', 'deleted', deleteTarget.id);
       fetchNews();
     } catch (err: any) {
       addToast('error', getErrorMessage(err, 'Ошибка удаления'));

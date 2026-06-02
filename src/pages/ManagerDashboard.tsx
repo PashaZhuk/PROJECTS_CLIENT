@@ -8,6 +8,7 @@ import { useGlobalChatLoader } from '../hooks/useGlobalChatLoader';
 import { useUserSockets } from '../hooks/useUserSockets';
 import type { Project, ActiveTabType } from '../types';
 import { StatsView } from '../components/dashboard/shared/StatsView';
+import { listenBroadcastSaved } from '../lib/broadcast';
 import { ProjectsListView } from '../components/dashboard/shared/ProjectsListView';
 import ManagerBroadcast from '../components/dashboard/manager/ManagerBroadcast';
 import BroadcastJournal from '../components/dashboard/manager/BroadcastJournal';
@@ -64,6 +65,15 @@ const ManagerDashboard = () => {
 
   const [expandedProjectId, setExpandedProjectId] = useState<number | null>(null);
   const [chatProject, setChatProject] = useState<Project | null>(null);
+
+  // Слушатель BroadcastChannel — если данные сохранены в другой вкладке
+  useEffect(() => {
+    return listenBroadcastSaved((msg) => {
+      if (msg.entityType === 'equipment' || msg.entityType === 'news' || msg.entityType === 'project') {
+        console.debug(`[Broadcast] ${msg.entityType} ${msg.action} in another tab`);
+      }
+    });
+  }, []);
 
   useGlobalChatLoader(user, projects);
 
