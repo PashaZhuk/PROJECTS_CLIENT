@@ -81,6 +81,9 @@ const LogsViewer = () => {
       if (search) params.append('search', search);
       if (dateMode === 'single' && selectedDate) {
         params.append('date', selectedDate);
+      } else if (dateMode === 'range') {
+        params.append('dateFrom', dateFrom);
+        params.append('dateTo', dateTo);
       }
       params.append('limit', '500');
       const response: any = await api.get(`admin/logs?${params.toString()}`).json();
@@ -91,7 +94,7 @@ const LogsViewer = () => {
     } finally {
       setLoading(false);
     }
-  }, [level, search, selectedDate, dateMode]);
+  }, [level, search, selectedDate, dateMode, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchLogs();
