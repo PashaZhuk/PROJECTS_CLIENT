@@ -6,7 +6,7 @@ import Select from 'react-select';
 import { useCreateUser } from '../../../hooks/useUsersQuery';
 import { userFormSchema, type UserFormData } from '../../../schemas/userSchema';
 import api from '../../../api/ky';
-import { getErrorMessage } from '../shared/UIHelpers';
+import { getErrorMessage, getErrorMessageAsync } from '../shared/UIHelpers';
 import { broadcastSaved, listenBroadcastSaved } from '../../../lib/broadcast';
 
 interface CompanyOption {
@@ -114,7 +114,7 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
       broadcastSaved('user', 'created');
       onCancel();
     } catch (err: any) {
-      setServerError(getErrorMessage(err, 'Ошибка при создании пользователя'));
+      setServerError(await getErrorMessageAsync(err, 'Ошибка при создании пользователя'));
     }
   };
 

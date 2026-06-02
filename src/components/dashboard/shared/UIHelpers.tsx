@@ -107,4 +107,25 @@ export function getErrorMessage(err: any, fallback: string): string {
   }
 
   return fallback;
+};
+
+/**
+ * Асинхронная версия — пробует прочитать тело ответа сервера.
+ * Использовать в catch-блоках, где нужно показать конкретную ошибку с сервера.
+ */
+export async function getErrorMessageAsync(err: any, fallback: string): Promise<string> {
+  if (!err) return fallback;
+  if (err.name === 'TimeoutError') return 'Сервер не отвечает. Попробуйте позже.';
+  if (err.name === 'TypeError' || err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')) {
+    return 'Сервер недоступен. Проверьте подключение и попробуйте позже.';
+  }
+  if (err.name === 'HTTPError' && err.response) {
+    try {
+      const body = await err.response.clone().json();
+      if (body?.error) return body.error;
+      if (body?.message) return body.message;
+    } catch {}
+    return fallback;
+  }
+  return fallback;
 }
