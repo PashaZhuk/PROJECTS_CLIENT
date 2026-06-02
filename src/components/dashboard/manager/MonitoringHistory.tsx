@@ -341,31 +341,34 @@ const MonitoringHistory = () => {
         {/* Table */}
         <div className="p-8 pt-4">
           <div className="hidden md:grid grid-cols-13 gap-4 px-4 py-3 bg-slate-50 rounded-xl mb-1">
-            <div className="col-span-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Дата/время</div>
-            <div className="col-span-2 text-[10px] font-black uppercase tracking-widest text-slate-400">Действие</div>
-            <div className="col-span-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Описание</div>
-            <div className="col-span-2 text-[10px] font-black uppercase tracking-widest text-slate-400">Кто</div>
-            <div className="col-span-1 text-[10px] font-black uppercase tracking-widest text-slate-400">ID</div>
-            <div className="col-span-1 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Тип</div>
+            <div className="col-span-3 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Дата/время</div>
+            <div className="col-span-2 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Действие</div>
+            <div className="col-span-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Описание</div>
+            <div className="col-span-2 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Кто</div>
+            <div className="col-span-1 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">ID</div>
+            <div className="col-span-1 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Тип</div>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-0 divide-y divide-slate-100">
             {displayed.map((event) => (
               <div
                 key={event.id}
-                className="grid grid-cols-1 md:grid-cols-13 gap-3 md:gap-4 items-start md:items-center px-4 py-4 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-200"
+                className="grid grid-cols-1 md:grid-cols-13 gap-3 md:gap-4 items-center px-4 py-4 hover:bg-slate-50 transition-all"
               >
-                <div className="col-span-3 flex items-center gap-2">
+                {/* Дата/время */}
+                <div className="col-span-3 text-center">
                   <span className="text-xs font-bold text-slate-600">{formatDateTime(event.createdAt)}</span>
                 </div>
 
-                <div className="col-span-2 pl-6 md:pl-0">
+                {/* Действие */}
+                <div className="col-span-2 text-center">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-bold text-slate-700">
                     {getActionLabel(event.action)}
                   </span>
                 </div>
 
-                <div className="col-span-4 pl-6 md:pl-0">
+                {/* Описание */}
+                <div className="col-span-4 text-center">
                   <div className="text-sm font-medium text-slate-700 leading-snug">
                     {event.description}
                     {event.entityId && (
@@ -374,17 +377,20 @@ const MonitoringHistory = () => {
                   </div>
                 </div>
 
-                <div className="col-span-2 pl-6 md:pl-0">
+                {/* Кто */}
+                <div className="col-span-2 text-center">
                   <span className="text-[11px] font-bold text-slate-600 truncate block">
                     {event.user?.companyName || event.user?.name || event.user?.email || '—'}
                   </span>
                 </div>
 
-                <div className="col-span-1 pl-6 md:pl-0">
+                {/* ID */}
+                <div className="col-span-1 text-center">
                   <span className="text-[10px] font-mono text-slate-400">#{event.id}</span>
                 </div>
 
-                <div className="col-span-1 pl-6 md:pl-0 text-right">
+                {/* Тип */}
+                <div className="col-span-1 text-center">
                   <TypeBadge entityType={event.entityType} />
                 </div>
               </div>
