@@ -1058,9 +1058,9 @@ pre .func { color: #fbbf24; }
   <tr><th>Операция</th><th>Метод/Путь</th><th>Действие</th></tr>
   <tr><td>Список</td><td>GET /equipment</td><td>findMany + count (фильтры: category, status, search)</td></tr>
   <tr><td>По ID</td><td>GET /equipment/:id</td><td>findUnique</td></tr>
-  <tr><td>Создать</td><td>POST /equipment</td><td>create → logEvent('equipment_added')</td></tr>
-  <tr><td>Обновить</td><td>PUT /equipment/:id</td><td>update → logEvent('equipment_edited')</td></tr>
-  <tr><td>Удалить</td><td>DELETE /equipment/:id</td><td>getById + delete → logEvent('equipment_deleted')</td></tr>
+  <tr><td>Создать</td><td>POST /equipment</td><td>create → logEvent с деталями (категория, SN, MAC, кому/куда)</td></tr>
+  <tr><td>Обновить</td><td>PUT /equipment/:id</td><td>getById → сравнение полей → update → logEvent с diff</td></tr>
+  <tr><td>Удалить</td><td>DELETE /equipment/:id</td><td>getById + delete → logEvent (SN + MAC)</td></tr>
   <tr><td>Категории</td><td>GET /equipment/categories</td><td>distinct: ['category']</td></tr>
 </table>
 </div>
@@ -1078,7 +1078,10 @@ pre .func { color: #fbbf24; }
 <div class="card">
 <h4>6.11 Лог рассылок / Лог событий</h4>
 <div class="flow-row"><span class="flow-step client">Manager</span> <span class="arrow">→</span> GET <code>/api/manager/broadcast-log</code> [auth, manager] → findMany(take: 50)</div>
-<div class="flow-row"><span class="flow-step client">Manager</span> <span class="arrow">→</span> GET <code>/api/manager/events</code> [auth, manager] → findMany(take: 100, include: user)</div>
+<div class="flow-row"><span class="flow-step client">Manager</span> <span class="arrow">→</span> GET <code>/api/manager/events?page=1&limit=200&action=</code> [auth, manager]</div>
+<div class="flow-row"><span class="flow-step server">getEventLog()</span> <span class="arrow">→</span> пагинация (page/limit), фильтр по action, до 500 записей</div>
+<div class="flow-row"><span class="flow-step server">Оборудование</span> <span class="arrow">→</span> add: детали (категория, SN, MAC, кому/куда). edit: сравнение всех полей → diff. delete: SN + MAC</div>
+<div class="flow-row"><span class="flow-step ui">MonitoringHistory</span> <span class="arrow">→</span> пагинация (страницы), фильтр по действию, поиск по тексту, ID записи, разделители строк</div>
 </div>
 
 <h3 id="flow-admin">7. Администрирование</h3>
