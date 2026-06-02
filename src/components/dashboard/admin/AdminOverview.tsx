@@ -1,15 +1,9 @@
-import { ShieldCheck, Activity, RefreshCw } from 'lucide-react';
+import { Activity, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
-import { StatCard, ServerStatus } from '../shared/StatCardStatus';
+import { StatCard } from '../shared/StatCardStatus';
 
-const AdminOverview = ({ stats, loading, isOnline, onRefresh }: any) => {
+const AdminOverview = ({ stats, onRefresh }: any) => {
   const [spin, setSpin] = useState(false);
-
-  const handleRefresh = async () => {
-    setSpin(true);
-    await onRefresh();
-    setSpin(false);
-  };
   if (!stats) return null;
 
   return (

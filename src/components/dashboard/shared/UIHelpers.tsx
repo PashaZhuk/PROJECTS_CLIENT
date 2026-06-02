@@ -82,3 +82,29 @@ export const LoadingState = () => (
     </p>
   </div>
 );
+
+/**
+ * Преобразует ошибку API/сети в человекочитаемое сообщение.
+ * Главная задача: не показывать "Failed to fetch"/TypeError пользователю.
+ * @param err — объект ошибки из catch
+ * @param fallback — сообщение, если расшифровать не удалось
+ */
+export function getErrorMessage(err: any, fallback: string): string {
+  if (!err) return fallback;
+
+  // Таймаут от ky
+  if (err.name === 'TimeoutError') return 'Сервер не отвечает. Попробуйте позже.';
+
+  // Сетевая ошибка: TypeError от fetch или сообщение "Failed to fetch"
+  // (кидаются при недоступном сервере, в отличие от HTTPError с ответом)
+  if (err.name === 'TypeError' || err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')) {
+    return 'Сервер недоступен. Проверьте подключение и попробуйте позже.';
+  }
+
+  // HTTPError от ky — есть ответ сервера, используем fallback
+  if (err.name === 'HTTPError' && err.response) {
+    return fallback;
+  }
+
+  return fallback;
+}

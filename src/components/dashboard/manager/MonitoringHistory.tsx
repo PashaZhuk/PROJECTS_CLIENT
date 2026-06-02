@@ -6,6 +6,7 @@ import {
   RefreshCw,
   AlertCircle,
 } from 'lucide-react';
+import { getErrorMessage } from '../shared/UIHelpers';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -118,7 +119,7 @@ const MonitoringHistory = () => {
         throw new Error('Неверный формат ответа');
       }
     } catch (err: any) {
-      setError(err.message || 'Ошибка загрузки');
+      setError(getErrorMessage(err, 'Ошибка загрузки'));
     } finally {
       setLoading(false);
     }

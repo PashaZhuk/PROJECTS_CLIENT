@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import api from '../api/ky';
+import { getErrorMessage } from './../components/dashboard/shared/UIHelpers';
 
 const ChangePasswordPage = () => {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ const ChangePasswordPage = () => {
         const errorBody = await err.response?.json?.();
         setError(errorBody?.error || 'Ошибка при смене пароля');
       } catch {
-        setError(err.message || 'Ошибка при смене пароля');
+        setError(getErrorMessage(err, 'Ошибка при смене пароля'));
       }
     } finally {
       setLoading(false);

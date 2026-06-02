@@ -3,7 +3,7 @@ import {
   ArrowLeft, Plus, Trash2, Save, Calendar, ChevronDown, Loader2, CheckCircle2
 } from 'lucide-react';
 import { PROJECT_CATEGORIES } from '../../../config/projectFields';
-import { useAuthStore } from '../../../store/useAuthStore';
+
 import projectApi from '../../../api/projects';
 import type { Project } from '../../../types';
 
@@ -37,7 +37,6 @@ interface Props {
 }
 
 const DynamicProjectForm = ({ onClose, onSuccess, initialData }: Props) => {
-  const user = useAuthStore((state) => state.user);
   const isEditing = !!initialData;
 
   // Определяем начальную категорию

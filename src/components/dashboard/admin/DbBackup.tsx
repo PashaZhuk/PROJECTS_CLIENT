@@ -134,12 +134,6 @@ const DbBackup = () => {
 
   // ─── Download backup ───
 
-  const handleDownload = useCallback((filename: string) => {
-    const a = document.createElement('a');
-    a.href = `/api/admin/backup/download/${encodeURIComponent(filename)}`;
-    a.download = filename;
-    a.click();
-  }, []);
 
   // ─── Restore backup ───
 

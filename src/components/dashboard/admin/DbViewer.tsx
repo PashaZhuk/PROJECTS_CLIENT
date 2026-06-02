@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Database, Search, ChevronLeft, ChevronRight, Loader2, AlertCircle, CheckCircle2, X, Pencil } from 'lucide-react';
 
 // ─── Types ───
@@ -35,9 +35,6 @@ function formatCellValue(value: unknown): string {
   return String(value);
 }
 
-function truncate(str: string, max: number): string {
-  return str.length > max ? str.slice(0, max) + '…' : str;
-}
 
 // ─── DbViewer ───
 
@@ -379,7 +376,7 @@ const DbViewer = () => {
                 Редактирование строки
                 {currentTableInfo.columns.find(c => c.isPk) && (
                   <span className="text-purple-600 ml-1">
-                    #{editingRow[currentTableInfo.columns.find(c => c.isPk)!.name]}
+                    #{String(editingRow[currentTableInfo.columns.find(c => c.isPk)!.name])}
                   </span>
                 )}
               </h2>

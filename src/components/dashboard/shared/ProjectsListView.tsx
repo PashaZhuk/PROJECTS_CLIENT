@@ -1,4 +1,3 @@
-import React from 'react';
 import { ClipboardList, Search, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { ProjectRow } from '../shared/ProjectRow';
 // Импортируем типы из вашего центрального файла типов
@@ -36,7 +35,7 @@ export const ProjectsListView = ({
   expandedId,
   setExpandedId,
   onEdit,
-  onCreateNew,
+
   isAdminView,
   onStatusUpdate,
   onOpenChat,

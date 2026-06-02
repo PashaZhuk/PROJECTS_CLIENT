@@ -1,4 +1,3 @@
-import React from 'react';
 import { Calendar, RefreshCw, Clock, CheckCircle2, FileText } from 'lucide-react';
 import { StatCard } from './UIHelpers';
 

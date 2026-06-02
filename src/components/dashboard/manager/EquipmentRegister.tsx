@@ -10,11 +10,10 @@ import {
   AlertCircle,
   CheckCircle2,
   ChevronDown,
-  ChevronRight,
   RotateCcw,
   X,
 } from 'lucide-react';
-
+import { getErrorMessage } from '../shared/UIHelpers';
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface Equipment {
@@ -703,7 +702,7 @@ const EquipmentRegister = () => {
       const fetchedItems: Equipment[] = data.items || data || [];
       setItems(Array.isArray(fetchedItems) ? fetchedItems : []);
     } catch (err: any) {
-      addToast('error', err.message || 'Ошибка загрузки данных');
+      addToast('error', getErrorMessage(err, 'Ошибка загрузки данных'));
     } finally {
       setLoading(false);
     }
@@ -758,7 +757,7 @@ const EquipmentRegister = () => {
       setEditingItem(null);
       fetchEquipment();
     } catch (err: any) {
-      addToast('error', err.message || 'Ошибка сохранения');
+      addToast('error', getErrorMessage(err, 'Ошибка сохранения'));
     } finally {
       setActionLoading(false);
     }
@@ -772,7 +771,7 @@ const EquipmentRegister = () => {
       addToast('success', `«${item.name}» удалено`);
       fetchEquipment();
     } catch (err: any) {
-      addToast('error', err.message || 'Ошибка удаления');
+      addToast('error', getErrorMessage(err, 'Ошибка удаления'));
     } finally {
       setActionLoading(false);
     }

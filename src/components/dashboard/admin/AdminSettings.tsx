@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Save, MapPin, Phone, Mail, Clock, Headphones, Building2, Loader2, AlertCircle, CheckCircle2, Info, ChevronLeft, Settings, ArrowRight } from 'lucide-react';
+import { Save, MapPin, Phone, Clock, Headphones, Building2, Loader2, AlertCircle, CheckCircle2, Info, ChevronLeft, Settings, ArrowRight } from 'lucide-react';
 import YandexMap from '../../ui/YandexMap';
 
 // ─── Типы ────────────────────────────────────────────

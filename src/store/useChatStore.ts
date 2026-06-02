@@ -53,7 +53,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       if (!old?.projects) return old;
       return {
         ...old,
-        projects: old.projects.map(p =>
+        projects: old.projects.map((p: any) =>
           Number(p.id) === pId ? { ...p, unreadCount: 0, hasUnread: false } : p
         ),
       };

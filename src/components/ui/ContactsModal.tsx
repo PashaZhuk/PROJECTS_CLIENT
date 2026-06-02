@@ -1,5 +1,4 @@
-import React from 'react';
-import { X, Phone, Mail, MapPin, Clock, Headphones, Building2 } from 'lucide-react';
+import { X, Phone, MapPin, Clock, Headphones, Building2 } from 'lucide-react';
 import YandexMap from './YandexMap';
 
 interface ContactsData {

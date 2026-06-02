@@ -1,5 +1,4 @@
 // StatCard.tsx
-import React from 'react';
 import { Loader2 } from 'lucide-react';
 
 export const StatCard = ({ title, value, icon, color, loading, subtitle }: any) => {

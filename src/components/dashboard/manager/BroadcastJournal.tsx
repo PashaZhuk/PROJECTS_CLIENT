@@ -4,12 +4,12 @@ import {
   Send,
   AlertCircle,
   CheckCircle2,
-  Clock,
   Loader2,
   RefreshCw,
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
+import { getErrorMessage } from '../shared/UIHelpers';
 
 // ---------------------------------------------------------------------------
 // Типы
@@ -83,7 +83,7 @@ const BroadcastJournal = () => {
       }
     } catch (err: any) {
       console.error('[BroadcastJournal] Ошибка загрузки:', err.message);
-      setError(err.message || 'Не удалось загрузить журнал рассылок');
+      setError(getErrorMessage(err, 'Не удалось загрузить журнал рассылок'));
     } finally {
       setLoading(false);
     }

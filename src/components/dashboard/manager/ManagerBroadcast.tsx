@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../../../store/useAuthStore';
 import api from '../../../api/ky';
 import { Send, Paperclip, X, Search, Mail, CheckCircle, AlertCircle, Loader2, FileWarning, FileText } from 'lucide-react';
+import { getErrorMessage } from '../shared/UIHelpers';
 
 interface Partner {
   id: number;
@@ -226,7 +227,7 @@ const ManagerBroadcast = () => {
           setError(body?.error || 'Ошибка при отправке');
         }
       } catch {
-        setError(err.message || 'Ошибка при отправке');
+        setError(getErrorMessage(err, 'Ошибка при отправке'));
       }
     } finally {
       setSending(false);

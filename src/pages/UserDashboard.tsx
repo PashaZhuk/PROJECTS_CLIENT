@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import type { Project, ActiveTabType } from '../types';
 import { useAuthStore } from '../store/useAuthStore';
@@ -13,6 +13,7 @@ import { ProjectsListView } from '../components/dashboard/shared/ProjectsListVie
 import { ChatDrawer } from '../components/dashboard/shared/ChatDrawer';
 import { NewsCards } from '../components/dashboard/shared/NewsCards';
 import OneCIntegrationCards from '../components/dashboard/shared/OneCIntegrationCards';
+import { StatsView } from '../components/dashboard/shared/StatsView';
 import api from '../api/ky';
 
 const SHOW_WORKING_FEATURES = false;
@@ -58,7 +59,7 @@ const UserDashboard = () => {
   const markMessagesAsReadLocally = useChatStore((state) => state.markMessagesAsReadLocally);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [_selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [chatProject, setChatProject] = useState<Project | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);

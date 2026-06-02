@@ -38,7 +38,6 @@ const PageLoader = () => (
 
 const AppContent = () => {
   const { 
-    user, 
     isAuthenticated, 
     isInitialized, 
     _hasHydrated, 

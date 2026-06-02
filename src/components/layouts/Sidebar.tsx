@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   LayoutDashboard, 
   Users, 
@@ -21,7 +21,6 @@ import type { ActiveTabType } from '../../types';
 
 const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setActiveTab: (t: ActiveTabType) => void }) => {
   const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
   
   const [isProjectsOpen, setIsProjectsOpen] = useState(false);
   const [isUsersOpen, setIsUsersOpen] = useState(false);

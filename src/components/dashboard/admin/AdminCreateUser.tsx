@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail, Key, RefreshCw, Check, Briefcase, ShieldCheck, Phone, AlertCircle } from 'lucide-react';
@@ -6,6 +6,7 @@ import Select from 'react-select';
 import { useCreateUser } from '../../../hooks/useUsersQuery';
 import { userFormSchema, type UserFormData } from '../../../schemas/userSchema';
 import api from '../../../api/ky';
+import { getErrorMessage } from '../shared/UIHelpers';
 
 interface CompanyOption {
   value: number;
@@ -102,7 +103,7 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
       await createMutation.mutateAsync(payload);
       onCancel();
     } catch (err: any) {
-      setServerError(err.message);
+      setServerError(getErrorMessage(err, 'Ошибка при создании пользователя'));
     }
   };
 

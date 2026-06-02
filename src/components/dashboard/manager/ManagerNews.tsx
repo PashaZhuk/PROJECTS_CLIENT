@@ -11,6 +11,7 @@ import {
   Image,
   Link,
 } from 'lucide-react';
+import { getErrorMessage } from '../shared/UIHelpers';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -372,7 +373,7 @@ const ManagerNews = () => {
       const data = await apiFetch(API_PREFIX);
       setItems(Array.isArray(data) ? data : []);
     } catch (err: any) {
-      addToast('error', err.message || 'Ошибка загрузки новостей');
+      addToast('error', getErrorMessage(err, 'Ошибка загрузки новостей'));
     } finally {
       setLoading(false);
     }
@@ -394,7 +395,7 @@ const ManagerNews = () => {
       setAddModalOpen(false);
       fetchNews();
     } catch (err: any) {
-      addToast('error', err.message || 'Ошибка сохранения');
+      addToast('error', getErrorMessage(err, 'Ошибка сохранения'));
     } finally {
       setActionLoading(false);
     }
@@ -410,7 +411,7 @@ const ManagerNews = () => {
       setDeleteTarget(null);
       fetchNews();
     } catch (err: any) {
-      addToast('error', err.message || 'Ошибка удаления');
+      addToast('error', getErrorMessage(err, 'Ошибка удаления'));
     } finally {
       setActionLoading(false);
     }

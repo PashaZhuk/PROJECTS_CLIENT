@@ -159,8 +159,18 @@ export const useAuthStore = create<AuthState>()(
           let errorMessage = 'Ошибка входа';
           let extraData: any = {};
 
+          // Сетевая ошибка — сервер недоступен
+          if (!error.response) {
+            if (error.name === 'TimeoutError') {
+              errorMessage = 'Сервер не отвечает. Попробуйте позже.';
+            } else {
+              errorMessage = 'Сервер недоступен. Проверьте подключение к сети и попробуйте позже.';
+            }
+            return { success: false, message: errorMessage, ...extraData };
+          }
+
           try {
-            const errorBody = await error.response?.json();
+            const errorBody = await error.response.json();
             errorMessage = errorBody?.error || errorBody?.message || errorBody?.msg || errorMessage;
             if (errorBody.lockUntil) extraData.lockUntil = new Date(errorBody.lockUntil);
             if (errorBody.timeLeft) extraData.timeLeft = errorBody.timeLeft;
@@ -200,8 +210,15 @@ export const useAuthStore = create<AuthState>()(
         } catch (error: any) {
           let errorMessage = 'Неверный код';
           let extraData: any = {};
+
+          // Сетевая ошибка
+          if (!error.response) {
+            errorMessage = 'Сервер недоступен. Проверьте подключение к сети и попробуйте позже.';
+            return { success: false, message: errorMessage };
+          }
+
           try {
-            const errorBody = await error.response?.json();
+            const errorBody = await error.response.json();
             errorMessage = errorBody?.error || errorBody?.message || errorMessage;
             if (errorBody.timeLeft) extraData.timeLeft = errorBody.timeLeft;
             if (errorBody.attemptsLeft !== undefined) extraData.attemptsLeft = errorBody.attemptsLeft;
