@@ -641,9 +641,9 @@ const EquipmentRegister = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  // Accordion state — all expanded by default
+  // Accordion state — all collapsed by default
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>(() =>
-    CATEGORIES.reduce((acc, cat) => ({ ...acc, [cat]: true }), {}),
+    CATEGORIES.reduce((acc, cat) => ({ ...acc, [cat]: false }), {}),
   );
 
   // Loading
@@ -994,7 +994,7 @@ const EquipmentRegister = () => {
                     key={cat}
                     category={cat}
                     items={catItems}
-                    expanded={expandedCategories[cat] ?? true}
+                    expanded={expandedCategories[cat] ?? false}
                     onToggle={() => toggleCategory(cat)}
                     onEdit={openEditModal}
                     onDelete={handleDelete}
@@ -1011,7 +1011,7 @@ const EquipmentRegister = () => {
                     key={cat}
                     category={cat}
                     items={catItems}
-                    expanded={expandedCategories[cat] ?? true}
+                    expanded={expandedCategories[cat] ?? false}
                     onToggle={() => toggleCategory(cat)}
                     onEdit={openEditModal}
                     onDelete={handleDelete}
