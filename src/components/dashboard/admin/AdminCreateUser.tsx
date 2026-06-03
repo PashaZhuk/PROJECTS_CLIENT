@@ -87,6 +87,7 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
     } else {
       setValue('companyName', '');
       setValue('unp', '');
+      setValue('phone', '');
     }
   };
 
@@ -107,7 +108,7 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
     } else {
       delete payload.companyName;
       delete payload.unp;
-      delete payload.phone;
+      // phone остаётся — требуется для 2FA для всех ролей
     }
     try {
       await createMutation.mutateAsync(payload);
@@ -121,7 +122,7 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
   return (
     <div className="max-w-3xl mx-auto bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
       <div className="p-10 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-        <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Регистрация партнера</h2>
+        <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Регистрация пользователя</h2>
         <ShieldCheck className="text-slate-200" size={32} />
       </div>
 
@@ -143,6 +144,7 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
               >
                 <option value="USER">ПАРТНЕР</option>
                 <option value="MANAGER">МЕНЕДЖЕР</option>
+                <option value="ADMIN">АДМИНИСТРАТОР</option>
               </select>
             </div>
             {errors.role && <span className="text-red-500 text-xs font-bold">{errors.role.message}</span>}
@@ -175,16 +177,6 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
                 isClearable
                 className="react-select-container"
                 classNamePrefix="react-select"
-                styles={{
-                  control: (base) => ({
-                    ...base,
-                    backgroundColor: '#f8fafc',
-                    borderRadius: '1rem',
-                    border: 'none',
-                    padding: '0.25rem 0',
-                    boxShadow: 'none',
-                  }),
-                }}
               />
               <input type="hidden" {...register('companyName')} />
               {errors.companyName && <span className="text-red-500 text-xs font-bold">{errors.companyName.message}</span>}
@@ -199,21 +191,22 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
               />
               {errors.unp && <span className="text-red-500 text-xs font-bold">{errors.unp.message}</span>}
             </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Телефон (для 2FA)</label>
-              <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-                <input
-                  {...register('phone')}
-                  placeholder="+375XXXXXXXXX"
-                  className={`w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl text-sm font-mono font-bold ${errors.phone ? 'ring-2 ring-red-500' : ''}`}
-                />
-              </div>
-              {errors.phone && <span className="text-red-500 text-xs font-bold">{errors.phone.message}</span>}
-            </div>
           </div>
         )}
+
+        {/* Телефон для всех ролей (2FA) */}
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Телефон (для 2FA)</label>
+          <div className="relative">
+            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+            <input
+              {...register('phone')}
+              placeholder="+375XXXXXXXXX"
+              className={`w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl text-sm font-mono font-bold ${errors.phone ? 'ring-2 ring-red-500' : ''}`}
+            />
+          </div>
+          {errors.phone && <span className="text-red-500 text-xs font-bold">{errors.phone.message}</span>}
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">

@@ -6,7 +6,7 @@ import { devLog, devError } from '../utils/devLog';
 import { broadcastAuth, listenBroadcast } from '../lib/broadcast';
 
 const INACTIVITY_LIMITS = {
-  USER: 30 * 60 * 1000,
+  USER: 2 * 60 * 60 * 1000,   // 2 часа для всех
   MANAGER: 2 * 60 * 60 * 1000,
   ADMIN: 2 * 60 * 60 * 1000,
 };

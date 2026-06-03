@@ -20,7 +20,7 @@ const managerSchema = baseSchema.extend({
   name: z.string().min(1, 'ФИО обязательно'),
   companyName: z.string().optional(),
   unp: z.string().optional(),
-  phone: z.string().optional(),
+  phone: z.string().regex(/^\+375\d{9}$/, 'Формат: +375XXXXXXXXX'),
 });
 
 const adminSchema = baseSchema.extend({
@@ -28,7 +28,7 @@ const adminSchema = baseSchema.extend({
   name: z.string().min(1, 'ФИО обязательно'),
   companyName: z.string().optional(),
   unp: z.string().optional(),
-  phone: z.string().optional(),
+  phone: z.string().regex(/^\+375\d{9}$/, 'Формат: +375XXXXXXXXX'),
 });
 
 export const userFormSchema = z.discriminatedUnion('role', [
