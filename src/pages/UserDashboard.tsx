@@ -32,7 +32,7 @@ const WorkInProgressBanner = ({ title }: { title: string }) => (
       </p>
       <div className="inline-flex items-center gap-3 px-6 py-3 bg-blue-50 border border-blue-200 rounded-full">
         <span className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-ping" />
-        <span className="text-xs font-black text-blue-700 uppercase tracking-widest">Скоро доступно</span>
+        <span className="text-[13px] font-bold text-blue-700 uppercase tracking-widest">Скоро доступно</span>
       </div>
     </div>
   </div>

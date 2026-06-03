@@ -128,14 +128,14 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
 
       <form onSubmit={handleSubmit(onSubmit)} className="p-10 space-y-6">
         {serverError && (
-          <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-red-100 flex items-center gap-2">
+          <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-[11px] font-bold uppercase tracking-widest border border-red-100 flex items-center gap-2">
             <AlertCircle size={14} /> {serverError}
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Роль в системе</label>
+            <label className="text-[10px] font-bold uppercase text-slate-400 ml-1 tracking-widest">Роль в системе</label>
             <div className="relative">
               <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <select
@@ -147,19 +147,19 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
                 <option value="ADMIN">АДМИНИСТРАТОР</option>
               </select>
             </div>
-            {errors.role && <span className="text-red-500 text-xs font-bold">{errors.role.message}</span>}
+            {errors.role && <span className="text-red-500 text-[13px] font-bold">{errors.role.message}</span>}
           </div>
 
           {/* Поле ФИО только для менеджера */}
           {roleValue === 'MANAGER' && (
             <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-              <label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">ФИО</label>
+              <label className="text-[10px] font-bold uppercase text-slate-400 ml-1 tracking-widest">ФИО</label>
               <input
                 {...register('name')}
                 placeholder="Иван Иванов"
                 className={`w-full px-6 py-4 bg-slate-50 border-none rounded-2xl text-sm font-medium ${errors.name ? 'ring-2 ring-red-500' : ''}`}
               />
-              {errors.name && <span className="text-red-500 text-xs font-bold">{errors.name.message}</span>}
+              {errors.name && <span className="text-red-500 text-[13px] font-bold">{errors.name.message}</span>}
             </div>
           )}
         </div>
@@ -167,7 +167,7 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
         {roleValue === 'USER' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Компания</label>
+              <label className="text-[10px] font-bold uppercase text-slate-400 ml-1 tracking-widest">Компания</label>
               <Select
                 options={companies}
                 isLoading={isLoadingCompanies}
@@ -183,20 +183,20 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">УНП</label>
+              <label className="text-[10px] font-bold uppercase text-slate-400 ml-1 tracking-widest">УНП</label>
               <input
                 {...register('unp')}
                 readOnly
                 className="w-full px-6 py-4 bg-slate-100 border-none rounded-2xl text-sm font-bold tracking-tighter cursor-default"
               />
-              {errors.unp && <span className="text-red-500 text-xs font-bold">{errors.unp.message}</span>}
+              {errors.unp && <span className="text-red-500 text-[13px] font-bold">{errors.unp.message}</span>}
             </div>
           </div>
         )}
 
         {/* Телефон для всех ролей (2FA) */}
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Телефон (для 2FA)</label>
+          <label className="text-[10px] font-bold uppercase text-slate-400 ml-1 tracking-widest">Телефон (для 2FA)</label>
           <div className="relative">
             <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
             <input
@@ -205,12 +205,12 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
               className={`w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl text-sm font-mono font-bold ${errors.phone ? 'ring-2 ring-red-500' : ''}`}
             />
           </div>
-          {errors.phone && <span className="text-red-500 text-xs font-bold">{errors.phone.message}</span>}
+          {errors.phone && <span className="text-red-500 text-[13px] font-bold">{errors.phone.message}</span>}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Email</label>
+            <label className="text-[10px] font-bold uppercase text-slate-400 ml-1 tracking-widest">Email</label>
             <div className="relative">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
               <input
@@ -219,11 +219,11 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
                 className={`w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl text-sm font-medium ${errors.email ? 'ring-2 ring-red-500' : ''}`}
               />
             </div>
-            {errors.email && <span className="text-red-500 text-xs font-bold">{errors.email.message}</span>}
+            {errors.email && <span className="text-red-500 text-[13px] font-bold">{errors.email.message}</span>}
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Временный пароль</label>
+            <label className="text-[10px] font-bold uppercase text-slate-400 ml-1 tracking-widest">Временный пароль</label>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
@@ -240,7 +240,7 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
                 <RefreshCw size={20} />
               </button>
             </div>
-            {errors.password && <span className="text-red-500 text-xs font-bold">{errors.password.message}</span>}
+            {errors.password && <span className="text-red-500 text-[13px] font-bold">{errors.password.message}</span>}
           </div>
         </div>
 
@@ -248,14 +248,14 @@ const AdminCreateUser = ({ onCancel }: CreateUserProps) => {
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 py-5 bg-slate-900 text-white rounded-3xl font-black uppercase tracking-[0.2em] text-xs hover:bg-slate-800 transition-all shadow-xl disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 py-5 bg-slate-900 text-white rounded-3xl font-bold uppercase tracking-[0.2em] text-[13px] hover:bg-slate-800 transition-all shadow-xl disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading ? <RefreshCw className="animate-spin" /> : <><Check size={16} /> Создать аккаунт</>}
           </button>
           <button
             type="button"
             onClick={onCancel}
-            className="px-10 py-5 text-slate-400 font-bold uppercase text-[10px] tracking-widest hover:text-slate-600"
+            className="px-10 py-5 text-slate-400 font-bold uppercase text-[11px] tracking-widest hover:text-slate-600"
           >
             Отмена
           </button>

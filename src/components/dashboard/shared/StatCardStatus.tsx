@@ -19,7 +19,7 @@ export const StatCard = ({ title, value, icon, color, loading, subtitle }: any) 
           )}
         </div>
       </div>
-      <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">{title}</p>
+      <p className="text-slate-400 text-[11px] font-bold uppercase tracking-[0.1em]">{title}</p>
       <div className={`mt-2 transition-all ${loading ? 'opacity-30 blur-[2px]' : 'opacity-100'}`}>
         <p className="text-5xl font-black text-slate-900 tracking-tighter">{value.toLocaleString()}</p>
         {subtitle}

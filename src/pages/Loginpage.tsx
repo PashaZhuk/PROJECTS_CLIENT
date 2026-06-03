@@ -262,7 +262,7 @@ const LoginPage = () => {
           </div>
 
           {codeError && (
-            <div className="mb-4 p-4 rounded-xl text-xs font-black uppercase tracking-widest border flex items-center gap-2 bg-red-50 text-red-600 border-red-200">
+            <div className="mb-4 p-4 rounded-xl text-[13px] font-bold uppercase tracking-widest border flex items-center gap-2 bg-red-50 text-red-600 border-red-200">
               <AlertCircle size={16} />
               <div>{codeError}</div>
             </div>
@@ -290,7 +290,7 @@ const LoginPage = () => {
             <button
               type="submit" 
               disabled={!code || codeLoading}
-              className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:bg-slate-800 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-[0.2em] text-[13px] hover:bg-slate-800 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {codeLoading ? <RefreshCw className="animate-spin" size={16} /> : <CheckCircle size={16} />}
               {codeLoading ? 'Проверка...' : 'Подтвердить'}
@@ -301,7 +301,7 @@ const LoginPage = () => {
             <button
               onClick={handleResendCode} 
               disabled={resendTimer > 0}
-              className="text-xs font-bold uppercase tracking-widest text-blue-600 hover:text-blue-800 disabled:text-gray-400 transition-colors"
+              className="text-[13px] font-bold uppercase tracking-widest text-blue-600 hover:text-blue-800 disabled:text-gray-400 transition-colors"
             >
               {resendTimer > 0 ? `Отправить повторно (${formatTime(resendTimer)})` : 'Отправить код снова'}
             </button>

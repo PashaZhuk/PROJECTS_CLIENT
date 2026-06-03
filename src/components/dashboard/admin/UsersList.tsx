@@ -74,7 +74,7 @@ const UsersList = () => {
       <div className="overflow-x-auto">
         <table className="w-full text-left table-fixed">
           <thead className="bg-slate-50/50">
-            <tr className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <tr className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
               <th className="px-10 py-5 w-2/5">Пользователь</th>
               <th className="px-6 py-5 w-1/6">Роль</th>
               <th className="px-6 py-5 w-1/6">УНП</th>
@@ -100,26 +100,26 @@ const UsersList = () => {
                           </div>
                         )}
                         <div className="flex flex-col">
-                          <div className="font-black text-slate-900 text-sm uppercase tracking-tight flex items-center gap-2 flex-wrap">
+                          <div className="font-bold text-slate-900 text-[13px] uppercase tracking-tight flex items-center gap-2 flex-wrap">
                             {user.companyName || user.name || 'Без названия'}
                             {user.role === 'ADMIN' && <UserCheck size={14} className="text-blue-500" />}
                             {lockInfo?.type === 'LOGIN' && (
-                              <span className="text-[9px] font-black text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-lg uppercase tracking-widest flex items-center gap-1">
+                              <span className="text-[9px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-lg uppercase tracking-widest flex items-center gap-1">
                                 <Lock size={10} /> Пароль ({lockInfo.minutesLeft} мин)
                               </span>
                             )}
                             {lockInfo?.type === '2FA' && (
-                              <span className="text-[9px] font-black text-purple-600 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-lg uppercase tracking-widest flex items-center gap-1">
+                              <span className="text-[9px] font-bold text-purple-600 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-lg uppercase tracking-widest flex items-center gap-1">
                                 <KeyRound size={10} /> SMS ({lockInfo.minutesLeft} мин)
                               </span>
                             )}
                             {isManuallyBlocked && (
-                              <span className="text-[9px] font-black text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-lg uppercase tracking-widest">
+                              <span className="text-[9px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-lg uppercase tracking-widest">
                                 Заблокирован
                               </span>
                             )}
                           </div>
-                          <div className="text-[10px] text-slate-400 font-bold flex items-center gap-1 uppercase tracking-tighter mt-1">
+                          <div className="text-[11px] text-slate-400 font-bold flex items-center gap-1 uppercase tracking-tighter mt-1">
                             <Mail size={10} /> {user.email}
                           </div>
                         </div>
@@ -127,7 +127,7 @@ const UsersList = () => {
                     </td>
 
                     <td className="px-6 py-6">
-                      <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
+                      <span className={`px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest border ${
                         user.role === 'ADMIN' ? 'bg-slate-900 text-white border-slate-900' :
                         user.role === 'MANAGER' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                         'bg-blue-50 text-blue-600 border-blue-100'
@@ -137,7 +137,7 @@ const UsersList = () => {
                     </td>
 
                     <td className="px-6 py-6">
-                      <div className="text-xs font-bold text-slate-600">{user.unp || '—'}</div>
+                      <div className="text-[13px] font-bold text-slate-600">{user.unp || '—'}</div>
                     </td>
 
                     <td className="px-10 py-6 text-right">
@@ -187,7 +187,7 @@ const UsersList = () => {
             ) : !loading && (
               <tr>
                 <td colSpan={4} className="px-10 py-20 text-center">
-                  <div className="text-slate-400 font-black uppercase tracking-[0.2em] text-xs">Пользователи не найдены</div>
+                  <div className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[13px]">Пользователи не найдены</div>
                 </td>
               </tr>
             )}
@@ -196,7 +196,7 @@ const UsersList = () => {
       </div>
 
       <div className="p-8 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
-        <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+        <div className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
           Стр {currentPage} из {totalPages}
         </div>
         <div className="flex gap-2">

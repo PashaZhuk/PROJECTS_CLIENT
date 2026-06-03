@@ -40,7 +40,7 @@ const AdminOverview = ({ stats, onRefresh }: any) => {
           subtitle={
             <div className="flex gap-4 mt-4 pt-4 border-t border-purple-100/50">
               <div className="relative group/tip">
-                <span className="text-[9px] text-slate-400 uppercase font-black cursor-help">
+                <span className="text-[9px] text-slate-400 uppercase font-bold cursor-help">
                   Пользователи: {stats.totalUsers}
                 </span>
                 {stats.totalUserNames?.length > 0 && (
@@ -56,7 +56,7 @@ const AdminOverview = ({ stats, onRefresh }: any) => {
                 )}
               </div>
               <div className="relative group/tip">
-                <span className="text-[9px] text-slate-400 uppercase font-black border-l border-purple-100/30 pl-4 cursor-help">
+                <span className="text-[9px] text-slate-400 uppercase font-bold border-l border-purple-100/30 pl-4 cursor-help">
                   Менеджеры: {stats.totalManagers}
                 </span>
                 {stats.totalManagerNames?.length > 0 && (
@@ -82,7 +82,7 @@ const AdminOverview = ({ stats, onRefresh }: any) => {
           subtitle={
             <div className="flex gap-4 mt-4 pt-4 border-t border-emerald-100/50">
               <div className="relative group/tip">
-                <span className="text-[9px] text-slate-400 uppercase font-black cursor-help">
+                <span className="text-[9px] text-slate-400 uppercase font-bold cursor-help">
                   Пользователи: {stats.details.onlineUsers}
                 </span>
                 {stats.details.onlineUserNames?.length > 0 && (
@@ -98,7 +98,7 @@ const AdminOverview = ({ stats, onRefresh }: any) => {
                 )}
               </div>
               <div className="relative group/tip">
-                <span className="text-[9px] text-slate-400 uppercase font-black border-l border-emerald-100/30 pl-4 cursor-help">
+                <span className="text-[9px] text-slate-400 uppercase font-bold border-l border-emerald-100/30 pl-4 cursor-help">
                   Менеджеры: {stats.details.onlineManagers}
                 </span>
                 {stats.details.onlineManagerNames?.length > 0 && (

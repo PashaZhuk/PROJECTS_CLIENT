@@ -69,7 +69,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
           <div className="pt-6 pb-2">
             <button 
               onClick={() => setIsUsersOpen(!isUsersOpen)}
-              className="w-full flex items-center gap-3 px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
+              className="w-full flex items-center gap-3 px-5 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 hover:text-slate-600 transition-colors"
             >
               <Users size={14} />
               <span className="flex-1 text-left">Управление системой</span>
@@ -118,7 +118,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
           <div className="pt-2 pb-2">
             <button 
               onClick={() => setIsDbOpen(!isDbOpen)}
-              className="w-full flex items-center gap-3 px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
+              className="w-full flex items-center gap-3 px-5 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 hover:text-slate-600 transition-colors"
             >
               <Database size={14} />
               <span className="flex-1 text-left">Работа с БД</span>
@@ -155,7 +155,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
             <div className="pt-6 pb-2">
               <button 
                 onClick={() => setIsOrdersOpen(!isOrdersOpen)}
-                className="w-full flex items-center gap-3 px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
+                className="w-full flex items-center gap-3 px-5 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 hover:text-slate-600 transition-colors"
               >
                 <ShoppingCart size={14} />
                 <span className="flex-1 text-left">Заказы</span>
@@ -186,7 +186,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
             <div className="pt-2 pb-2">
               <button 
                 onClick={() => setIsProjectsOpen(!isProjectsOpen)}
-                className="w-full flex items-center gap-3 px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
+                className="w-full flex items-center gap-3 px-5 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 hover:text-slate-600 transition-colors"
               >
                 <FolderOpen size={14} />
                 <span className="flex-1 text-left">Проекты</span>
@@ -224,7 +224,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
             <div className="pt-6 pb-2">
               <button 
                 onClick={() => setIsProjectsOpen(!isProjectsOpen)}
-                className="w-full flex items-center gap-3 px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
+                className="w-full flex items-center gap-3 px-5 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 hover:text-slate-600 transition-colors"
               >
                 <FolderOpen size={14} />
                 <span className="flex-1 text-left">Проекты</span>
@@ -248,7 +248,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
             <div className="pt-2 pb-2">
               <button 
                 onClick={() => setIsOrdersOpen(!isOrdersOpen)}
-                className="w-full flex items-center gap-3 px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
+                className="w-full flex items-center gap-3 px-5 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 hover:text-slate-600 transition-colors"
               >
                 <ShoppingCart size={14} />
                 <span className="flex-1 text-left">Заказы</span>
@@ -272,7 +272,7 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: ActiveTabType, setAct
             <div className="pt-2 pb-2">
               <button 
                 onClick={() => setIsOrdersOpen(!isOrdersOpen)}
-                className="w-full flex items-center gap-3 px-5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-slate-600 transition-colors"
+                className="w-full flex items-center gap-3 px-5 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 hover:text-slate-600 transition-colors"
               >
                 <FileText size={14} />
                 <span className="flex-1 text-left">Информирование</span>
@@ -364,8 +364,8 @@ const NavBtn = ({ active, onClick, icon, label, theme }: any) => (
 );
 
 const SubNavBtn = ({ active, onClick, label, icon, theme }: any) => (
-  <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${active ? `bg-slate-50 ${theme.text} font-black` : 'text-slate-400 hover:bg-gray-50'}`}>
-    {icon} <span className="text-xs">{label}</span>
+  <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${active ? `bg-slate-50 ${theme.text} font-bold` : 'text-slate-400 hover:text-slate-700 hover:bg-gray-50'}`}>
+    {icon} <span className="text-[13px] font-medium">{label}</span>
   </button>
 );
 

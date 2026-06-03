@@ -221,7 +221,7 @@ const DbViewer = () => {
       <div className="flex gap-4 mb-6 items-start">
         {/* Selector */}
         <div className="w-64 shrink-0">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Таблица</label>
+          <label className="block text-[13px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Таблица</label>
           <select
             value={selectedTable}
             onChange={e => { setSelectedTable(e.target.value); setPage(1); setSearch(''); setSearchInput(''); }}
@@ -235,7 +235,7 @@ const DbViewer = () => {
 
         {/* Search */}
         <div className="flex-1">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Поиск</label>
+          <label className="block text-[13px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Поиск</label>
           <div className="relative">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -250,7 +250,7 @@ const DbViewer = () => {
 
         {/* Info badge */}
         <div className="shrink-0 pt-6">
-          <div className="px-4 py-2.5 bg-purple-50 rounded-xl text-xs font-bold text-purple-700 whitespace-nowrap">
+          <div className="px-4 py-2.5 bg-purple-50 rounded-xl text-[13px] font-bold text-purple-700 whitespace-nowrap">
             {tableData ? `${tableData.total} записей` : '—'}
           </div>
         </div>
@@ -293,7 +293,7 @@ const DbViewer = () => {
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/50">
                     {tableData.columns.map(col => (
-                      <th key={col.name} className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-wider text-gray-500 whitespace-nowrap">
+                      <th key={col.name} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-500 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           <span>{col.name}</span>
                           {col.isPk && <span className="text-[8px] px-1 py-0.5 rounded bg-purple-100 text-purple-700">PK</span>}
@@ -311,7 +311,7 @@ const DbViewer = () => {
                       onClick={() => openEditor(row, tableData.columns)}
                     >
                       {tableData.columns.map(col => (
-                        <td key={col.name} className="px-4 py-2.5 text-xs text-gray-700 max-w-[250px] truncate" title={formatCellValue(row[col.name]) as string}>
+                        <td key={col.name} className="px-4 py-2.5 text-[13px] text-gray-700 max-w-[250px] truncate" title={formatCellValue(row[col.name]) as string}>
                           {formatCellValue(row[col.name])}
                         </td>
                       ))}
@@ -326,7 +326,7 @@ const DbViewer = () => {
 
             {/* Pagination */}
             <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50/50">
-              <span className="text-xs text-gray-500 font-medium">
+              <span className="text-[13px] text-gray-500 font-medium">
                 {tableData.total > 0
                   ? `${(page - 1) * perPage + 1}–${Math.min(page * perPage, tableData.total)} из ${tableData.total}`
                   : 'Нет данных'}
@@ -339,7 +339,7 @@ const DbViewer = () => {
                 >
                   <ChevronLeft size={16} />
                 </button>
-                <span className="text-xs font-bold text-gray-600 min-w-[60px] text-center">
+                <span className="text-[13px] font-bold text-gray-600 min-w-[60px] text-center">
                   {page} / {totalPages}
                 </span>
                 <button
@@ -398,7 +398,7 @@ const DbViewer = () => {
 
                 return (
                   <div key={col.name}>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-gray-500 mb-1.5">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
                       {col.name}
                       {col.type && <span className="text-gray-300 font-normal normal-case ml-1">({col.type})</span>}
                       {col.nullable && <span className="text-amber-500 ml-1">nullable</span>}

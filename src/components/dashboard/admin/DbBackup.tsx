@@ -259,11 +259,11 @@ const DbBackup = () => {
         <div className="lg:col-span-2 space-y-6">
           {/* Create backup card */}
           <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
-            <h2 className="text-sm font-black uppercase tracking-wider text-gray-600 mb-4 flex items-center gap-2">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-600 mb-4 flex items-center gap-2">
               <Plus size={16} className="text-purple-600" />
               Создать бэкап
             </h2>
-            <p className="text-xs text-gray-400 mb-5 leading-relaxed">
+            <p className="text-[13px] text-gray-400 mb-5 leading-relaxed">
               Создаёт полный дамп базы данных через <code className="text-purple-600 bg-purple-50 px-1 rounded">pg_dump</code>.
               Файл сохраняется на сервере и будет доступен для скачивания.
             </p>
@@ -282,11 +282,11 @@ const DbBackup = () => {
 
           {/* Upload backup card */}
           <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
-            <h2 className="text-sm font-black uppercase tracking-wider text-gray-600 mb-4 flex items-center gap-2">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-600 mb-4 flex items-center gap-2">
               <Upload size={16} className="text-purple-600" />
               Загрузить бэкап
             </h2>
-            <p className="text-xs text-gray-400 mb-5 leading-relaxed">
+            <p className="text-[13px] text-gray-400 mb-5 leading-relaxed">
               Если портал развёрнут заново — загрузите <code className="text-purple-600 bg-purple-50 px-1 rounded">.sql</code> файл
               с локального компьютера, затем восстановите из него базу данных.
             </p>
@@ -305,7 +305,7 @@ const DbBackup = () => {
 
           {/* Schedule card */}
           <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
-            <h2 className="text-sm font-black uppercase tracking-wider text-gray-600 mb-4 flex items-center gap-2">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-600 mb-4 flex items-center gap-2">
               <Clock size={16} className="text-purple-600" />
               Расписание
             </h2>
@@ -331,7 +331,7 @@ const DbBackup = () => {
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-bold">{p.label}</div>
                     {p.desc && (
-                      <div className="text-[10px] text-gray-400 mt-0.5">{p.desc}</div>
+                      <div className="text-[11px] text-gray-400 mt-0.5">{p.desc}</div>
                     )}
                   </div>
                   {p.cron && (
@@ -363,7 +363,7 @@ const DbBackup = () => {
                 />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-bold">Своё выражение</div>
-                  <div className="text-[10px] text-gray-400 mt-0.5">Указать cron вручную</div>
+                  <div className="text-[11px] text-gray-400 mt-0.5">Указать cron вручную</div>
                 </div>
                 <code className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded shrink-0">
                   custom
@@ -374,7 +374,7 @@ const DbBackup = () => {
             {/* Custom cron input (when "Своё выражение" selected) */}
             {!SCHEDULE_PRESETS.some(p => p.cron === scheduleInput) && (
               <div className="mb-4 pl-1">
-                <label className="block text-[10px] font-black uppercase tracking-wider text-gray-500 mb-1.5">
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
                   Cron-выражение
                 </label>
                 <div className="relative">
@@ -417,14 +417,14 @@ const DbBackup = () => {
             <div className="flex items-center justify-between pt-3 border-t border-gray-100">
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${schedule.enabled ? 'bg-emerald-500' : 'bg-gray-300'}`} />
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                   {schedule.enabled ? scheduleInput : 'Неактивно'}
                 </span>
               </div>
               <button
                 onClick={handleSaveSchedule}
                 disabled={savingSchedule}
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:from-gray-300 disabled:to-gray-300 text-white font-bold text-xs rounded-xl transition-all shadow-md disabled:shadow-none"
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:from-gray-300 disabled:to-gray-300 text-white font-bold text-[13px] rounded-xl transition-all shadow-md disabled:shadow-none"
               >
                 {savingSchedule ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                 <span>Сохранить</span>
@@ -438,11 +438,11 @@ const DbBackup = () => {
           <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
             {/* Header */}
             <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="text-sm font-black uppercase tracking-wider text-gray-600 flex items-center gap-2">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-gray-600 flex items-center gap-2">
                 <Database size={16} className="text-purple-600" />
                 Сохранённые бэкапы
                 {backups.length > 0 && (
-                  <span className="text-[10px] font-bold text-gray-400 ml-1">({backups.length})</span>
+                  <span className="text-[11px] font-bold text-gray-400 ml-1">({backups.length})</span>
                 )}
               </h2>
               <button
@@ -458,7 +458,7 @@ const DbBackup = () => {
             {/* Информация для аварийного восстановления */}
             {!loading && backups.length > 0 && (
               <div className="px-6 py-3 bg-amber-50/50 border-b border-amber-100">
-                <p className="text-[10px] text-amber-700 leading-relaxed">
+                <p className="text-[11px] text-amber-700 leading-relaxed">
                   📁 Файлы бэкапов хранятся на сервере в папке <code className="font-mono text-[9px] bg-amber-100 px-1 rounded">server/backups/</code>.
                   Если сервер недоступен — восстановите вручную через <code className="font-mono text-[9px] bg-amber-100 px-1 rounded">./restore.sh</code> в папке сервера.
                 </p>
@@ -477,7 +477,7 @@ const DbBackup = () => {
               <div className="flex flex-col items-center justify-center p-12 text-center">
                 <Database size={40} className="text-gray-200 mb-4" />
                 <p className="text-sm font-bold text-gray-400">Нет сохранённых бэкапов</p>
-                <p className="text-xs text-gray-300 mt-1">Нажмите «Создать бэкап сейчас» чтобы сделать первый дамп</p>
+                <p className="text-[13px] text-gray-300 mt-1">Нажмите «Создать бэкап сейчас» чтобы сделать первый дамп</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-50">
@@ -549,7 +549,7 @@ const DbBackup = () => {
                 <span className="font-bold text-slate-700">{confirmRestoreFilename}</span>?
               </p>
               <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6 w-full">
-                <p className="text-xs font-bold text-red-700 leading-relaxed">
+                <p className="text-[13px] font-bold text-red-700 leading-relaxed">
                   ⚠️ Все текущие данные будут заменены данными из бэкапа.
                   Это действие необратимо.
                 </p>

@@ -154,7 +154,7 @@ const Section = ({ title, icon, children }: { title: string; icon: React.ReactNo
   <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
     <div className="flex items-center gap-2 mb-5 pb-4 border-b border-gray-100">
       {icon}
-      <h3 className="text-sm font-black uppercase tracking-wider text-gray-600">{title}</h3>
+      <h3 className="text-sm font-bold uppercase tracking-wider text-gray-600">{title}</h3>
     </div>
     <div className="space-y-4">
       {children}
@@ -164,7 +164,7 @@ const Section = ({ title, icon, children }: { title: string; icon: React.ReactNo
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div>
-    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">{label}</label>
+    <label className="block text-[13px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">{label}</label>
     {children}
   </div>
 );
@@ -193,12 +193,12 @@ const ToolSelector = ({ onSelect }: { onSelect: (toolId: string) => void }) => {
           <div className="px-6 pt-6 pb-4 border-b border-gray-100">
             <div className="flex items-center gap-2">
               <Settings size={18} className="text-purple-600 shrink-0" />
-              <h2 className="text-sm font-black uppercase tracking-wider text-gray-700">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-gray-700">
                 {section.title}
               </h2>
             </div>
             {section.description && (
-              <p className="text-xs text-gray-400 mt-1 ml-[26px]">
+              <p className="text-[13px] text-gray-400 mt-1 ml-[26px]">
                 {section.description}
               </p>
             )}
@@ -219,7 +219,7 @@ const ToolSelector = ({ onSelect }: { onSelect: (toolId: string) => void }) => {
                   <div className="text-sm font-bold text-slate-800 group-hover:text-purple-700 transition-colors">
                     {tool.label}
                   </div>
-                  <div className="text-xs text-slate-400 mt-0.5">
+                  <div className="text-[13px] text-slate-400 mt-0.5">
                     {tool.description}
                   </div>
                 </div>
@@ -408,7 +408,7 @@ const ContactsEditor = ({ onBack }: { onBack: () => void }) => {
                 {/* Подсказка */}
                 <div className="group relative shrink-0 mt-2">
                   <Info size={18} className="text-gray-400 hover:text-purple-600 cursor-help transition-colors" />
-                  <div className="absolute right-0 top-full mt-2 w-80 p-4 bg-gray-900 text-white text-xs rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <div className="absolute right-0 top-full mt-2 w-80 p-4 bg-gray-900 text-white text-[13px] rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                     <div className="font-bold text-purple-300 mb-2 text-sm">Как сменить карту</div>
                     <ol className="space-y-1.5 list-decimal list-inside leading-relaxed">
                       <li>Зайдите на <a href="https://constructor.maps.yandex.ru" target="_blank" rel="noopener" className="text-blue-300 hover:underline">constructor.maps.yandex.ru</a></li>
@@ -571,7 +571,7 @@ const BrandingEditor = ({ onBack }: { onBack: () => void }) => {
                 <span className="text-[10px] text-gray-400 font-bold text-center px-2">Нет логотипа</span>
               )}
             </div>
-            <label className="px-4 py-2 bg-purple-600 text-white text-xs font-bold rounded-xl hover:bg-purple-700 cursor-pointer transition-colors">
+            <label className="px-4 py-2 bg-purple-600 text-white text-[13px] font-bold rounded-xl hover:bg-purple-700 cursor-pointer transition-colors">
               Загрузить
               <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={handleFileUpload} className="hidden" />
             </label>
@@ -581,7 +581,7 @@ const BrandingEditor = ({ onBack }: { onBack: () => void }) => {
               </button>
             )}
           </div>
-          <div className="flex-1 text-xs text-gray-400 leading-relaxed">
+          <div className="flex-1 text-[13px] text-gray-400 leading-relaxed">
             <p className="font-bold mb-1">Рекомендации:</p>
             <ul className="list-disc list-inside space-y-1">
               <li>Формат: PNG, WebP или SVG</li>

@@ -349,7 +349,7 @@ const LogsViewer = () => {
           <div className="flex bg-slate-100 rounded-xl p-0.5">
             <button
               onClick={() => setDateMode('single')}
-              className={`px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
+              className={`px-3 py-2 rounded-lg text-[13px] font-bold transition-colors ${
                 dateMode === 'single' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
               }`}
             >
@@ -357,7 +357,7 @@ const LogsViewer = () => {
             </button>
             <button
               onClick={() => setDateMode('range')}
-              className={`px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
+              className={`px-3 py-2 rounded-lg text-[13px] font-bold transition-colors ${
                 dateMode === 'range' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
               }`}
             >
@@ -378,7 +378,7 @@ const LogsViewer = () => {
           ) : (
             <>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500 font-bold">с</span>
+                <span className="text-[13px] text-slate-500 font-bold">с</span>
                 <div className="w-36">
                   {renderDateInput(
                     dateFrom, displayDateFrom,
@@ -387,7 +387,7 @@ const LogsViewer = () => {
                     'ДД.ММ.ГГГГ',
                   )}
                 </div>
-                <span className="text-xs text-slate-500 font-bold">по</span>
+                <span className="text-[13px] text-slate-500 font-bold">по</span>
                 <div className="w-36">
                   {renderDateInput(
                     dateTo, displayDateTo,
@@ -474,7 +474,7 @@ const LogsViewer = () => {
                 </div>
               </div>
             ))}
-            <div className="text-right text-xs text-slate-400 pt-4">
+            <div className="text-right text-[13px] text-slate-400 pt-4">
               Показано {logs.length} из {total} (последних)
             </div>
           </div>
