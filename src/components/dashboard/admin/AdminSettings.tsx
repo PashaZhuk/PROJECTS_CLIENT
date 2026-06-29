@@ -51,6 +51,12 @@ const STATIC_SECTION: SettingsSection = {
       description: 'Адрес, телефоны, email, Яндекс.Карта',
       icon: <MapPin size={20} />,
     },
+    {
+      id: 'motto',
+      label: 'Лозунг дня',
+      description: 'Текст под датой в шапке портала',
+      icon: <Info size={20} />,
+    },
   ],
 };
 
@@ -633,6 +639,129 @@ const BrandingEditor = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
+// ─── MottoEditor ───────────────────────────────────────
+
+const MottoEditor = ({ onBack }: { onBack: () => void }) => {
+  const [motto, setMotto] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/settings/daily-motto')
+      .then(r => r.json())
+      .then(data => {
+        if (data?.success && data.data) {
+          setMotto(String(data.data));
+        }
+      })
+      .catch(() => setMessage({ type: 'error', text: 'Ошибка загрузки лозунга' }))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (message?.type === 'success') {
+      const t = setTimeout(() => setMessage(null), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [message]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const res = await fetch('/api/admin/settings/daily-motto', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ value: motto }),
+      });
+      const data = await res.json();
+      if (data?.success) {
+        setMessage({ type: 'success', text: 'Лозунг сохранён' });
+        broadcastSaved('setting', 'updated');
+      } else {
+        setMessage({ type: 'error', text: data?.error || 'Ошибка сохранения' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Ошибка сети' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-20">
+        <Loader2 size={32} className="animate-spin text-purple-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex items-start gap-4">
+        <button onClick={onBack} className="flex items-center justify-center w-10 h-10 mt-1 rounded-xl border border-gray-200 text-gray-400 hover:text-purple-600 hover:border-purple-200 hover:bg-purple-50 transition-all shrink-0">
+          <ChevronLeft size={20} />
+        </button>
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Лозунг <span className="text-purple-600">дня</span></h1>
+          <p className="text-slate-500 text-sm mt-1">Текст, отображаемый под датой в шапке портала</p>
+        </div>
+      </div>
+
+      {message && (
+        <div className={`flex items-center gap-3 px-6 py-4 rounded-2xl border shadow-lg ${
+          message.type === 'success'
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+            : 'bg-red-50 border-red-200 text-red-700'
+        }`}>
+          {message.type === 'success' ? <CheckCircle2 size={22} /> : <AlertCircle size={22} />}
+          <span className="text-sm font-bold">{message.text}</span>
+          <button onClick={() => setMessage(null)} className="ml-auto p-1 rounded-lg hover:bg-black/5">&times;</button>
+        </div>
+      )}
+
+      <Section title="Редактирование лозунга" icon={<Info size={18} className="text-purple-600" />}>
+        <Field label="Текст лозунга">
+          <ValidatedInput
+            value={motto}
+            onChange={(e: any) => setMotto(e.target.value)}
+            maxLength={70}
+            placeholder="Например: Понедельник — день тяжёлый, а B2B портал — лёгкий!"
+          />
+        </Field>
+        <p className="text-[12px] text-gray-400 mt-2 italic">Лозунг отображается в шапке портала у всех пользователей.</p>
+      </Section>
+
+      <div className="flex justify-end pt-4 border-t border-gray-100">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="group relative flex items-center justify-center px-10 py-4 min-w-[240px] bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:from-gray-300 disabled:to-gray-300 text-white font-bold text-sm tracking-wider uppercase rounded-2xl transition-all duration-300 active:scale-[0.97] disabled:active:scale-100 shadow-lg shadow-purple-200/60 hover:shadow-xl hover:shadow-purple-300/40 disabled:shadow-none overflow-hidden"
+        >
+          <span className={`absolute inset-0 flex items-center justify-center gap-3 transition-all duration-200 ${
+            saving ? 'opacity-0 scale-75' : 'opacity-100 scale-100'
+          }`}>
+            <Save size={18} />
+            <span>Сохранить лозунг</span>
+          </span>
+          <span className={`absolute inset-0 flex items-center justify-center gap-3 transition-all duration-200 ${
+            saving ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+          }`}>
+            <Loader2 size={18} className="animate-spin" />
+            <span>Сохранение...</span>
+          </span>
+          <span className="invisible inline-flex items-center gap-3">
+            <Save size={18} />
+            <span>Сохранить лозунг</span>
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // ─── AdminSettings (роутер) ────────────────────────────
 
 const AdminSettings = () => {
@@ -643,6 +772,9 @@ const AdminSettings = () => {
   }
   if (selectedTool === 'contacts') {
     return <ContactsEditor onBack={() => setSelectedTool(null)} />;
+  }
+  if (selectedTool === 'motto') {
+    return <MottoEditor onBack={() => setSelectedTool(null)} />;
   }
 
   return <ToolSelector onSelect={setSelectedTool} />;

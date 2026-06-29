@@ -64,6 +64,10 @@ const LoginPage = () => {
 
   useEffect(() => {
     if (isInitialized && isAuthenticated && user) {
+      if (user.mustChangePassword) {
+        navigate('/force-change-password', { replace: true });
+        return;
+      }
       const routes = { 
         ADMIN: '/admin/dashboard', 
         MANAGER: '/manager/dashboard', 

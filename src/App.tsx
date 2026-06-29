@@ -43,7 +43,8 @@ const AppContent = () => {
     _hasHydrated, 
     checkAuth,
     isUserBlocked,
-    setUserBlocked
+    setUserBlocked,
+    user,
   } = useAuthStore();
 
   const authChecked = useRef(false);
@@ -107,7 +108,7 @@ const AppContent = () => {
           <Routes>
             <Route 
               path="/login" 
-              element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />} 
+              element={!isAuthenticated ? <LoginPage /> : user?.mustChangePassword ? <Navigate to="/force-change-password" replace /> : <Navigate to="/dashboard" replace />} 
             />
             <Route 
               path="/reset-password" 

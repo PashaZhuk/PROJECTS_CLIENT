@@ -139,13 +139,13 @@ describe('useAuthStore', () => {
       expect(result.userBlocked).toBe(true)
     })
 
-    it('обрабатывает ошибки без response.json', async () => {
+    it('обрабатывает ошибки сети', async () => {
       mockLogin.mockRejectedValue(new Error('Network error'))
 
       const result = await useAuthStore.getState().login({ email: 'test@test.com', password: 'pass' })
 
       expect(result.success).toBe(false)
-      expect(result.message).toBe('Network error')
+      expect(result.message).toContain('Сервер недоступен')
     })
   })
 
