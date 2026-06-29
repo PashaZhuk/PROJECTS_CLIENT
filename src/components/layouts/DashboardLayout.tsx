@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../layouts/Sidebar';
 import PartnerSidebar from '../layouts/PartnerSidebar';
+import ChatButton from '../ui/ChatButton';
 import { useAuthStore } from '../../store/useAuthStore';
 import type { ActiveTabType } from '../../types'
 
@@ -20,6 +21,8 @@ const DashboardLayout = () => {
       </main>
 
       {user?.role === 'USER' && <PartnerSidebar setActiveTab={setActiveTab} />}
+
+      {user?.role === 'USER' && <ChatButton />}
     </div>
   );
 };
