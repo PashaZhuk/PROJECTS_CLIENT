@@ -8,7 +8,7 @@ import { useSessionManager } from './hooks/useSessionManager';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import DashboardLayout from './components/layouts/DashboardLayout';
 import Header from './components/ui/Header';
-// import Footer from './components/ui/Footer';
+import Footer from './components/ui/Footer';
 import LoginPage from './pages/LoginPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ForcePasswordChange from './components/auth/ForcePasswordChange';
@@ -90,7 +90,7 @@ const AppContent = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 relative font-sans">
+    <div className="flex flex-col h-screen overflow-hidden bg-gray-50 relative font-sans">
       <SessionExpiredModal />
       <SessionSupersededModal />
       <LockedModal 
@@ -149,7 +149,7 @@ const AppContent = () => {
         </Suspense>
       </main>
       
-      {/* <Footer /> */}
+      <Footer />
     </div>
   );
 }
